@@ -8,10 +8,6 @@
 # Java class files
 *.class
 
-# built native files
-*.o
-*.so
-
 # generated files
 **/bin/
 **/gen/
@@ -29,20 +25,21 @@
 # Eclipse Metadata
 **/.metadata/
 
-# Mac OS X clutter
-*.DS_Store
-
-# Windows clutter
-Thumbs.db
-
-# Intellij IDEA (see https://intellij-support.jetbrains.com/hc/en-us/articles/206827587-How-to-manage-projects-under-Version-Control-Systems)
+# Intellij IDEA (see https://intellij-support.jetbrains.com/entries/23393067)
 *.iws
 **/.idea/workspace.xml
 **/.idea/tasks.xml
 **/.idea/datasources.xml
 **/.idea/dataSources.ids
-# **/.idea/gradle.xml
-# **/.idea/libraries/
+**/.idea/gradle.xml
+**/.idea/libraries
 
-# Others
+# Linux clutter
 *~
+*.swp
+
+# Mac OS X clutter
+*.DS_Store
+
+# Windows clutter
+Thumbs.db
