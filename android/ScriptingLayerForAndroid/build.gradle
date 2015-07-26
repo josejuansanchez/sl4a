@@ -4,7 +4,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.1.0'
+        classpath 'com.android.tools.build:gradle:1.2.3'
     }
 }
 
@@ -28,8 +28,8 @@ dependencies {
 }
 
 android {
-    buildToolsVersion "21.1.2"
-    compileSdkVersion 21
+    buildToolsVersion "22.0.1"
+    compileSdkVersion 22
 
     sourceSets {
         main {
@@ -48,11 +48,12 @@ android {
     }
     defaultConfig {
         minSdkVersion 4
-        targetSdkVersion 4
+        targetSdkVersion 22
         versionCode 611
         versionName '6.1.1'
     }
-    productFlavors {
+
+/*    productFlavors {
         x86 {
             ndk {
                 abiFilter "x86"
@@ -77,7 +78,7 @@ android {
     productFlavors {
     }
     dexOptions {
-    }
+    }*/
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_6
         targetCompatibility JavaVersion.VERSION_1_7
@@ -94,5 +95,14 @@ android {
             }
         }
     }
+
+/*    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'mips', 'armeabi-v7a'
+            universalApk true
+        }
+    }*/
 }
 
