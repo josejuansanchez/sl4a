@@ -47,13 +47,13 @@ android {
         instrumentTest.setRoot('tests')
     }
     defaultConfig {
-        minSdkVersion 4
+        minSdkVersion 8
         targetSdkVersion 22
         versionCode 611
         versionName '6.1.1'
     }
 
-/*    productFlavors {
+    productFlavors {
         x86 {
             ndk {
                 abiFilter "x86"
@@ -75,7 +75,7 @@ android {
             }
         }
     }
-    productFlavors {
+/*    productFlavors {
     }
     dexOptions {
     }*/
@@ -100,7 +100,7 @@ android {
         abi {
             enable true
             reset()
-            include 'x86', 'mips', 'armeabi-v7a'
+            include 'x86', 'mips', 'armeabi-v7a', 'armeabi'
             universalApk true
         }
     }*/

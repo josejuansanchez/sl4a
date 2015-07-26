@@ -31,6 +31,7 @@ public class CustomizeWindow {
   }
 
   public static void requestCustomTitle(Activity activity, String title, int contentViewLayoutResId) {
+      // This was commented out because of problems with Android Lollipop.
 /*    activity.requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);*/
     activity.setContentView(contentViewLayoutResId);
 /*    activity.getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.title);
