@@ -23,7 +23,7 @@ android {
     compileSdkVersion 22
 
     defaultConfig {
-        minSdkVersion 8
+        minSdkVersion 10
         targetSdkVersion 22
     }
 

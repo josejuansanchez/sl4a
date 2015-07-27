@@ -24,13 +24,13 @@ import com.googlecode.android_scripting.Constants;
 
 public class ScriptingLayerServiceLauncher extends Activity {
 
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    // Forward the intent that launched us to start the service.
-    Intent intent = getIntent();
-    intent.setComponent(Constants.SL4A_SERVICE_COMPONENT_NAME);
-    startService(intent);
-    finish();
-  }
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Forward the intent that launched us to start the service.
+        Intent intent = getIntent();
+        intent.setComponent(Constants.SL4A_SERVICE_COMPONENT_NAME);
+        startService(intent);
+        finish();
+    }
 }

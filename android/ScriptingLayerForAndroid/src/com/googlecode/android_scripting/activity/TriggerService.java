@@ -42,126 +42,126 @@ import com.googlecode.android_scripting.trigger.TriggerRepository.TriggerReposit
 
 /**
  * The trigger service takes care of installing triggers serialized to the preference storage.
- * 
+ *
  * <p>
  * The service also installs an alarm that keeps it running, unless the user force-quits the
  * service.
- * 
+ *
  * <p>
  * When no triggers are installed the service shuts down silently as to not consume resources
  * unnecessarily.
- * 
+ *
  * @author Felix Arends (felix.arends@gmail.com)
  * @author Damon Kohler (damonkohler@gmail.com)
  */
 public class TriggerService extends ForegroundService {
-  private static final int NOTIFICATION_ID = NotificationIdFactory.create();
-  private static final long PING_MILLIS = 10 * 1000 * 60;
+    private static final int NOTIFICATION_ID = NotificationIdFactory.create();
+    private static final long PING_MILLIS = 10 * 1000 * 60;
 
-  private final IBinder mBinder;
-  private TriggerRepository mTriggerRepository;
-  private FacadeManager mFacadeManager;
-  private EventFacade mEventFacade;
+    private final IBinder mBinder;
+    private TriggerRepository mTriggerRepository;
+    private FacadeManager mFacadeManager;
+    private EventFacade mEventFacade;
 
-  public class LocalBinder extends Binder {
-    public TriggerService getService() {
-      return TriggerService.this;
+    public class LocalBinder extends Binder {
+        public TriggerService getService() {
+            return TriggerService.this;
+        }
     }
-  }
 
-  public TriggerService() {
-    super(NOTIFICATION_ID);
-    mBinder = new LocalBinder();
-  }
-
-  @Override
-  public IBinder onBind(Intent intent) {
-    return mBinder;
-  }
-
-  @Override
-  public void onCreate() {
-    super.onCreate();
-
-    mFacadeManager =
-        new FacadeManager(FacadeConfiguration.getSdkLevel(), this, null,
-            FacadeConfiguration.getFacadeClasses());
-    mEventFacade = mFacadeManager.getReceiver(EventFacade.class);
-
-    mTriggerRepository = ((BaseApplication) getApplication()).getTriggerRepository();
-    mTriggerRepository.bootstrapObserver(new RepositoryObserver());
-    mTriggerRepository.bootstrapObserver(new EventGenerationControllingObserver(mFacadeManager));
-    installAlarm();
-  }
-
-  @Override
-  public void onStart(Intent intent, int startId) {
-    if (mTriggerRepository.isEmpty()) {
-      stopSelfResult(startId);
-      return;
-    }
-  }
-
-  /** Returns the notification to display whenever the service is running. */
-  @Override
-  protected Notification createNotification() {
-    Notification notification =
-        new Notification(R.drawable.sl4a_logo_48, "SL4A Trigger Service started.",
-            System.currentTimeMillis());
-    Intent notificationIntent = new Intent(this, TriggerManager.class);
-    notification.setLatestEventInfo(this, "SL4A Trigger Service", "Tap to view triggers",
-        PendingIntent.getActivity(this, 0, notificationIntent, 0));
-    notification.flags = Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
-    return notification;
-  }
-
-  private class TriggerEventObserver implements EventObserver {
-    private final Trigger mTrigger;
-
-    public TriggerEventObserver(Trigger trigger) {
-      mTrigger = trigger;
+    public TriggerService() {
+        super(NOTIFICATION_ID);
+        mBinder = new LocalBinder();
     }
 
     @Override
-    public void onEventReceived(Event event) {
-      mTrigger.handleEvent(event, TriggerService.this);
-    }
-  }
-
-  private class RepositoryObserver implements TriggerRepositoryObserver {
-    int mTriggerCount = 0;
-
-    @Override
-    public void onPut(Trigger trigger) {
-      mTriggerCount++;
-      mEventFacade.addNamedEventObserver(trigger.getEventName(), new TriggerEventObserver(trigger));
+    public IBinder onBind(Intent intent) {
+        return mBinder;
     }
 
     @Override
-    public void onRemove(Trigger trigger) {
-      Preconditions.checkArgument(mTriggerCount > 0);
-      // TODO(damonkohler): Tear down EventObserver associated with trigger.
-      if (--mTriggerCount == 0) {
-        // TODO(damonkohler): Use stopSelfResult() which would require tracking startId.
-        stopSelf();
-      }
+    public void onCreate() {
+        super.onCreate();
+
+        mFacadeManager =
+                new FacadeManager(FacadeConfiguration.getSdkLevel(), this, null,
+                        FacadeConfiguration.getFacadeClasses());
+        mEventFacade = mFacadeManager.getReceiver(EventFacade.class);
+
+        mTriggerRepository = ((BaseApplication) getApplication()).getTriggerRepository();
+        mTriggerRepository.bootstrapObserver(new RepositoryObserver());
+        mTriggerRepository.bootstrapObserver(new EventGenerationControllingObserver(mFacadeManager));
+        installAlarm();
     }
-  }
 
-  private void installAlarm() {
-    AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + PING_MILLIS,
-        PING_MILLIS, IntentBuilders.buildTriggerServicePendingIntent(this));
-  }
+    @Override
+    public void onStart(Intent intent, int startId) {
+        if (mTriggerRepository.isEmpty()) {
+            stopSelfResult(startId);
+            return;
+        }
+    }
 
-  private void uninstallAlarm() {
-    AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-    alarmManager.cancel(IntentBuilders.buildTriggerServicePendingIntent(this));
-  }
+    /** Returns the notification to display whenever the service is running. */
+    @Override
+    protected Notification createNotification() {
+        Notification notification =
+                new Notification(R.drawable.sl4a_logo_48, "SL4A Trigger Service started.",
+                        System.currentTimeMillis());
+        Intent notificationIntent = new Intent(this, TriggerManager.class);
+        notification.setLatestEventInfo(this, "SL4A Trigger Service", "Tap to view triggers",
+                PendingIntent.getActivity(this, 0, notificationIntent, 0));
+        notification.flags = Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
+        return notification;
+    }
 
-  @Override
-  public void onDestroy() {
-    super.onDestroy();
-    uninstallAlarm();
-  }
+    private class TriggerEventObserver implements EventObserver {
+        private final Trigger mTrigger;
+
+        public TriggerEventObserver(Trigger trigger) {
+            mTrigger = trigger;
+        }
+
+        @Override
+        public void onEventReceived(Event event) {
+            mTrigger.handleEvent(event, TriggerService.this);
+        }
+    }
+
+    private class RepositoryObserver implements TriggerRepositoryObserver {
+        int mTriggerCount = 0;
+
+        @Override
+        public void onPut(Trigger trigger) {
+            mTriggerCount++;
+            mEventFacade.addNamedEventObserver(trigger.getEventName(), new TriggerEventObserver(trigger));
+        }
+
+        @Override
+        public void onRemove(Trigger trigger) {
+            Preconditions.checkArgument(mTriggerCount > 0);
+            // TODO(damonkohler): Tear down EventObserver associated with trigger.
+            if (--mTriggerCount == 0) {
+                // TODO(damonkohler): Use stopSelfResult() which would require tracking startId.
+                stopSelf();
+            }
+        }
+    }
+
+    private void installAlarm() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + PING_MILLIS,
+                PING_MILLIS, IntentBuilders.buildTriggerServicePendingIntent(this));
+    }
+
+    private void uninstallAlarm() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        alarmManager.cancel(IntentBuilders.buildTriggerServicePendingIntent(this));
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        uninstallAlarm();
+    }
 }

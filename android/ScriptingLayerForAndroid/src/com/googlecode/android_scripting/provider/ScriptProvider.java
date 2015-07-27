@@ -41,126 +41,126 @@ import java.io.File;
 
 public class ScriptProvider extends ContentProvider {
 
-  public static final String SINGLE_MIME = "vnd.android.cursor.item/vnd.sl4a.script";
-  public static final String MULTIPLE_MIME = "vnd.android.cursor.dir/vnd.sl4a.script";
+    public static final String SINGLE_MIME = "vnd.android.cursor.item/vnd.sl4a.script";
+    public static final String MULTIPLE_MIME = "vnd.android.cursor.dir/vnd.sl4a.script";
 
-  private static final int LIVEFOLDER_ID = 1;
-  private static final int SUGGESTIONS_ID = 2;
+    private static final int LIVEFOLDER_ID = 1;
+    private static final int SUGGESTIONS_ID = 2;
 
-  public static final String AUTHORITY = ScriptProvider.class.getName().toLowerCase();
-  public static final String LIVEFOLDER = "liveFolder";
-  public static final String SUGGESTIONS = "searchSuggestions/*/*";
+    public static final String AUTHORITY = ScriptProvider.class.getName().toLowerCase();
+    public static final String LIVEFOLDER = "liveFolder";
+    public static final String SUGGESTIONS = "searchSuggestions/*/*";
 
-  private final UriMatcher mUriMatcher;
+    private final UriMatcher mUriMatcher;
 
-  private Context mContext;
-  private InterpreterConfiguration mConfiguration;
+    private Context mContext;
+    private InterpreterConfiguration mConfiguration;
 
-  public ScriptProvider() {
-    mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-    mUriMatcher.addURI(AUTHORITY, LIVEFOLDER, LIVEFOLDER_ID);
-    mUriMatcher.addURI(AUTHORITY, SUGGESTIONS, SUGGESTIONS_ID);
-  }
-
-  @Override
-  public int delete(Uri uri, String selection, String[] selectionArgs) {
-    return 0;
-  }
-
-  @Override
-  public String getType(Uri uri) {
-    if (uri.getLastPathSegment().equals("scripts")) {
-      return MULTIPLE_MIME;
+    public ScriptProvider() {
+        mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+        mUriMatcher.addURI(AUTHORITY, LIVEFOLDER, LIVEFOLDER_ID);
+        mUriMatcher.addURI(AUTHORITY, SUGGESTIONS, SUGGESTIONS_ID);
     }
-    return SINGLE_MIME;
-  }
 
-  @Override
-  public Uri insert(Uri uri, ContentValues values) {
-    return null;
-  }
-
-  @Override
-  public boolean onCreate() {
-    mContext = getContext();
-    mConfiguration = new InterpreterConfiguration(mContext);
-    mConfiguration.startDiscovering();
-    return true;
-  }
-
-  @Override
-  public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-      String sortOrder) {
-    switch (mUriMatcher.match(uri)) {
-    case LIVEFOLDER_ID:
-      return queryLiveFolder();
-    case SUGGESTIONS_ID:
-      String query = uri.getLastPathSegment().toLowerCase();
-      return querySearchSuggestions(query);
-    default:
-      return null;
+    @Override
+    public int delete(Uri uri, String selection, String[] selectionArgs) {
+        return 0;
     }
-  }
 
-  private Cursor querySearchSuggestions(String query) {
-    String[] columns =
-        { BaseColumns._ID, SearchManager.SUGGEST_COLUMN_TEXT_1,
-          SearchManager.SUGGEST_COLUMN_TEXT_2, SearchManager.SUGGEST_COLUMN_ICON_2,
-          SearchManager.SUGGEST_COLUMN_QUERY, SearchManager.SUGGEST_COLUMN_SHORTCUT_ID };
-    MatrixCursor cursor = new MatrixCursor(columns);
-    int index = 0;
-    for (File script : ScriptStorageAdapter.listExecutableScripts(null, mConfiguration)) {
-      String scriptName = script.getName().toLowerCase();
-      if (!scriptName.contains(query)) {
-        continue;
-      }
-      Interpreter interpreter = mConfiguration.getInterpreterForScript(scriptName);
-      String secondLine = interpreter.getNiceName();
-      int icon = FeaturedInterpreters.getInterpreterIcon(mContext, interpreter.getExtension());
-      Object[] row =
-          { index, scriptName, secondLine, icon, scriptName,
-            SearchManager.SUGGEST_NEVER_MAKE_SHORTCUT };
-      cursor.addRow(row);
-      ++index;
-    }
-    return cursor;
-  }
-
-  private Cursor queryLiveFolder() {
-    String[] columns =
-        { BaseColumns._ID, LiveFolders.NAME, LiveFolders.INTENT, LiveFolders.ICON_RESOURCE,
-          LiveFolders.ICON_PACKAGE, LiveFolders.DESCRIPTION };
-    MatrixCursor cursor = new MatrixCursor(columns);
-    int index = 0;
-    for (File script : ScriptStorageAdapter.listExecutableScriptsRecursively(null, mConfiguration)) {
-      int iconId = 0;
-      if (script.isDirectory()) {
-        iconId = R.drawable.folder;
-      } else {
-        iconId = FeaturedInterpreters.getInterpreterIcon(mContext, script.getName());
-        if (iconId == 0) {
-          iconId = R.drawable.sl4a_logo_32;
+    @Override
+    public String getType(Uri uri) {
+        if (uri.getLastPathSegment().equals("scripts")) {
+            return MULTIPLE_MIME;
         }
-      }
-      ShortcutIconResource icon = ShortcutIconResource.fromContext(mContext, iconId);
-      Intent intent = IntentBuilders.buildStartInBackgroundIntent(script);
-      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      String description = script.getAbsolutePath();
-      if (description.startsWith(InterpreterConstants.SCRIPTS_ROOT)) {
-        description = description.replaceAll(InterpreterConstants.SCRIPTS_ROOT, "scripts/");
-      }
-      Object[] row =
-          { index, script.getName(), intent.toURI(), icon.resourceName, icon.packageName,
-            description };
-      cursor.addRow(row);
-      ++index;
+        return SINGLE_MIME;
     }
-    return cursor;
-  }
 
-  @Override
-  public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-    return 0;
-  }
+    @Override
+    public Uri insert(Uri uri, ContentValues values) {
+        return null;
+    }
+
+    @Override
+    public boolean onCreate() {
+        mContext = getContext();
+        mConfiguration = new InterpreterConfiguration(mContext);
+        mConfiguration.startDiscovering();
+        return true;
+    }
+
+    @Override
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+                        String sortOrder) {
+        switch (mUriMatcher.match(uri)) {
+            case LIVEFOLDER_ID:
+                return queryLiveFolder();
+            case SUGGESTIONS_ID:
+                String query = uri.getLastPathSegment().toLowerCase();
+                return querySearchSuggestions(query);
+            default:
+                return null;
+        }
+    }
+
+    private Cursor querySearchSuggestions(String query) {
+        String[] columns =
+                { BaseColumns._ID, SearchManager.SUGGEST_COLUMN_TEXT_1,
+                        SearchManager.SUGGEST_COLUMN_TEXT_2, SearchManager.SUGGEST_COLUMN_ICON_2,
+                        SearchManager.SUGGEST_COLUMN_QUERY, SearchManager.SUGGEST_COLUMN_SHORTCUT_ID };
+        MatrixCursor cursor = new MatrixCursor(columns);
+        int index = 0;
+        for (File script : ScriptStorageAdapter.listExecutableScripts(null, mConfiguration)) {
+            String scriptName = script.getName().toLowerCase();
+            if (!scriptName.contains(query)) {
+                continue;
+            }
+            Interpreter interpreter = mConfiguration.getInterpreterForScript(scriptName);
+            String secondLine = interpreter.getNiceName();
+            int icon = FeaturedInterpreters.getInterpreterIcon(mContext, interpreter.getExtension());
+            Object[] row =
+                    { index, scriptName, secondLine, icon, scriptName,
+                            SearchManager.SUGGEST_NEVER_MAKE_SHORTCUT };
+            cursor.addRow(row);
+            ++index;
+        }
+        return cursor;
+    }
+
+    private Cursor queryLiveFolder() {
+        String[] columns =
+                { BaseColumns._ID, LiveFolders.NAME, LiveFolders.INTENT, LiveFolders.ICON_RESOURCE,
+                        LiveFolders.ICON_PACKAGE, LiveFolders.DESCRIPTION };
+        MatrixCursor cursor = new MatrixCursor(columns);
+        int index = 0;
+        for (File script : ScriptStorageAdapter.listExecutableScriptsRecursively(null, mConfiguration)) {
+            int iconId = 0;
+            if (script.isDirectory()) {
+                iconId = R.drawable.folder;
+            } else {
+                iconId = FeaturedInterpreters.getInterpreterIcon(mContext, script.getName());
+                if (iconId == 0) {
+                    iconId = R.drawable.sl4a_logo_32;
+                }
+            }
+            ShortcutIconResource icon = ShortcutIconResource.fromContext(mContext, iconId);
+            Intent intent = IntentBuilders.buildStartInBackgroundIntent(script);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            String description = script.getAbsolutePath();
+            if (description.startsWith(InterpreterConstants.SCRIPTS_ROOT)) {
+                description = description.replaceAll(InterpreterConstants.SCRIPTS_ROOT, "scripts/");
+            }
+            Object[] row =
+                    { index, script.getName(), intent.toURI(), icon.resourceName, icon.packageName,
+                            description };
+            cursor.addRow(row);
+            ++index;
+        }
+        return cursor;
+    }
+
+    @Override
+    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        return 0;
+    }
 
 }

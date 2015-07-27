@@ -111,18 +111,18 @@ public class InterpreterManager extends ListActivity {
     menu.clear();
     buildInstallLanguagesMenu(menu);
     menu.add(Menu.NONE, MenuId.NETWORK.getId(), Menu.NONE, "Start Server").setIcon(
-        android.R.drawable.ic_menu_share);
+            android.R.drawable.ic_menu_share);
     menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Preferences").setIcon(
-        android.R.drawable.ic_menu_preferences);
+            android.R.drawable.ic_menu_preferences);
     menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
-        android.R.drawable.ic_menu_help);
+            android.R.drawable.ic_menu_help);
     return super.onPrepareOptionsMenu(menu);
   }
 
   private void buildInstallLanguagesMenu(Menu menu) {
     SubMenu installMenu =
-        menu.addSubMenu(Menu.NONE, MenuId.ADD.getId(), Menu.NONE, "Add").setIcon(
-            android.R.drawable.ic_menu_add);
+            menu.addSubMenu(Menu.NONE, MenuId.ADD.getId(), Menu.NONE, "Add").setIcon(
+                    android.R.drawable.ic_menu_add);
     int i = MenuId.values().length + Menu.FIRST;
     for (String interpreterName : mFeaturedInterpreters) {
       installMenu.add(Menu.NONE, i++, Menu.NONE, interpreterName);
@@ -246,7 +246,7 @@ public class InterpreterManager extends ListActivity {
 
       if (convertView == null) {
         LayoutInflater inflater =
-            (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         container = (LinearLayout) inflater.inflate(R.layout.list_item, null);
       } else {
         container = (LinearLayout) convertView;
@@ -254,8 +254,8 @@ public class InterpreterManager extends ListActivity {
       ImageView img = (ImageView) container.findViewById(R.id.list_item_icon);
 
       int imgId =
-          FeaturedInterpreters.getInterpreterIcon(InterpreterManager.this,
-              interpreter.getExtension());
+              FeaturedInterpreters.getInterpreterIcon(InterpreterManager.this,
+                      interpreter.getExtension());
       if (imgId == 0) {
         imgId = R.drawable.sl4a_logo_32;
       }

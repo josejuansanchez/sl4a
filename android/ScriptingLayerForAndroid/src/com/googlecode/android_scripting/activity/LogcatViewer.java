@@ -45,153 +45,153 @@ import java.util.List;
 
 public class LogcatViewer extends ListActivity {
 
-  private List<String> mLogcatMessages;
-  private int mOldLastPosition;
-  private LogcatViewerAdapter mAdapter;
-  private Process mLogcatProcess;
+    private List<String> mLogcatMessages;
+    private int mOldLastPosition;
+    private LogcatViewerAdapter mAdapter;
+    private Process mLogcatProcess;
 
-  private static enum MenuId {
-    HELP, PREFERENCES, JUMP_TO_BOTTOM, SHARE, COPY;
-    public int getId() {
-      return ordinal() + Menu.FIRST;
-    }
-  }
-
-  private class LogcatWatcher implements Runnable {
-    @Override
-    public void run() {
-      mLogcatProcess = new Process();
-      mLogcatProcess.setBinary(new File("/system/bin/logcat"));
-      mLogcatProcess.start(null);
-      try {
-        BufferedReader br = new BufferedReader(new InputStreamReader(mLogcatProcess.getIn()));
-        while (true) {
-          final String line = br.readLine();
-          if (line == null) {
-            break;
-          }
-          runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-              mLogcatMessages.add(line);
-              mAdapter.notifyDataSetInvalidated();
-              // This logic performs what transcriptMode="normal" should do. Since that doesn't seem
-              // to work, we do it this way.
-              int lastVisiblePosition = getListView().getLastVisiblePosition();
-              int lastPosition = mLogcatMessages.size() - 1;
-              if (lastVisiblePosition == mOldLastPosition || lastVisiblePosition == -1) {
-                getListView().setSelection(lastPosition);
-              }
-              mOldLastPosition = lastPosition;
-            }
-          });
+    private static enum MenuId {
+        HELP, PREFERENCES, JUMP_TO_BOTTOM, SHARE, COPY;
+        public int getId() {
+            return ordinal() + Menu.FIRST;
         }
-      } catch (IOException e) {
-        Log.e("Failed to read from logcat process.", e);
-      } finally {
+    }
+
+    private class LogcatWatcher implements Runnable {
+        @Override
+        public void run() {
+            mLogcatProcess = new Process();
+            mLogcatProcess.setBinary(new File("/system/bin/logcat"));
+            mLogcatProcess.start(null);
+            try {
+                BufferedReader br = new BufferedReader(new InputStreamReader(mLogcatProcess.getIn()));
+                while (true) {
+                    final String line = br.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mLogcatMessages.add(line);
+                            mAdapter.notifyDataSetInvalidated();
+                            // This logic performs what transcriptMode="normal" should do. Since that doesn't seem
+                            // to work, we do it this way.
+                            int lastVisiblePosition = getListView().getLastVisiblePosition();
+                            int lastPosition = mLogcatMessages.size() - 1;
+                            if (lastVisiblePosition == mOldLastPosition || lastVisiblePosition == -1) {
+                                getListView().setSelection(lastPosition);
+                            }
+                            mOldLastPosition = lastPosition;
+                        }
+                    });
+                }
+            } catch (IOException e) {
+                Log.e("Failed to read from logcat process.", e);
+            } finally {
+                mLogcatProcess.kill();
+            }
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        CustomizeWindow.requestCustomTitle(this, "Logcat", R.layout.logcat_viewer);
+        mLogcatMessages = new LinkedList<String>();
+        mOldLastPosition = 0;
+        mAdapter = new LogcatViewerAdapter();
+        setListAdapter(mAdapter);
+        ActivityFlinger.attachView(getListView(), this);
+        ActivityFlinger.attachView(getWindow().getDecorView(), this);
+        // Analytics.trackActivity(this);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Preferences").setIcon(
+                android.R.drawable.ic_menu_preferences);
+        menu.add(Menu.NONE, MenuId.JUMP_TO_BOTTOM.getId(), Menu.NONE, "Jump to Bottom").setIcon(
+                android.R.drawable.ic_menu_revert);
+        menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
+                android.R.drawable.ic_menu_help);
+        menu.add(Menu.NONE, MenuId.SHARE.getId(), Menu.NONE, "Share").setIcon(
+                android.R.drawable.ic_menu_share);
+        menu.add(Menu.NONE, MenuId.COPY.getId(), Menu.NONE, "Copy").setIcon(
+                android.R.drawable.ic_menu_edit);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private String getAsString() {
+        StringBuilder builder = new StringBuilder();
+        for (String message : mLogcatMessages) {
+            builder.append(message + "\n");
+        }
+        return builder.toString();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemId = item.getItemId();
+        if (itemId == MenuId.HELP.getId()) {
+            Help.show(this);
+        } else if (itemId == MenuId.JUMP_TO_BOTTOM.getId()) {
+            getListView().setSelection(mLogcatMessages.size() - 1);
+        } else if (itemId == MenuId.PREFERENCES.getId()) {
+            startActivity(new Intent(this, Preferences.class));
+        } else if (itemId == MenuId.SHARE.getId()) {
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.putExtra(Intent.EXTRA_TEXT, getAsString().toString());
+            intent.putExtra(Intent.EXTRA_SUBJECT, "Logcat Dump");
+            intent.setType("text/plain");
+            startActivity(Intent.createChooser(intent, "Send Logcat to:"));
+        } else if (itemId == MenuId.COPY.getId()) {
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            clipboard.setText(getAsString());
+            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onStart() {
+        mLogcatMessages.clear();
+        Thread logcatWatcher = new Thread(new LogcatWatcher());
+        logcatWatcher.setPriority(Thread.NORM_PRIORITY - 1);
+        logcatWatcher.start();
+        mAdapter.notifyDataSetInvalidated();
+        super.onStart();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
         mLogcatProcess.kill();
-      }
-    }
-  }
-
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    CustomizeWindow.requestCustomTitle(this, "Logcat", R.layout.logcat_viewer);
-    mLogcatMessages = new LinkedList<String>();
-    mOldLastPosition = 0;
-    mAdapter = new LogcatViewerAdapter();
-    setListAdapter(mAdapter);
-    ActivityFlinger.attachView(getListView(), this);
-    ActivityFlinger.attachView(getWindow().getDecorView(), this);
-    // Analytics.trackActivity(this);
-  }
-
-  @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
-    menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Preferences").setIcon(
-        android.R.drawable.ic_menu_preferences);
-    menu.add(Menu.NONE, MenuId.JUMP_TO_BOTTOM.getId(), Menu.NONE, "Jump to Bottom").setIcon(
-        android.R.drawable.ic_menu_revert);
-    menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
-        android.R.drawable.ic_menu_help);
-    menu.add(Menu.NONE, MenuId.SHARE.getId(), Menu.NONE, "Share").setIcon(
-        android.R.drawable.ic_menu_share);
-    menu.add(Menu.NONE, MenuId.COPY.getId(), Menu.NONE, "Copy").setIcon(
-        android.R.drawable.ic_menu_edit);
-    return super.onCreateOptionsMenu(menu);
-  }
-
-  private String getAsString() {
-    StringBuilder builder = new StringBuilder();
-    for (String message : mLogcatMessages) {
-      builder.append(message + "\n");
-    }
-    return builder.toString();
-  }
-
-  @Override
-  public boolean onOptionsItemSelected(MenuItem item) {
-    int itemId = item.getItemId();
-    if (itemId == MenuId.HELP.getId()) {
-      Help.show(this);
-    } else if (itemId == MenuId.JUMP_TO_BOTTOM.getId()) {
-      getListView().setSelection(mLogcatMessages.size() - 1);
-    } else if (itemId == MenuId.PREFERENCES.getId()) {
-      startActivity(new Intent(this, Preferences.class));
-    } else if (itemId == MenuId.SHARE.getId()) {
-      Intent intent = new Intent(Intent.ACTION_SEND);
-      intent.putExtra(Intent.EXTRA_TEXT, getAsString().toString());
-      intent.putExtra(Intent.EXTRA_SUBJECT, "Logcat Dump");
-      intent.setType("text/plain");
-      startActivity(Intent.createChooser(intent, "Send Logcat to:"));
-    } else if (itemId == MenuId.COPY.getId()) {
-      ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-      clipboard.setText(getAsString());
-      Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
-    }
-    return super.onOptionsItemSelected(item);
-  }
-
-  @Override
-  protected void onStart() {
-    mLogcatMessages.clear();
-    Thread logcatWatcher = new Thread(new LogcatWatcher());
-    logcatWatcher.setPriority(Thread.NORM_PRIORITY - 1);
-    logcatWatcher.start();
-    mAdapter.notifyDataSetInvalidated();
-    super.onStart();
-  }
-
-  @Override
-  protected void onPause() {
-    super.onPause();
-    mLogcatProcess.kill();
-  }
-
-  private class LogcatViewerAdapter extends BaseAdapter {
-
-    @Override
-    public int getCount() {
-      return mLogcatMessages.size();
     }
 
-    @Override
-    public Object getItem(int position) {
-      return mLogcatMessages.get(position);
-    }
+    private class LogcatViewerAdapter extends BaseAdapter {
 
-    @Override
-    public long getItemId(int position) {
-      return position;
-    }
+        @Override
+        public int getCount() {
+            return mLogcatMessages.size();
+        }
 
-    @Override
-    public View getView(final int position, View convertView, ViewGroup parent) {
-      TextView view = new TextView(LogcatViewer.this);
-      view.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
-      view.setText(mLogcatMessages.get(position));
-      return view;
+        @Override
+        public Object getItem(int position) {
+            return mLogcatMessages.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(final int position, View convertView, ViewGroup parent) {
+            TextView view = new TextView(LogcatViewer.this);
+            view.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+            view.setText(mLogcatMessages.get(position));
+            return view;
+        }
     }
-  }
 }

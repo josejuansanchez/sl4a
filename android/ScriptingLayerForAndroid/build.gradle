@@ -47,7 +47,7 @@ android {
         instrumentTest.setRoot('tests')
     }
     defaultConfig {
-        minSdkVersion 8
+        minSdkVersion 10
         targetSdkVersion 22
         versionCode 611
         versionName '6.1.1'

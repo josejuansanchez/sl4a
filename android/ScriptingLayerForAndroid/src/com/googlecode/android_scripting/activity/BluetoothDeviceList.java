@@ -35,95 +35,95 @@ import java.util.List;
 
 public class BluetoothDeviceList extends ListActivity {
 
-  private static class DeviceInfo {
-    public final String mmName;
-    public final String mmAddress;
+    private static class DeviceInfo {
+        public final String mmName;
+        public final String mmAddress;
 
-    public DeviceInfo(String name, String address) {
-      mmName = name;
-      mmAddress = address;
-    }
-  }
-
-  private final DeviceListAdapter mAdapter = new DeviceListAdapter();
-  private final BluetoothDiscoveryHelper mBluetoothHelper =
-      new BluetoothDiscoveryHelper(this, mAdapter);
-
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    CustomizeWindow.requestCustomTitle(this, "Bluetooth Devices", R.layout.bluetooth_device_list);
-    setListAdapter(mAdapter);
-    // Analytics.trackActivity(this);
-  }
-
-  @Override
-  protected void onStart() {
-    super.onStart();
-    CustomizeWindow.toggleProgressBarVisibility(this, true);
-    mBluetoothHelper.startDiscovery();
-  }
-
-  @Override
-  protected void onStop() {
-    super.onStop();
-    mBluetoothHelper.cancel();
-  }
-
-  @Override
-  protected void onListItemClick(android.widget.ListView l, View v, int position, long id) {
-    DeviceInfo device = (DeviceInfo) mAdapter.getItem(position);
-    final Intent result = new Intent();
-    result.putExtra(Constants.EXTRA_DEVICE_ADDRESS, device.mmAddress);
-    setResult(RESULT_OK, result);
-    finish();
-  };
-
-  private class DeviceListAdapter extends BaseAdapter implements BluetoothDiscoveryListener {
-    List<DeviceInfo> mmDeviceList;
-
-    public DeviceListAdapter() {
-      mmDeviceList = new ArrayList<DeviceInfo>();
+        public DeviceInfo(String name, String address) {
+            mmName = name;
+            mmAddress = address;
+        }
     }
 
-    public void addDevice(String name, String address) {
-      mmDeviceList.add(new DeviceInfo(name, address));
-      notifyDataSetChanged();
+    private final DeviceListAdapter mAdapter = new DeviceListAdapter();
+    private final BluetoothDiscoveryHelper mBluetoothHelper =
+            new BluetoothDiscoveryHelper(this, mAdapter);
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        CustomizeWindow.requestCustomTitle(this, "Bluetooth Devices", R.layout.bluetooth_device_list);
+        setListAdapter(mAdapter);
+        // Analytics.trackActivity(this);
     }
 
     @Override
-    public int getCount() {
-      return mmDeviceList.size();
+    protected void onStart() {
+        super.onStart();
+        CustomizeWindow.toggleProgressBarVisibility(this, true);
+        mBluetoothHelper.startDiscovery();
     }
 
     @Override
-    public Object getItem(int position) {
-      return mmDeviceList.get(position);
+    protected void onStop() {
+        super.onStop();
+        mBluetoothHelper.cancel();
     }
 
     @Override
-    public long getItemId(int position) {
-      return position;
-    }
+    protected void onListItemClick(android.widget.ListView l, View v, int position, long id) {
+        DeviceInfo device = (DeviceInfo) mAdapter.getItem(position);
+        final Intent result = new Intent();
+        result.putExtra(Constants.EXTRA_DEVICE_ADDRESS, device.mmAddress);
+        setResult(RESULT_OK, result);
+        finish();
+    };
 
-    @Override
-    public View getView(int position, View convertView, ViewGroup viewGroup) {
-      final DeviceInfo device = mmDeviceList.get(position);
-      final TextView view = new TextView(BluetoothDeviceList.this);
-      view.setPadding(2, 2, 2, 2);
-      view.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-      view.setText(device.mmName + " (" + device.mmAddress + ")");
-      return view;
-    }
+    private class DeviceListAdapter extends BaseAdapter implements BluetoothDiscoveryListener {
+        List<DeviceInfo> mmDeviceList;
 
-    @Override
-    public void addBondedDevice(String name, String address) {
-      addDevice(name, address);
-    }
+        public DeviceListAdapter() {
+            mmDeviceList = new ArrayList<DeviceInfo>();
+        }
 
-    @Override
-    public void scanDone() {
-      CustomizeWindow.toggleProgressBarVisibility(BluetoothDeviceList.this, false);
+        public void addDevice(String name, String address) {
+            mmDeviceList.add(new DeviceInfo(name, address));
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public int getCount() {
+            return mmDeviceList.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return mmDeviceList.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup viewGroup) {
+            final DeviceInfo device = mmDeviceList.get(position);
+            final TextView view = new TextView(BluetoothDeviceList.this);
+            view.setPadding(2, 2, 2, 2);
+            view.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+            view.setText(device.mmName + " (" + device.mmAddress + ")");
+            return view;
+        }
+
+        @Override
+        public void addBondedDevice(String name, String address) {
+            addDevice(name, address);
+        }
+
+        @Override
+        public void scanDone() {
+            CustomizeWindow.toggleProgressBarVisibility(BluetoothDeviceList.this, false);
+        }
     }
-  }
 }

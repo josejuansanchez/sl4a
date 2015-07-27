@@ -22,11 +22,11 @@ import android.preference.PreferenceActivity;
 import com.googlecode.android_scripting.R;
 
 public class Preferences extends PreferenceActivity {
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    // Load the preferences from an XML resource
-    addPreferencesFromResource(R.xml.preferences);
-    // Analytics.trackActivity(this);
-  }
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Load the preferences from an XML resource
+        addPreferencesFromResource(R.xml.preferences);
+        // Analytics.trackActivity(this);
+    }
 }

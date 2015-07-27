@@ -26,22 +26,23 @@ import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.Version;
 
 public class CustomizeWindow {
-  private CustomizeWindow() {
-    // Utility class.
-  }
+    private CustomizeWindow() {
+        // Utility class.
+    }
 
-  public static void requestCustomTitle(Activity activity, String title, int contentViewLayoutResId) {
-      // This was commented out because of problems with Android Lollipop.
+    public static void requestCustomTitle(Activity activity, String title, int contentViewLayoutResId) {
+        // This was commented out because of problems with Android Lollipop.
 /*    activity.requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);*/
-    activity.setContentView(contentViewLayoutResId);
+        activity.setContentView(contentViewLayoutResId);
+        activity.setTitle("SL4A - " + title);
 /*    activity.getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.title);
     ((TextView) activity.findViewById(R.id.left_text)).setText(title);
     ((TextView) activity.findViewById(R.id.right_text)).setText("SL4A r"
         + Version.getVersion(activity));*/
-  }
+    }
 
-  public static void toggleProgressBarVisibility(Activity activity, boolean on) {
-    ((ProgressBar) activity.findViewById(R.id.progress_bar)).setVisibility(on ? View.VISIBLE
-        : View.GONE);
-  }
+    public static void toggleProgressBarVisibility(Activity activity, boolean on) {
+        ((ProgressBar) activity.findViewById(R.id.progress_bar)).setVisibility(on ? View.VISIBLE
+                : View.GONE);
+    }
 }

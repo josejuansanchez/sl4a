@@ -25,35 +25,35 @@ import com.googlecode.android_scripting.widget.DurationPicker;
 
 public class DurationPickerDialog {
 
-  private DurationPickerDialog() {
-    // Utility class.
-  }
+    private DurationPickerDialog() {
+        // Utility class.
+    }
 
-  public interface DurationPickedListener {
-    public void onSet(double duration);
+    public interface DurationPickedListener {
+        public void onSet(double duration);
 
-    public void onCancel();
-  }
+        public void onCancel();
+    }
 
-  public static void getDurationFromDialog(Activity activity, String title,
-      final DurationPickedListener done) {
-    final DurationPicker picker = new DurationPicker(activity);
-    AlertDialog.Builder alert = new AlertDialog.Builder(activity);
-    alert.setIcon(R.drawable.ic_dialog_time);
-    alert.setTitle(title);
-    alert.setView(picker);
-    alert.setPositiveButton("Set", new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface dialog, int whichButton) {
-        done.onSet(picker.getDuration());
-      }
-    });
-    alert.setOnCancelListener(new DialogInterface.OnCancelListener() {
-      @Override
-      public void onCancel(DialogInterface arg0) {
-        done.onCancel();
-      }
-    });
-    alert.show();
-  }
+    public static void getDurationFromDialog(Activity activity, String title,
+                                             final DurationPickedListener done) {
+        final DurationPicker picker = new DurationPicker(activity);
+        AlertDialog.Builder alert = new AlertDialog.Builder(activity);
+        alert.setIcon(R.drawable.ic_dialog_time);
+        alert.setTitle(title);
+        alert.setView(picker);
+        alert.setPositiveButton("Set", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int whichButton) {
+                done.onSet(picker.getDuration());
+            }
+        });
+        alert.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface arg0) {
+                done.onCancel();
+            }
+        });
+        alert.show();
+    }
 }

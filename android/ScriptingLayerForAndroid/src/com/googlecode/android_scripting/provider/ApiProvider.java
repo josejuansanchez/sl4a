@@ -38,91 +38,91 @@ import java.util.Collection;
 
 public class ApiProvider extends ContentProvider {
 
-  public static final String SINGLE_MIME = "vnd.android.cursor.item/vnd.sl4a.api";
+    public static final String SINGLE_MIME = "vnd.android.cursor.item/vnd.sl4a.api";
 
-  private static final int SUGGESTIONS_ID = 1;
+    private static final int SUGGESTIONS_ID = 1;
 
-  public static final String AUTHORITY = ApiProvider.class.getName().toLowerCase();
-  public static final String SUGGESTIONS = "searchSuggestions/*/*";
+    public static final String AUTHORITY = ApiProvider.class.getName().toLowerCase();
+    public static final String SUGGESTIONS = "searchSuggestions/*/*";
 
-  private final UriMatcher mUriMatcher;
-  private final Collection<MethodDescriptor> mMethodDescriptors;
+    private final UriMatcher mUriMatcher;
+    private final Collection<MethodDescriptor> mMethodDescriptors;
 
-  public ApiProvider() {
-    mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-    mUriMatcher.addURI(AUTHORITY, SUGGESTIONS, SUGGESTIONS_ID);
-    mMethodDescriptors =
-        Collections2.filter(FacadeConfiguration.collectMethodDescriptors(),
-            new Predicate<MethodDescriptor>() {
-              @Override
-              public boolean apply(MethodDescriptor descriptor) {
-                Method method = descriptor.getMethod();
-                if (method.isAnnotationPresent(RpcDeprecated.class)) {
-                  return false;
-                } else if (method.isAnnotationPresent(RpcMinSdk.class)) {
-                  int requiredSdkLevel = method.getAnnotation(RpcMinSdk.class).value();
-                  if (FacadeConfiguration.getSdkLevel() < requiredSdkLevel) {
-                    return false;
-                  }
-                }
-                return true;
-              }
-            });
-  }
-
-  @Override
-  public int delete(Uri uri, String selection, String[] selectionArgs) {
-    return 0;
-  }
-
-  @Override
-  public String getType(Uri uri) {
-    return SINGLE_MIME;
-  }
-
-  @Override
-  public Uri insert(Uri uri, ContentValues values) {
-    return null;
-  }
-
-  @Override
-  public boolean onCreate() {
-    return true;
-  }
-
-  @Override
-  public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-      String sortOrder) {
-    switch (mUriMatcher.match(uri)) {
-    case SUGGESTIONS_ID:
-      String query = uri.getLastPathSegment().toLowerCase();
-      return querySearchSuggestions(query);
+    public ApiProvider() {
+        mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+        mUriMatcher.addURI(AUTHORITY, SUGGESTIONS, SUGGESTIONS_ID);
+        mMethodDescriptors =
+                Collections2.filter(FacadeConfiguration.collectMethodDescriptors(),
+                        new Predicate<MethodDescriptor>() {
+                            @Override
+                            public boolean apply(MethodDescriptor descriptor) {
+                                Method method = descriptor.getMethod();
+                                if (method.isAnnotationPresent(RpcDeprecated.class)) {
+                                    return false;
+                                } else if (method.isAnnotationPresent(RpcMinSdk.class)) {
+                                    int requiredSdkLevel = method.getAnnotation(RpcMinSdk.class).value();
+                                    if (FacadeConfiguration.getSdkLevel() < requiredSdkLevel) {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            }
+                        });
     }
-    return null;
-  }
 
-  private Cursor querySearchSuggestions(String query) {
-    String[] columns =
-        { BaseColumns._ID, SearchManager.SUGGEST_COLUMN_TEXT_1,
-          SearchManager.SUGGEST_COLUMN_TEXT_2, SearchManager.SUGGEST_COLUMN_QUERY };
-    MatrixCursor cursor = new MatrixCursor(columns);
-    int index = 0;
-    for (MethodDescriptor descriptor : mMethodDescriptors) {
-      String name = descriptor.getMethod().getName();
-      if (!name.toLowerCase().contains(query)) {
-        continue;
-      }
-      String description = descriptor.getMethod().getAnnotation(Rpc.class).description();
-      description = description.replaceAll("\\s+", " ");
-      Object[] row = { index, name, description, name };
-      cursor.addRow(row);
-      ++index;
+    @Override
+    public int delete(Uri uri, String selection, String[] selectionArgs) {
+        return 0;
     }
-    return cursor;
-  }
 
-  @Override
-  public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-    return 0;
-  }
+    @Override
+    public String getType(Uri uri) {
+        return SINGLE_MIME;
+    }
+
+    @Override
+    public Uri insert(Uri uri, ContentValues values) {
+        return null;
+    }
+
+    @Override
+    public boolean onCreate() {
+        return true;
+    }
+
+    @Override
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+                        String sortOrder) {
+        switch (mUriMatcher.match(uri)) {
+            case SUGGESTIONS_ID:
+                String query = uri.getLastPathSegment().toLowerCase();
+                return querySearchSuggestions(query);
+        }
+        return null;
+    }
+
+    private Cursor querySearchSuggestions(String query) {
+        String[] columns =
+                { BaseColumns._ID, SearchManager.SUGGEST_COLUMN_TEXT_1,
+                        SearchManager.SUGGEST_COLUMN_TEXT_2, SearchManager.SUGGEST_COLUMN_QUERY };
+        MatrixCursor cursor = new MatrixCursor(columns);
+        int index = 0;
+        for (MethodDescriptor descriptor : mMethodDescriptors) {
+            String name = descriptor.getMethod().getName();
+            if (!name.toLowerCase().contains(query)) {
+                continue;
+            }
+            String description = descriptor.getMethod().getAnnotation(Rpc.class).description();
+            description = description.replaceAll("\\s+", " ");
+            Object[] row = { index, name, description, name };
+            cursor.addRow(row);
+            ++index;
+        }
+        return cursor;
+    }
+
+    @Override
+    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        return 0;
+    }
 }

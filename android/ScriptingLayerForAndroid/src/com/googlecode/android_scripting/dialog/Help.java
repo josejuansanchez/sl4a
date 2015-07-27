@@ -45,102 +45,102 @@ import java.util.zip.ZipInputStream;
 import org.connectbot.HelpActivity;
 
 public class Help {
-  private Help() {
-    // Utility class.
-  }
+    private Help() {
+        // Utility class.
+    }
 
-  private static int helpChecked = 0;
+    private static int helpChecked = 0;
 
-  public static boolean checkApiHelp(Context context) {
-    byte[] buf = new byte[1024];
-    if (helpChecked == 0) {
-      try {
-        File dest = new File(InterpreterConstants.SDCARD_SL4A_DOC);
-        if (!dest.exists()) {
-          dest.mkdirs();
-        }
-        new File(InterpreterConstants.SDCARD_SL4A_DOC, "index.html");
-        AssetManager assetManager = context.getAssets();
-        ZipInputStream zip = new ZipInputStream(assetManager.open("sl4adoc.zip"));
-        ZipEntry entry;
-        while ((entry = zip.getNextEntry()) != null) {
-          File file = new File(InterpreterConstants.SDCARD_SL4A_DOC, entry.getName());
-          if (!file.exists() || file.lastModified() < entry.getTime()) {
-            if (!file.exists() && !file.getParentFile().exists()) {
-              file.getParentFile().mkdirs();
+    public static boolean checkApiHelp(Context context) {
+        byte[] buf = new byte[1024];
+        if (helpChecked == 0) {
+            try {
+                File dest = new File(InterpreterConstants.SDCARD_SL4A_DOC);
+                if (!dest.exists()) {
+                    dest.mkdirs();
+                }
+                new File(InterpreterConstants.SDCARD_SL4A_DOC, "index.html");
+                AssetManager assetManager = context.getAssets();
+                ZipInputStream zip = new ZipInputStream(assetManager.open("sl4adoc.zip"));
+                ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) {
+                    File file = new File(InterpreterConstants.SDCARD_SL4A_DOC, entry.getName());
+                    if (!file.exists() || file.lastModified() < entry.getTime()) {
+                        if (!file.exists() && !file.getParentFile().exists()) {
+                            file.getParentFile().mkdirs();
+                        }
+                        OutputStream output = new BufferedOutputStream(new FileOutputStream(file));
+                        int len;
+                        while ((len = zip.read(buf)) > 0) {
+                            output.write(buf, 0, len);
+                        }
+                        output.flush();
+                        output.close();
+                        file.setLastModified(entry.getTime());
+                    }
+                }
+                helpChecked = 1;
+            } catch (IOException e) {
+                Log.e("Help not found ", e);
+                helpChecked = -1;
+                return false;
             }
-            OutputStream output = new BufferedOutputStream(new FileOutputStream(file));
-            int len;
-            while ((len = zip.read(buf)) > 0) {
-              output.write(buf, 0, len);
+        }
+        return helpChecked > 0;
+    }
+
+    public static void showApiHelp(Context context, String help) {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        Uri uri = Uri.parse("file://" + InterpreterConstants.SDCARD_SL4A_DOC + help);
+        intent.setDataAndType(uri, "text/html");
+        SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(context);
+        if (p.getBoolean(Constants.FORCE_BROWSER, true)) {
+            intent.setComponent(new ComponentName("com.android.browser",
+                    "com.android.browser.BrowserActivity"));
+        }
+        context.startActivity(intent);
+    }
+
+    public static void show(final Activity activity) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        List<CharSequence> list = new ArrayList<CharSequence>();
+        list.add("Wiki Documentation");
+        list.add("YouTube Screencasts");
+        list.add("Terminal Help");
+        if (checkApiHelp(activity)) {
+            list.add("API Help");
+        }
+        CharSequence[] mylist = list.toArray(new CharSequence[list.size()]);
+        builder.setItems(mylist, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0: {
+                        Intent intent = new Intent();
+                        intent.setAction(Intent.ACTION_VIEW);
+                        intent.setData(Uri.parse(activity.getString(R.string.wiki_url)));
+                        activity.startActivity(intent);
+                        break;
+                    }
+                    case 1: {
+                        Intent intent = new Intent();
+                        intent.setAction(Intent.ACTION_VIEW);
+                        intent.setData(Uri.parse(activity.getString(R.string.youtube_url)));
+                        activity.startActivity(intent);
+                        break;
+                    }
+                    case 2: {
+                        Intent intent = new Intent(activity, HelpActivity.class);
+                        activity.startActivity(intent);
+                        break;
+                    }
+                    case 3: {
+                        showApiHelp(activity, "index.html");
+                    }
+                }
             }
-            output.flush();
-            output.close();
-            file.setLastModified(entry.getTime());
-          }
-        }
-        helpChecked = 1;
-      } catch (IOException e) {
-        Log.e("Help not found ", e);
-        helpChecked = -1;
-        return false;
-      }
+        });
+        builder.show();
     }
-    return helpChecked > 0;
-  }
-
-  public static void showApiHelp(Context context, String help) {
-    Intent intent = new Intent();
-    intent.setAction(Intent.ACTION_VIEW);
-    Uri uri = Uri.parse("file://" + InterpreterConstants.SDCARD_SL4A_DOC + help);
-    intent.setDataAndType(uri, "text/html");
-    SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(context);
-    if (p.getBoolean(Constants.FORCE_BROWSER, true)) {
-      intent.setComponent(new ComponentName("com.android.browser",
-          "com.android.browser.BrowserActivity"));
-    }
-    context.startActivity(intent);
-  }
-
-  public static void show(final Activity activity) {
-    AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-    List<CharSequence> list = new ArrayList<CharSequence>();
-    list.add("Wiki Documentation");
-    list.add("YouTube Screencasts");
-    list.add("Terminal Help");
-    if (checkApiHelp(activity)) {
-      list.add("API Help");
-    }
-    CharSequence[] mylist = list.toArray(new CharSequence[list.size()]);
-    builder.setItems(mylist, new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface dialog, int which) {
-        switch (which) {
-        case 0: {
-          Intent intent = new Intent();
-          intent.setAction(Intent.ACTION_VIEW);
-          intent.setData(Uri.parse(activity.getString(R.string.wiki_url)));
-          activity.startActivity(intent);
-          break;
-        }
-        case 1: {
-          Intent intent = new Intent();
-          intent.setAction(Intent.ACTION_VIEW);
-          intent.setData(Uri.parse(activity.getString(R.string.youtube_url)));
-          activity.startActivity(intent);
-          break;
-        }
-        case 2: {
-          Intent intent = new Intent(activity, HelpActivity.class);
-          activity.startActivity(intent);
-          break;
-        }
-        case 3: {
-          showApiHelp(activity, "index.html");
-        }
-        }
-      }
-    });
-    builder.show();
-  }
 }

@@ -27,49 +27,49 @@ import java.io.InputStream;
 
 public class Sl4aApplication extends BaseApplication {
 
-  @Override
-  public void onCreate() {
-    super.onCreate();
-    // Analytics.start(this, "UA-158835-13");
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // Analytics.start(this, "UA-158835-13");
 
-    // extract run_pie from asset folder.
-    File path = new File(this.getFilesDir(), "run_pie");
-    if (!path.isFile()) {
-      String run_pie = System.getProperty("os.arch");
-      if (run_pie.startsWith("i686")) {
-        run_pie = "_x86";
-      }
-      else if (run_pie.startsWith("mips")) {
-        run_pie = "_mips";
-      }
-      else {
-        // FIXME: armv7a binary is not used, it this right?
-        Log.v("fallback arch to arm: " + run_pie);
-        run_pie = "_armeabi";
-      }
-      run_pie = "run_pie" + run_pie;
+        // extract run_pie from asset folder.
+        File path = new File(this.getFilesDir(), "run_pie");
+        if (!path.isFile()) {
+            String run_pie = System.getProperty("os.arch");
+            if (run_pie.startsWith("i686")) {
+                run_pie = "_x86";
+            }
+            else if (run_pie.startsWith("mips")) {
+                run_pie = "_mips";
+            }
+            else {
+                // FIXME: armv7a binary is not used, it this right?
+                Log.v("fallback arch to arm: " + run_pie);
+                run_pie = "_armeabi";
+            }
+            run_pie = "run_pie" + run_pie;
 
-      try {
-        AssetManager as = getResources().getAssets();
-        InputStream ins = as.open(run_pie);
-        byte[] buffer = new byte[ins.available()];
-        ins.read(buffer);
-        ins.close();
-        FileOutputStream fos = this.openFileOutput("run_pie", Context.MODE_PRIVATE);
-        fos.write(buffer);
-        fos.close();
+            try {
+                AssetManager as = getResources().getAssets();
+                InputStream ins = as.open(run_pie);
+                byte[] buffer = new byte[ins.available()];
+                ins.read(buffer);
+                ins.close();
+                FileOutputStream fos = this.openFileOutput("run_pie", Context.MODE_PRIVATE);
+                fos.write(buffer);
+                fos.close();
 
-        path.setExecutable(true);
-      } catch (FileNotFoundException e) {
-        e.printStackTrace();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+                path.setExecutable(true);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
-  }
 
-  @Override
-  public void onTerminate() {
-    // Analytics.stop();
-  }
+    @Override
+    public void onTerminate() {
+        // Analytics.stop();
+    }
 }
