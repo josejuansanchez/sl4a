@@ -47,7 +47,7 @@ android {
         instrumentTest.setRoot('tests')
     }
     defaultConfig {
-        minSdkVersion 10
+        minSdkVersion 15
         targetSdkVersion 22
         versionCode 611
         versionName '6.1.1'
@@ -80,7 +80,7 @@ android {
     dexOptions {
     }*/
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_6
+        sourceCompatibility JavaVersion.VERSION_1_7
         targetCompatibility JavaVersion.VERSION_1_7
     }
 

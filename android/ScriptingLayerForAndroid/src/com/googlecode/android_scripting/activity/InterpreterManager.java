@@ -63,7 +63,7 @@ public class InterpreterManager extends ListActivity {
   private InterpreterConfiguration mConfiguration;
   private SharedPreferences mPreferences;
 
-  private static enum MenuId {
+  private enum MenuId {
     HELP, ADD, NETWORK, PREFERENCES;
     public int getId() {
       return ordinal() + Menu.FIRST;
@@ -75,7 +75,7 @@ public class InterpreterManager extends ListActivity {
     super.onCreate(savedInstanceState);
     CustomizeWindow.requestCustomTitle(this, "Interpreters", R.layout.interpreter_manager);
     mConfiguration = ((BaseApplication) getApplication()).getInterpreterConfiguration();
-    mInterpreters = new ArrayList<Interpreter>();
+    mInterpreters = new ArrayList<>();
     mAdapter = new InterpreterManagerAdapter();
     mObserver = new InterpreterListObserver();
     mAdapter.registerDataSetObserver(mObserver);

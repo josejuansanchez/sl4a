@@ -70,6 +70,7 @@ public class Sl4aApplication extends BaseApplication {
 
     @Override
     public void onTerminate() {
+        super.onTerminate();
         // Analytics.stop();
     }
 }

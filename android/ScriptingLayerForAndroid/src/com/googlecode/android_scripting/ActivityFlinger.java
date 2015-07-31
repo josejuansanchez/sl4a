@@ -52,15 +52,14 @@ public class ActivityFlinger {
         }
     }
 
-    private static Map<Class<?>, ActivityTransition> mActivityTransitions =
-            new HashMap<Class<?>, ActivityTransition>();
+    private static Map<Class<?>, ActivityTransition> mActivityTransitions = new HashMap<>();
 
     private ActivityFlinger() {
         // Utility class.
     }
 
     static {
-        List<Class<? extends Activity>> entries = new ArrayList<Class<? extends Activity>>();
+        List<Class<? extends Activity>> entries = new ArrayList<>();
         entries.add(ScriptManager.class);
         entries.add(InterpreterManager.class);
         entries.add(TriggerManager.class);
@@ -88,7 +87,7 @@ public class ActivityFlinger {
 
     public static void attachView(View view, Context context) {
         final LeftRightFlingListener mListener = new LeftRightFlingListener();
-        final GestureDetector mGestureDetector = new GestureDetector(mListener);
+        final GestureDetector mGestureDetector = new GestureDetector(context, mListener);
         ActivityTransition transition = mActivityTransitions.get(context.getClass());
         if (transition.mLeft != null) {
             mListener.mLeftRunnable = new StartActivityRunnable(context, transition.mLeft);

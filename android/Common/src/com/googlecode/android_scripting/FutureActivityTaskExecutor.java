@@ -29,8 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FutureActivityTaskExecutor {
 
   private final Context mContext;
-  private final Map<Integer, FutureActivityTask<?>> mTaskMap =
-      new ConcurrentHashMap<Integer, FutureActivityTask<?>>();
+  private final Map<Integer, FutureActivityTask<?>> mTaskMap = new ConcurrentHashMap<>();
   private final AtomicInteger mIdGenerator = new AtomicInteger(0);
 
   public FutureActivityTaskExecutor(Context context) {

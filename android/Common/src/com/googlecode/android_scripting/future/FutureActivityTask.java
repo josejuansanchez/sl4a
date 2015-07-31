@@ -26,74 +26,74 @@ import android.view.View;
 import android.view.Window;
 
 /**
- * Encapsulates an {@link Activity} and a {@link FutureObject}.
- * 
+ * Encapsulates an {@link Activity} and a {[?] FutureObject}.
+ *
  * @author Damon Kohler (damonkohler@gmail.com)
  */
 public abstract class FutureActivityTask<T> {
 
-  private final FutureResult<T> mResult = new FutureResult<T>();
-  private Activity mActivity;
+    private final FutureResult<T> mResult = new FutureResult<>();
+    private Activity mActivity;
 
-  public void setActivity(Activity activity) {
-    mActivity = activity;
-  }
+    public void setActivity(Activity activity) {
+        mActivity = activity;
+    }
 
-  public Activity getActivity() {
-    return mActivity;
-  }
+    public Activity getActivity() {
+        return mActivity;
+    }
 
-  public void onCreate() {
-    mActivity.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-  }
+    public void onCreate() {
+        mActivity.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
+    }
 
-  public void onStart() {
-  }
+    public void onStart() {
+    }
 
-  public void onResume() {
-  }
+    public void onResume() {
+    }
 
-  public void onPause() {
-  }
+    public void onPause() {
+    }
 
-  public void onStop() {
-  }
+    public void onStop() {
+    }
 
-  public void onDestroy() {
-  }
+    public void onDestroy() {
+    }
 
-  public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-  }
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    }
 
-  public boolean onPrepareOptionsMenu(Menu menu) {
-    return false;
-  }
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        return false;
+    }
 
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
-  }
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    }
 
-  protected void setResult(T result) {
-    mResult.set(result);
-  }
+    protected void setResult(T result) {
+        mResult.set(result);
+    }
 
-  public T getResult() throws InterruptedException {
-    return mResult.get();
-  }
+    public T getResult() throws InterruptedException {
+        return mResult.get();
+    }
 
-  public void finish() {
-    mActivity.finish();
-  }
+    public void finish() {
+        mActivity.finish();
+    }
 
-  public void startActivity(Intent intent) {
-    mActivity.startActivity(intent);
-  }
+    public void startActivity(Intent intent) {
+        mActivity.startActivity(intent);
+    }
 
-  public void startActivityForResult(Intent intent, int requestCode) {
-    mActivity.startActivityForResult(intent, requestCode);
-  }
+    public void startActivityForResult(Intent intent, int requestCode) {
+        mActivity.startActivityForResult(intent, requestCode);
+    }
 
-  public boolean onKeyDown(int keyCode, KeyEvent event) {
-    // Placeholder.
-    return false;
-  }
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // Placeholder.
+        return false;
+    }
 }

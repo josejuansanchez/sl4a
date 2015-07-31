@@ -86,7 +86,7 @@ public class ScriptingLayerService extends ForegroundService {
 
     public ScriptingLayerService() {
         super(NOTIFICATION_ID);
-        mProcessMap = new ConcurrentHashMap<Integer, InterpreterProcess>();
+        mProcessMap = new ConcurrentHashMap<>();
         mBinder = new LocalBinder();
     }
 
@@ -134,13 +134,13 @@ public class ScriptingLayerService extends ForegroundService {
     }
 
     @Override
-    public void onStart(Intent intent, int startId) {
-        super.onStart(intent, startId);
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
         String errmsg = null;
         if (intent.getAction().equals(Constants.ACTION_KILL_ALL)) {
             killAll();
             stopSelf(startId);
-            return;
+            return START_STICKY;
         }
 
         if (intent.getAction().equals(Constants.ACTION_KILL_PROCESS)) {
@@ -148,12 +148,12 @@ public class ScriptingLayerService extends ForegroundService {
             if (mProcessMap.isEmpty()) {
                 stopSelf(startId);
             }
-            return;
+            return START_STICKY;
         }
 
         if (intent.getAction().equals(Constants.ACTION_SHOW_RUNNING_SCRIPTS)) {
             showRunningScripts();
-            return;
+            return START_STICKY;
         }
 
         String name = intent.getStringExtra(Constants.EXTRA_SCRIPT_PATH);
@@ -162,7 +162,7 @@ public class ScriptingLayerService extends ForegroundService {
             if (mProcessMap.isEmpty()) {
                 stopSelf(startId);
             }
-            return;
+            return START_STICKY;
         }
 
         AndroidProxy proxy = null;
@@ -200,6 +200,8 @@ public class ScriptingLayerService extends ForegroundService {
         } else {
             addProcess(interpreterProcess);
         }
+
+        return START_STICKY;
     }
 
     private boolean tryPort(AndroidProxy androidProxy, boolean usePublicIp, int usePort) {

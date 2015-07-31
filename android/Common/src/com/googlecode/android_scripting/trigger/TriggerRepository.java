@@ -41,164 +41,165 @@ import org.apache.commons.codec.binary.Base64Codec;
  * A repository maintaining all currently scheduled triggers. This includes, for example, alarms or
  * observers of arriving text messages etc. This class is responsible for serializing the list of
  * triggers to the shared preferences store, and retrieving it from there.
- * 
+ *
  * @author Felix Arends (felix.arends@gmail.com)
  * @author Damon Kohler (damonkohler@gmail.com)
  */
 public class TriggerRepository {
-  /**
-   * The list of triggers is serialized to the shared preferences entry with this name.
-   */
-  private static final String TRIGGERS_PREF_KEY = "TRIGGERS";
-
-  private final SharedPreferences mPreferences;
-  private final Context mContext;
-
-  /**
-   * An interface for objects that are notified when a trigger is added to the repository.
-   */
-  public interface TriggerRepositoryObserver {
     /**
-     * Invoked just before the trigger is added to the repository.
-     * 
-     * @param trigger
-     *          The trigger about to be added to the repository.
+     * The list of triggers is serialized to the shared preferences entry with this name.
      */
-    void onPut(Trigger trigger);
+    private static final String TRIGGERS_PREF_KEY = "TRIGGERS";
+
+    private final SharedPreferences mPreferences;
+    private final Context mContext;
 
     /**
-     * Invoked just after the trigger has been removed from the repository.
-     * 
-     * @param trigger
-     *          The trigger that has just been removed from the repository.
+     * An interface for objects that are notified when a trigger is added to the repository.
      */
-    void onRemove(Trigger trigger);
-  }
+    public interface TriggerRepositoryObserver {
+        /**
+         * Invoked just before the trigger is added to the repository.
+         *
+         * @param trigger
+         *          The trigger about to be added to the repository.
+         */
+        void onPut(Trigger trigger);
 
-  private final Multimap<String, Trigger> mTriggers;
-  private final CopyOnWriteArrayList<TriggerRepositoryObserver> mTriggerObservers =
-      new CopyOnWriteArrayList<TriggerRepositoryObserver>();
-
-  public TriggerRepository(Context context) {
-    mContext = context;
-    mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-    String triggers = mPreferences.getString(TRIGGERS_PREF_KEY, null);
-    mTriggers = deserializeTriggersFromString(triggers);
-  }
-
-  /** Returns a list of all triggers. The list is unmodifiable. */
-  public synchronized Multimap<String, Trigger> getAllTriggers() {
-    return Multimaps.unmodifiableMultimap(mTriggers);
-  }
-
-  /**
-   * Adds a new trigger to the repository.
-   * 
-   * @param trigger
-   *          the {@link Trigger} to add
-   */
-  public synchronized void put(Trigger trigger) {
-    notifyOnAdd(trigger);
-    mTriggers.put(trigger.getEventName(), trigger);
-    storeTriggers();
-    ensureTriggerServiceRunning();
-  }
-
-  /** Removes a specific {@link Trigger}. */
-  public synchronized void remove(final Trigger trigger) {
-    mTriggers.get(trigger.getEventName()).remove(trigger);
-    storeTriggers();
-    notifyOnRemove(trigger);
-  }
-
-  /** Ensures that the {@link TriggerService} is running */
-  private void ensureTriggerServiceRunning() {
-    Intent startTriggerServiceIntent = IntentBuilders.buildTriggerServiceIntent();
-    mContext.startService(startTriggerServiceIntent);
-  }
-
-  /** Notify all {@link TriggerRepositoryObserver}s that a {@link Trigger} was added. */
-  private void notifyOnAdd(Trigger trigger) {
-    for (TriggerRepositoryObserver observer : mTriggerObservers) {
-      observer.onPut(trigger);
+        /**
+         * Invoked just after the trigger has been removed from the repository.
+         *
+         * @param trigger
+         *          The trigger that has just been removed from the repository.
+         */
+        void onRemove(Trigger trigger);
     }
-  }
 
-  /** Notify all {@link TriggerRepositoryObserver}s that a {@link Trigger} was removed. */
-  private void notifyOnRemove(Trigger trigger) {
-    for (TriggerRepositoryObserver observer : mTriggerObservers) {
-      observer.onRemove(trigger);
+    private final Multimap<String, Trigger> mTriggers;
+    private final CopyOnWriteArrayList<TriggerRepositoryObserver> mTriggerObservers =
+            new CopyOnWriteArrayList<>();
+
+    public TriggerRepository(Context context) {
+        mContext = context;
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String triggers = mPreferences.getString(TRIGGERS_PREF_KEY, null);
+        mTriggers = deserializeTriggersFromString(triggers);
     }
-  }
 
-  /** Writes the list of triggers to the shared preferences. */
-  private synchronized void storeTriggers() {
-    SharedPreferences.Editor editor = mPreferences.edit();
-    final String triggerValue = serializeTriggersToString(mTriggers);
-    if (triggerValue != null) {
-      editor.putString(TRIGGERS_PREF_KEY, triggerValue);
+    /** Returns a list of all triggers. The list is unmodifiable. */
+    public synchronized Multimap<String, Trigger> getAllTriggers() {
+        return Multimaps.unmodifiableMultimap(mTriggers);
     }
-    editor.commit();
-  }
 
-  /** Deserializes the {@link Multimap} of {@link Trigger}s from a base 64 encoded string. */
-  @SuppressWarnings("unchecked")
-  private Multimap<String, Trigger> deserializeTriggersFromString(String triggers) {
-    if (triggers == null) {
-      return ArrayListMultimap.<String, Trigger> create();
+    /**
+     * Adds a new trigger to the repository.
+     *
+     * @param trigger
+     *          the {@link Trigger} to add
+     */
+    public synchronized void put(Trigger trigger) {
+        notifyOnAdd(trigger);
+        mTriggers.put(trigger.getEventName(), trigger);
+        storeTriggers();
+        ensureTriggerServiceRunning();
     }
-    try {
-      final ByteArrayInputStream inputStream =
-          new ByteArrayInputStream(Base64Codec.decodeBase64(triggers.getBytes()));
-      final ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-      return (Multimap<String, Trigger>) objectInputStream.readObject();
-    } catch (Exception e) {
-      Log.e(e);
+
+    /** Removes a specific {@link Trigger}. */
+    public synchronized void remove(final Trigger trigger) {
+        mTriggers.get(trigger.getEventName()).remove(trigger);
+        storeTriggers();
+        notifyOnRemove(trigger);
     }
-    return ArrayListMultimap.<String, Trigger> create();
-  }
 
-  /** Serializes the list of triggers to a Base64 encoded string. */
-  private String serializeTriggersToString(Multimap<String, Trigger> triggers) {
-    try {
-      final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      final ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
-      objectOutputStream.writeObject(triggers);
-      return new String(Base64Codec.encodeBase64(outputStream.toByteArray()));
-    } catch (IOException e) {
-      Log.e(e);
-      return null;
+    /** Ensures that the [Common] TriggerService is running */
+    private void ensureTriggerServiceRunning() {
+        Intent startTriggerServiceIntent = IntentBuilders.buildTriggerServiceIntent();
+        mContext.startService(startTriggerServiceIntent);
     }
-  }
 
-  /** Returns {@code true} iff the list of triggers is empty. */
-  public synchronized boolean isEmpty() {
-    return mTriggers.isEmpty();
-  }
-
-  /** Adds a {@link TriggerRepositoryObserver}. */
-  public void addObserver(TriggerRepositoryObserver observer) {
-    mTriggerObservers.add(observer);
-  }
-
-  /**
-   * Adds the given {@link TriggerRepositoryObserver} and invokes
-   * {@link TriggerRepositoryObserver#onPut} for all existing triggers.
-   * 
-   * @param observer
-   *          The observer to add.
-   */
-  public synchronized void bootstrapObserver(TriggerRepositoryObserver observer) {
-    addObserver(observer);
-    for (Entry<String, Trigger> trigger : mTriggers.entries()) {
-      observer.onPut(trigger.getValue());
+    /** Notify all {@link TriggerRepositoryObserver}s that a {@link Trigger} was added. */
+    private void notifyOnAdd(Trigger trigger) {
+        for (TriggerRepositoryObserver observer : mTriggerObservers) {
+            observer.onPut(trigger);
+        }
     }
-  }
 
-  /**
-   * Removes a {@link TriggerRepositoryObserver}.
-   */
-  public void removeObserver(TriggerRepositoryObserver observer) {
-    mTriggerObservers.remove(observer);
-  }
+    /** Notify all {@link TriggerRepositoryObserver}s that a {@link Trigger} was removed. */
+    private void notifyOnRemove(Trigger trigger) {
+        for (TriggerRepositoryObserver observer : mTriggerObservers) {
+            observer.onRemove(trigger);
+        }
+    }
+
+    /** Writes the list of triggers to the shared preferences. */
+    private synchronized void storeTriggers() {
+        SharedPreferences.Editor editor = mPreferences.edit();
+        final String triggerValue = serializeTriggersToString(mTriggers);
+        if (triggerValue != null) {
+            editor.putString(TRIGGERS_PREF_KEY, triggerValue);
+        }
+        //editor.commit();
+        editor.apply();
+    }
+
+    /** Deserializes the {@link Multimap} of {@link Trigger}s from a base 64 encoded string. */
+    @SuppressWarnings("unchecked")
+    private Multimap<String, Trigger> deserializeTriggersFromString(String triggers) {
+        if (triggers == null) {
+            return ArrayListMultimap.<String, Trigger> create();
+        }
+        try {
+            final ByteArrayInputStream inputStream =
+                    new ByteArrayInputStream(Base64Codec.decodeBase64(triggers.getBytes()));
+            final ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+            return (Multimap<String, Trigger>) objectInputStream.readObject();
+        } catch (Exception e) {
+            Log.e(e);
+        }
+        return ArrayListMultimap.<String, Trigger> create();
+    }
+
+    /** Serializes the list of triggers to a Base64 encoded string. */
+    private String serializeTriggersToString(Multimap<String, Trigger> triggers) {
+        try {
+            final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            final ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+            objectOutputStream.writeObject(triggers);
+            return new String(Base64Codec.encodeBase64(outputStream.toByteArray()));
+        } catch (IOException e) {
+            Log.e(e);
+            return null;
+        }
+    }
+
+    /** Returns {@code true} iff the list of triggers is empty. */
+    public synchronized boolean isEmpty() {
+        return mTriggers.isEmpty();
+    }
+
+    /** Adds a {@link TriggerRepositoryObserver}. */
+    public void addObserver(TriggerRepositoryObserver observer) {
+        mTriggerObservers.add(observer);
+    }
+
+    /**
+     * Adds the given {@link TriggerRepositoryObserver} and invokes
+     * {@link TriggerRepositoryObserver#onPut} for all existing triggers.
+     *
+     * @param observer
+     *          The observer to add.
+     */
+    public synchronized void bootstrapObserver(TriggerRepositoryObserver observer) {
+        addObserver(observer);
+        for (Entry<String, Trigger> trigger : mTriggers.entries()) {
+            observer.onPut(trigger.getValue());
+        }
+    }
+
+    /**
+     * Removes a {@link TriggerRepositoryObserver}.
+     */
+    public void removeObserver(TriggerRepositoryObserver observer) {
+        mTriggerObservers.remove(observer);
+    }
 }
