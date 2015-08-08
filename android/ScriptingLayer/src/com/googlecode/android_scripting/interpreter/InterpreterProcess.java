@@ -28,98 +28,98 @@ import java.net.UnknownHostException;
 
 /**
  * This is a skeletal implementation of an interpreter process.
- * 
+ *
  * @author Damon Kohler (damonkohler@gmail.com)
  */
 public class InterpreterProcess extends Process {
 
-  private final AndroidProxy mProxy;
-  private final Interpreter mInterpreter;
-  private String mCommand;
+    private final AndroidProxy mProxy;
+    private final Interpreter mInterpreter;
+    private String mCommand;
 
-  /**
-   * Creates a new {@link InterpreterProcess}.
-   * 
-   * @param launchScript
-   *          the absolute path to a script that should be launched with the interpreter
-   * @param port
-   *          the port that the AndroidProxy is listening on
-   */
-  public InterpreterProcess(Interpreter interpreter, AndroidProxy proxy, String appFiles) {
-    mProxy = proxy;
-    mInterpreter = interpreter;
+    /**
+     * Creates a new {@link InterpreterProcess}.
+     *
+     * param launchScript
+     *          the absolute path to a script that should be launched with the interpreter
+     * param port
+     *          the port that the AndroidProxy is listening on
+     */
+    public InterpreterProcess(Interpreter interpreter, AndroidProxy proxy, String appFiles) {
+        mProxy = proxy;
+        mInterpreter = interpreter;
 
-    addAppFiles(appFiles);
-    setBinary(interpreter.getBinary());
-    setName(interpreter.getNiceName());
-    setCommand(interpreter.getInteractiveCommand());
-    addAllArguments(interpreter.getArguments());
-    putAllEnvironmentVariables(System.getenv());
-    putEnvironmentVariable("AP_HOST", getHost());
-    putEnvironmentVariable("AP_PORT", Integer.toString(getPort()));
-    if (proxy.getSecret() != null) {
-      putEnvironmentVariable("AP_HANDSHAKE", getSecret());
+        addAppFiles(appFiles);
+        setBinary(interpreter.getBinary());
+        setName(interpreter.getNiceName());
+        setCommand(interpreter.getInteractiveCommand());
+        addAllArguments(interpreter.getArguments());
+        putAllEnvironmentVariables(System.getenv());
+        putEnvironmentVariable("AP_HOST", getHost());
+        putEnvironmentVariable("AP_PORT", Integer.toString(getPort()));
+        if (proxy.getSecret() != null) {
+            putEnvironmentVariable("AP_HANDSHAKE", getSecret());
+        }
+        putAllEnvironmentVariables(interpreter.getEnvironmentVariables());
     }
-    putAllEnvironmentVariables(interpreter.getEnvironmentVariables());
-  }
 
-  protected void setCommand(String command) {
-    mCommand = command;
-  }
-
-  public Interpreter getInterpreter() {
-    return mInterpreter;
-  }
-
-  public String getHost() {
-    String result = mProxy.getAddress().getHostName();
-    if (result.equals("0.0.0.0")) { // Wildcard.
-      try {
-        return SimpleServer.getPublicInetAddress().getHostName();
-      } catch (UnknownHostException e) {
-        Log.i("public address", e);
-        e.printStackTrace();
-      } catch (SocketException e) {
-        Log.i("public address", e);
-      }
+    protected void setCommand(String command) {
+        mCommand = command;
     }
-    return result;
-  }
 
-  public int getPort() {
-    return mProxy.getAddress().getPort();
-  }
-
-  public InetSocketAddress getAddress() {
-    return mProxy.getAddress();
-  }
-
-  public String getSecret() {
-    return mProxy.getSecret();
-  }
-
-  public RpcReceiverManagerFactory getRpcReceiverManagerFactory() {
-    return mProxy.getRpcReceiverManagerFactory();
-  }
-
-  @Override
-  public void start(final Runnable shutdownHook) {
-    // Analytics.track(mInterpreter.getName());
-    // NOTE(damonkohler): String.isEmpty() doesn't work on Cupcake.
-    if (!mCommand.equals("")) {
-      addArgument(mCommand);
+    public Interpreter getInterpreter() {
+        return mInterpreter;
     }
-    super.start(shutdownHook);
-  }
 
-  @Override
-  public void kill() {
-    super.kill();
-    mProxy.shutdown();
-  }
+    public String getHost() {
+        String result = mProxy.getAddress().getHostName();
+        if (result.equals("0.0.0.0")) { // Wildcard.
+            try {
+                return SimpleServer.getPublicInetAddress().getHostName();
+            } catch (UnknownHostException e) {
+                Log.i("public address", e);
+                e.printStackTrace();
+            } catch (SocketException e) {
+                Log.i("public address", e);
+            }
+        }
+        return result;
+    }
 
-  @Override
-  public String getWorkingDirectory() {
-    return InterpreterConstants.SDCARD_SL4A_ROOT;
-  }
+    public int getPort() {
+        return mProxy.getAddress().getPort();
+    }
+
+    public InetSocketAddress getAddress() {
+        return mProxy.getAddress();
+    }
+
+    public String getSecret() {
+        return mProxy.getSecret();
+    }
+
+    public RpcReceiverManagerFactory getRpcReceiverManagerFactory() {
+        return mProxy.getRpcReceiverManagerFactory();
+    }
+
+    @Override
+    public void start(final Runnable shutdownHook) {
+        // Analytics.track(mInterpreter.getName());
+        // NOTE(damonkohler): String.isEmpty() doesn't work on Cupcake.
+        if (!mCommand.equals("")) {
+            addArgument(mCommand);
+        }
+        super.start(shutdownHook);
+    }
+
+    @Override
+    public void kill() {
+        super.kill();
+        mProxy.shutdown();
+    }
+
+    @Override
+    public String getWorkingDirectory() {
+        return InterpreterConstants.SDCARD_SL4A_ROOT;
+    }
 }

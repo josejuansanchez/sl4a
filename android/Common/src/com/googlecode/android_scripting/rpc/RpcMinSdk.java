@@ -21,12 +21,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Use this annotation to specify minimum SDK level (if higher than 3).
+ * Use this annotation to specify minimum SDK level (if higher than 15).
  * 
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface RpcMinSdk {
   /** Minimum SDK Level. */
-  public int value();
+  int value();
 }

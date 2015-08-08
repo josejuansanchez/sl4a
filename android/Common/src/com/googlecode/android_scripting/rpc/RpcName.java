@@ -24,13 +24,14 @@ import java.lang.annotation.Target;
 
 /**
  * Use this annotation to mark an RPC parameter that have a default value.
- * 
+ *
  * @author igor.v.karp@gmail.com (Igor Karp)
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @Documented
 public @interface RpcName {
-  /** The default value of the RPC parameter. */
-  public String name();
+    // TODO (Miguel): find out what's this for. The description is wrong.
+    /** The default value of the RPC method (?). */
+    String name();
 }

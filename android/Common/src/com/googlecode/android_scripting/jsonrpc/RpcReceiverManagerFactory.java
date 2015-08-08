@@ -19,7 +19,7 @@ package com.googlecode.android_scripting.jsonrpc;
 import java.util.List;
 
 public interface RpcReceiverManagerFactory {
-  public RpcReceiverManager create();
+    RpcReceiverManager create();
 
-  public List<RpcReceiverManager> getRpcReceiverManagers();
+    List<RpcReceiverManager> getRpcReceiverManagers();
 }

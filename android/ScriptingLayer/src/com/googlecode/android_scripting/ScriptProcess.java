@@ -27,20 +27,20 @@ import java.io.File;
  */
 public class ScriptProcess extends InterpreterProcess {
 
-  private final File mScript;
+    private final File mScript;
 
-  public ScriptProcess(File script, InterpreterConfiguration configuration, AndroidProxy proxy,
-                       String pathDataFile) {
-    super(configuration.getInterpreterForScript(script.getName()), proxy, pathDataFile);
-    mScript = script;
-    String scriptName = script.getName();
-    setName(scriptName);
-    Interpreter interpreter = configuration.getInterpreterForScript(scriptName);
-    setCommand(String.format(interpreter.getScriptCommand(), script.getAbsolutePath()));
-  }
+    public ScriptProcess(File script, InterpreterConfiguration configuration, AndroidProxy proxy,
+                         String pathDataFile) {
+        super(configuration.getInterpreterForScript(script.getName()), proxy, pathDataFile);
+        mScript = script;
+        String scriptName = script.getName();
+        setName(scriptName);
+        Interpreter interpreter = configuration.getInterpreterForScript(scriptName);
+        setCommand(String.format(interpreter.getScriptCommand(), script.getAbsolutePath()));
+    }
 
-  public String getPath() {
-    return mScript.getPath();
-  }
+    public String getPath() {
+        return mScript.getPath();
+    }
 
 }

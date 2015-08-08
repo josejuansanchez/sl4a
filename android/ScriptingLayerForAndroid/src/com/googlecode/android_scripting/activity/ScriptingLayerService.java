@@ -63,6 +63,7 @@ public class ScriptingLayerService extends ForegroundService {
     private volatile int mModCount = 0;
     private NotificationManager mNotificationManager;
     private Notification mNotification;
+/*    private Notification.Builder mNotification;*/
     private PendingIntent mNotificationPendingIntent;
     private InterpreterConfiguration mInterpreterConfiguration;
 
@@ -95,7 +96,7 @@ public class ScriptingLayerService extends ForegroundService {
         super.onCreate();
         mInterpreterConfiguration = ((BaseApplication) getApplication()).getInterpreterConfiguration();
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mRecentlyKilledProcess = new WeakReference<InterpreterProcess>(null);
+        mRecentlyKilledProcess = new WeakReference<>(null);
         mTerminalManager = new TerminalManager(this);
         mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         mHide = mPreferences.getBoolean(Constants.HIDE_NOTIFY, false);
@@ -103,8 +104,13 @@ public class ScriptingLayerService extends ForegroundService {
 
     @Override
     protected Notification createNotification() {
+        // TODO: implement notifications using Notification.Builder.
         mNotification =
                 new Notification(R.drawable.sl4a_notification_logo, null, System.currentTimeMillis());
+/*        mNotification = new Notification.Builder(this)
+                .setSmallIcon(R.drawable.sl4a_notification_logo)
+                .setContentTitle("SL4A Service")
+                .setContentInfo("Tap to view running scripts");*/
         mNotification.flags = Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
         Intent notificationIntent = new Intent(this, ScriptingLayerService.class);
         notificationIntent.setAction(Constants.ACTION_SHOW_RUNNING_SCRIPTS);

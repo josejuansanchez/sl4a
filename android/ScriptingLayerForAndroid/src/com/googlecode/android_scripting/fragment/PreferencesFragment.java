@@ -14,23 +14,20 @@
  * the License.
  */
 
-package com.googlecode.android_scripting.activity;
+package com.googlecode.android_scripting.fragment;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceFragment;
 
 import com.googlecode.android_scripting.R;
-import com.googlecode.android_scripting.fragment.PreferencesFragment;
 
-public class Preferences extends Activity {
+public class PreferencesFragment extends PreferenceFragment {
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Display the fragment as the main content.
-        getFragmentManager().beginTransaction()
-                .replace(android.R.id.content, new PreferencesFragment())
-                .commit();
+        // Load the preferences from an XML resource
+        addPreferencesFromResource(R.xml.preferences);
+        // Analytics.trackActivity(this);
     }
 }

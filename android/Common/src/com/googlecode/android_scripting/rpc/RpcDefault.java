@@ -24,16 +24,16 @@ import java.lang.annotation.Target;
 
 /**
  * Use this annotation to mark an RPC parameter that have a default value.
- * 
+ *
  * @author igor.v.karp@gmail.com (Igor Karp)
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @Documented
 public @interface RpcDefault {
-  /** The default value of the RPC parameter. */
-  public String value();
+    /** The default value of the RPC parameter. */
+    String value();
 
-  @SuppressWarnings("rawtypes")
-  public Class<? extends Converter> converter() default Converter.class;
+    @SuppressWarnings("rawtypes")
+    Class<? extends Converter> converter() default Converter.class;
 }

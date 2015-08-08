@@ -20,23 +20,23 @@ import java.lang.reflect.Type;
 
 /**
  * RPC parameter description.
- * 
+ *
  * @author igor.v.karp@gmail.com (Igor Karp)
  */
 public final class ParameterDescriptor {
-  private final String value;
-  private final Type type;
+    private final String value;
+    private final Type type;
 
-  public ParameterDescriptor(String value, Type type) {
-    this.value = value;
-    this.type = type;
-  }
+    public ParameterDescriptor(String value, Type type) {
+        this.value = value;
+        this.type = type;
+    }
 
-  public String getValue() {
-    return value;
-  }
+    public String getValue() {
+        return value;
+    }
 
-  public Type getType() {
-    return type;
-  }
+    public Type getType() {
+        return type;
+    }
 }
