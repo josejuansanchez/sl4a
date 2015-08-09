@@ -75,7 +75,7 @@ public class TriggerManager extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        CustomizeWindow.requestCustomTitle(this, "Triggers", R.layout.trigger_manager);
+        CustomizeWindow.setToolbarTitle(this, "Triggers", R.layout.trigger_manager);
         ScriptTriggerListObserver observer = new ScriptTriggerListObserver();
         mAdapter = new ScriptTriggerAdapter();
         setListAdapter(mAdapter);

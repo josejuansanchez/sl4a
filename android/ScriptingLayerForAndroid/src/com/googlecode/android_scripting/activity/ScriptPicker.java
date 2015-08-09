@@ -58,7 +58,7 @@ public class ScriptPicker extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        CustomizeWindow.requestCustomTitle(this, "Scripts", R.layout.script_manager);
+        CustomizeWindow.setToolbarTitle(this, "Scripts", R.layout.script_manager);
         mCurrentDir = mBaseDir;
         mConfiguration = ((BaseApplication) getApplication()).getInterpreterConfiguration();
         mScripts = ScriptStorageAdapter.listExecutableScripts(null, mConfiguration);

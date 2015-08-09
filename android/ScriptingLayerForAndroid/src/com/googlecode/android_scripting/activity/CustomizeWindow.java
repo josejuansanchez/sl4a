@@ -16,7 +16,9 @@
 
 package com.googlecode.android_scripting.activity;
 
+import android.support.v7.app.ActionBar;
 import android.app.Activity;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.Window;
 import android.widget.ProgressBar;
@@ -30,15 +32,26 @@ public class CustomizeWindow {
         // Utility class.
     }
 
-    public static void requestCustomTitle(Activity activity, String title, int contentViewLayoutResId) {
-        // This was commented out because of problems with Android Lollipop.
-/*    activity.requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);*/
-        activity.setContentView(contentViewLayoutResId);
-        activity.setTitle("SL4A - " + title);
-/*    activity.getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.title);
-    ((TextView) activity.findViewById(R.id.left_text)).setText(title);
-    ((TextView) activity.findViewById(R.id.right_text)).setText("SL4A r"
-        + Version.getVersion(activity));*/
+    public static void setToolbarTitle(Activity activity, String title, int contentViewLayoutResId) {
+        // Temporary if, all will be using Toolbar.
+        if (activity instanceof AppCompatActivity) {
+
+            ActionBar actionBar = ((AppCompatActivity) activity).getSupportActionBar();
+            if (actionBar != null) {
+                actionBar.setTitle(title);
+/*            actionBar.setSubtitle("SL4A r" + Version.getVersion(activity));*/
+            }
+        } else {
+            // This was commented out because of problems with Android Lollipop.
+/*        activity.requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);*/
+            activity.setContentView(contentViewLayoutResId);
+            activity.setTitle("SL4A - " + title);
+/*        activity.getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.title);
+        ((TextView) activity.findViewById(R.id.left_text)).setText(title);
+        ((TextView) activity.findViewById(R.id.right_text)).setText("SL4A r"
+                + Version.getVersion(activity));*/
+
+        }
     }
 
     public static void toggleProgressBarVisibility(Activity activity, boolean on) {

@@ -525,7 +525,7 @@ public class AndroidFacade extends RpcReceiver {
         });
     }
 
-    // TODO (Miguel): remove obviously.
+/*    // TODO (Miguel): remove obviously.
     @Rpc(description = "This is a test method to try that my RPC understanding is correct.")
     public void miguelMethod(@RpcParameter(name = "message") final String message) {
         mHandler.post(new Runnable() {
@@ -534,7 +534,7 @@ public class AndroidFacade extends RpcReceiver {
                 Toast.makeText(mService, "Miguel Toast! " + message, Toast.LENGTH_SHORT).show();
             }
         });
-    }
+    }*/
 
     private String getInputFromAlertDialog(final String title, final String message,
                                            final boolean password) {

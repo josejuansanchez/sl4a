@@ -52,7 +52,7 @@ public class BluetoothDeviceList extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        CustomizeWindow.requestCustomTitle(this, "Bluetooth Devices", R.layout.bluetooth_device_list);
+        CustomizeWindow.setToolbarTitle(this, "Bluetooth Devices", R.layout.bluetooth_device_list);
         setListAdapter(mAdapter);
         // Analytics.trackActivity(this);
     }

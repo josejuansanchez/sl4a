@@ -1,23 +1,9 @@
-/*
- * Copyright (C) 2009 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
-
 package com.googlecode.android_scripting.activity;
 
+import android.app.Activity;
+import android.app.ListFragment;
+
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -25,20 +11,18 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.DataSetObserver;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -76,61 +60,11 @@ import java.util.Map.Entry;
 import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
 
-/**
- * Manages creation, deletion, and execution of stored scripts.
- *
- * @author Damon Kohler (damonkohler@gmail.com)
- */
-
-public class ScriptManager extends AppCompatActivity {
-
-    static String SCRIPTS_FRAGMENT = "scriptsFragment";
-
-    Toolbar toolbar;
-    ActionBar actionBar;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.script_manager);
-
-        // Toolbar.
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            getSupportActionBar().setHomeButtonEnabled(true);
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        }
-
-        // Since Status Bar is transparent in styles.xml, set its color.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setStatusBarColor(getResources().getColor(R.color.primary_dark));
-        }
-
-        // Display Settings fragment.
-        getFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new ScriptMan(), SCRIPTS_FRAGMENT)
-                .commit();
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        ((ScriptMan) getFragmentManager().findFragmentByTag(SCRIPTS_FRAGMENT)).handleIntent(intent);
-    }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return (((ScriptMan) getFragmentManager().findFragmentByTag(SCRIPTS_FRAGMENT))
-                .onKeyDown(keyCode)) || super.onKeyDown(keyCode, event);
-    }
-
-
-
-/*public class ScriptManager extends ListActivity {
+public class ScriptMan extends ListFragment {
 
     private final static String EMPTY = "";
+
+    Activity activity;
 
     private List<File> mScripts;
     private ScriptManagerAdapter mAdapter;
@@ -159,9 +93,28 @@ public class ScriptManager extends AppCompatActivity {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate layout for this fragment.
+        return inflater.inflate(R.layout.fragment_script_man, container, false);
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+/*        // Ensure that the host activity implements the OnFoodQuantitySet interface.
+        try {
+            onFoodQuantitySet = (OnFoodQuantitySet) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString() + " must implement OnFoodQuantitySet interface");
+        }*/
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        CustomizeWindow.setToolbarTitle(this, "Scripts", R.layout.script_manager);
+        activity = getActivity();
+        CustomizeWindow.setToolbarTitle(activity, "Scripts", R.layout.script_manager);
         if (FileUtils.externalStorageMounted()) {
             File sl4a = mBaseDir.getParentFile();
             if (!sl4a.exists()) {
@@ -173,7 +126,7 @@ public class ScriptManager extends AppCompatActivity {
                 }
             }
             if (!FileUtils.makeDirectories(mBaseDir, 0755)) {
-                new AlertDialog.Builder(this)
+                new AlertDialog.Builder(activity)
                         .setTitle("Error")
                         .setMessage(
                                 "Failed to create scripts directory.\n" + mBaseDir + "\n"
@@ -181,34 +134,34 @@ public class ScriptManager extends AppCompatActivity {
                         .setIcon(android.R.drawable.ic_dialog_alert).setPositiveButton("Ok", null).show();
             }
         } else {
-            new AlertDialog.Builder(this).setTitle("External Storage Unavailable")
+            new AlertDialog.Builder(activity).setTitle("External Storage Unavailable")
                     .setMessage("Scripts will be unavailable as long as external storage is unavailable.")
                     .setIcon(android.R.drawable.ic_dialog_alert).setPositiveButton("Ok", null).show();
         }
 
         mCurrentDir = mBaseDir;
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        mAdapter = new ScriptManagerAdapter(this);
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+        mAdapter = new ScriptManagerAdapter(activity);
         mObserver = new ScriptListObserver();
         mAdapter.registerDataSetObserver(mObserver);
-        mConfiguration = ((BaseApplication) getApplication()).getInterpreterConfiguration();
-        mManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        mConfiguration = ((BaseApplication) activity.getApplication()).getInterpreterConfiguration();
+        mManager = (SearchManager) activity.getSystemService(Context.SEARCH_SERVICE);
 
         registerForContextMenu(getListView());
         updateAndFilterScriptList(mQuery);
         setListAdapter(mAdapter);
-        ActivityFlinger.attachView(getListView(), this);
-        ActivityFlinger.attachView(getWindow().getDecorView(), this);
-        startService(IntentBuilders.buildTriggerServiceIntent());
-        handleIntent(getIntent());
-        UsageTrackingConfirmation.show(this);
+        ActivityFlinger.attachView(getListView(), activity);
+        ActivityFlinger.attachView(activity.getWindow().getDecorView(), activity);
+        activity.startService(IntentBuilders.buildTriggerServiceIntent());
+        handleIntent(activity.getIntent());
+        UsageTrackingConfirmation.show(activity);
         // Analytics.trackActivity(this);
     }
 
-    @Override
+/*    @Override
     protected void onNewIntent(Intent intent) {
         handleIntent(intent);
-    }
+    }*/
 
     @SuppressWarnings("serial")
     private void updateAndFilterScriptList(final String query) {
@@ -228,16 +181,16 @@ public class ScriptManager extends AppCompatActivity {
         synchronized (mQuery) {
             if (!mQuery.equals(query)) {
                 if (query == null || query.equals(EMPTY)) {
-                    ((TextView) findViewById(R.id.left_text)).setText("Scripts");
+                    ((TextView) activity.findViewById(R.id.left_text)).setText("Scripts");
                 } else {
-                    ((TextView) findViewById(R.id.left_text)).setText(query);
+                    ((TextView) activity.findViewById(R.id.left_text)).setText(query);
                 }
                 mQuery = query;
             }
         }
 
         if (mScripts.size() == 0) {
-            ((TextView) findViewById(android.R.id.empty)).setText("No matches found.");
+            ((TextView) activity.findViewById(android.R.id.empty)).setText("No matches found.");
         }
 
         // TODO(damonkohler): Extending the File class here seems odd.
@@ -256,7 +209,7 @@ public class ScriptManager extends AppCompatActivity {
         }
     }
 
-    private void handleIntent(Intent intent) {
+    public void handleIntent(Intent intent) {
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             mInSearchResultMode = true;
             String query = intent.getStringExtra(SearchManager.QUERY);
@@ -292,14 +245,13 @@ public class ScriptManager extends AppCompatActivity {
         return false;
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
+    public boolean onKeyDown(int keyCode) {
         if (keyCode == KeyEvent.KEYCODE_BACK && mInSearchResultMode) {
             mInSearchResultMode = false;
             mAdapter.notifyDataSetInvalidated();
             return true;
         }
-        return super.onKeyDown(keyCode, event);
+        return false;
     }
 
     @Override
@@ -315,17 +267,17 @@ public class ScriptManager extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         if (!mInSearchResultMode) {
-            ((TextView) findViewById(android.R.id.empty)).setText(R.string.no_scripts_message);
+            ((TextView) getView().findViewById(android.R.id.empty)).setText(R.string.no_scripts_message);
         }
         updateAndFilterScriptList(mQuery);
         mAdapter.notifyDataSetChanged();
     }
 
     @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
+    public void onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
         menu.clear();
         buildMenuIdMaps();
@@ -339,7 +291,6 @@ public class ScriptManager extends AppCompatActivity {
                 R.drawable.ic_menu_refresh);
         menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
                 android.R.drawable.ic_menu_help);
-        return true;
     }
 
     private void buildSwitchActivityMenu(Menu menu) {
@@ -382,10 +333,10 @@ public class ScriptManager extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == MenuId.HELP.getId()) {
-            Help.show(this);
+            Help.show(activity);
         } else if (itemId == MenuId.INTERPRETER_MANAGER.getId()) {
             // Show interpreter manger.
-            Intent i = new Intent(this, InterpreterManager.class);
+            Intent i = new Intent(activity, InterpreterManager.class);
             startActivity(i);
         } else if (mAddMenuIds.containsKey(itemId)) {
             // Add a new script.
@@ -405,22 +356,22 @@ public class ScriptManager extends AppCompatActivity {
         } else if (itemId == MenuId.FOLDER_ADD.getId()) {
             addFolder();
         } else if (itemId == MenuId.PREFERENCES.getId()) {
-            startActivity(new Intent(this, Preferences.class));
+            startActivity(new Intent(activity, Preferences.class));
         } else if (itemId == MenuId.TRIGGER_MANAGER.getId()) {
-            startActivity(new Intent(this, TriggerManager.class));
+            startActivity(new Intent(activity, TriggerManager.class));
         } else if (itemId == MenuId.LOGCAT_VIEWER.getId()) {
-            startActivity(new Intent(this, LogcatViewer.class));
+            startActivity(new Intent(activity, LogcatViewer.class));
         } else if (itemId == MenuId.REFRESH.getId()) {
             updateAndFilterScriptList(mQuery);
             mAdapter.notifyDataSetChanged();
         } else if (itemId == MenuId.SEARCH.getId()) {
-            onSearchRequested();
+            activity.onSearchRequested();
         }
         return true;
     }
 
     @Override
-    protected void onListItemClick(ListView list, View view, int position, long id) {
+    public void onListItemClick(ListView list, View view, int position, long id) {
         final File file = (File) list.getItemAtPosition(position);
         mCurrent = file;
         if (file.isDirectory()) {
@@ -437,13 +388,13 @@ public class ScriptManager extends AppCompatActivity {
 
         ActionItem terminal = new ActionItem();
         terminal.setIcon(getResources().getDrawable(R.drawable.terminal));
-        terminal.setOnClickListener(new OnClickListener() {
+        terminal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ScriptManager.this, ScriptingLayerService.class);
+                Intent intent = new Intent(activity, ScriptingLayerService.class);
                 intent.setAction(Constants.ACTION_LAUNCH_FOREGROUND_SCRIPT);
                 intent.putExtra(Constants.EXTRA_SCRIPT_PATH, file.getPath());
-                startService(intent);
+                activity.startService(intent);
                 dismissQuickActions(actionMenu);
             }
         });
@@ -453,10 +404,10 @@ public class ScriptManager extends AppCompatActivity {
         background.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ScriptManager.this, ScriptingLayerService.class);
+                Intent intent = new Intent(activity, ScriptingLayerService.class);
                 intent.setAction(Constants.ACTION_LAUNCH_BACKGROUND_SCRIPT);
                 intent.putExtra(Constants.EXTRA_SCRIPT_PATH, file.getPath());
-                startService(intent);
+                activity.startService(intent);
                 dismissQuickActions(actionMenu);
             }
         });
@@ -508,7 +459,7 @@ public class ScriptManager extends AppCompatActivity {
 
     // Quickedit chokes on sdk 3 or below, and some Android builds. Provides alternative menu.
     private void doDialogMenu() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         final CharSequence[] menuList =
                 { "Run Foreground", "Run Background", "Edit", "Delete", "Rename", "External Editor" };
         builder.setTitle(mCurrent.getName());
@@ -519,16 +470,16 @@ public class ScriptManager extends AppCompatActivity {
                 Intent intent;
                 switch (which) {
                     case 0:
-                        intent = new Intent(ScriptManager.this, ScriptingLayerService.class);
+                        intent = new Intent(activity, ScriptingLayerService.class);
                         intent.setAction(Constants.ACTION_LAUNCH_FOREGROUND_SCRIPT);
                         intent.putExtra(Constants.EXTRA_SCRIPT_PATH, mCurrent.getPath());
-                        startService(intent);
+                        activity.startService(intent);
                         break;
                     case 1:
-                        intent = new Intent(ScriptManager.this, ScriptingLayerService.class);
+                        intent = new Intent(activity, ScriptingLayerService.class);
                         intent.setAction(Constants.ACTION_LAUNCH_BACKGROUND_SCRIPT);
                         intent.putExtra(Constants.EXTRA_SCRIPT_PATH, mCurrent.getPath());
-                        startService(intent);
+                        activity.startService(intent);
                         break;
                     case 2:
                         editScript(mCurrent);
@@ -554,7 +505,7 @@ public class ScriptManager extends AppCompatActivity {
         try {
             startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "Unable to open external editor\n" + e.toString(), Toast.LENGTH_SHORT)
+            Toast.makeText(activity, "Unable to open external editor\n" + e.toString(), Toast.LENGTH_SHORT)
                     .show();
         }
     }
@@ -569,13 +520,12 @@ public class ScriptManager extends AppCompatActivity {
         }, 1);
     }
 
-    *//**
+    /**
      * Opens the script for editing.
      *
      * @param script
      *          the name of the script to edit
-     *//*
-
+     */
     private void editScript(File script) {
         Intent i = new Intent(Constants.ACTION_EDIT_SCRIPT);
         i.putExtra(Constants.EXTRA_SCRIPT_PATH, script.getAbsolutePath());
@@ -583,7 +533,7 @@ public class ScriptManager extends AppCompatActivity {
     }
 
     private void delete(final File file) {
-        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        AlertDialog.Builder alert = new AlertDialog.Builder(activity);
         alert.setTitle("Delete");
         alert.setMessage("Would you like to delete " + file.getName() + "?");
         alert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -602,28 +552,28 @@ public class ScriptManager extends AppCompatActivity {
     }
 
     private void addFolder() {
-        final EditText folderName = new EditText(this);
+        final EditText folderName = new EditText(activity);
         folderName.setHint("Folder Name");
-        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        AlertDialog.Builder alert = new AlertDialog.Builder(activity);
         alert.setTitle("Add Folder");
         alert.setView(folderName);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 String name = folderName.getText().toString();
                 if (name.length() == 0) {
-                    Log.e(ScriptManager.this, "Folder name is empty.");
+                    Log.e(activity, "Folder name is empty.");
                     return;
                 } else {
                     for (File f : mScripts) {
                         if (f.getName().equals(name)) {
-                            Log.e(ScriptManager.this, String.format("Folder \"%s\" already exists.", name));
+                            Log.e(activity, String.format("Folder \"%s\" already exists.", name));
                             return;
                         }
                     }
                 }
                 File dir = new File(mCurrentDir, name);
                 if (!FileUtils.makeDirectories(dir, 0755)) {
-                    Log.e(ScriptManager.this, String.format("Cannot create folder \"%s\".", name));
+                    Log.e(activity, String.format("Cannot create folder \"%s\".", name));
                 }
                 mAdapter.notifyDataSetInvalidated();
             }
@@ -632,21 +582,21 @@ public class ScriptManager extends AppCompatActivity {
     }
 
     private void rename(final File file) {
-        final EditText newName = new EditText(this);
+        final EditText newName = new EditText(activity);
         newName.setText(file.getName());
-        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        AlertDialog.Builder alert = new AlertDialog.Builder(activity);
         alert.setTitle("Rename");
         alert.setView(newName);
         alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 String name = newName.getText().toString();
                 if (name.length() == 0) {
-                    Log.e(ScriptManager.this, "Name is empty.");
+                    Log.e(activity, "Name is empty.");
                     return;
                 } else {
                     for (File f : mScripts) {
                         if (f.getName().equals(name)) {
-                            Log.e(ScriptManager.this, String.format("\"%s\" already exists.", name));
+                            Log.e(activity, String.format("\"%s\" already exists.", name));
                             return;
                         }
                     }
@@ -661,9 +611,9 @@ public class ScriptManager extends AppCompatActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         RequestCode request = RequestCode.values()[requestCode];
-        if (resultCode == RESULT_OK) {
+        if (resultCode == activity.RESULT_OK) {
             switch (request) {
                 case QRCODE_ADD:
                     writeScriptFromBarcode(data);
@@ -685,12 +635,12 @@ public class ScriptManager extends AppCompatActivity {
     private void writeScriptFromBarcode(Intent data) {
         String result = data.getStringExtra("SCAN_RESULT");
         if (result == null) {
-            Log.e(this, "Invalid QR code content.");
+            Log.e(activity, "Invalid QR code content.");
             return;
         }
         String contents[] = result.split("\n", 2);
         if (contents.length != 2) {
-            Log.e(this, "Invalid QR code content.");
+            Log.e(activity, "Invalid QR code content.");
             return;
         }
         String title = contents[0];
@@ -714,7 +664,7 @@ public class ScriptManager extends AppCompatActivity {
 
         @Override
         public void onConfigurationChanged() {
-            runOnUiThread(new Runnable() {
+            activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     updateAndFilterScriptList(mQuery);
@@ -733,7 +683,6 @@ public class ScriptManager extends AppCompatActivity {
         protected List<File> getScriptList() {
             return mScripts;
         }
-    }*/
-
+    }
 
 }

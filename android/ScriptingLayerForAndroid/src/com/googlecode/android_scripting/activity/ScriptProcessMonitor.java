@@ -86,7 +86,7 @@ public class ScriptProcessMonitor extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         bindService(new Intent(this, ScriptingLayerService.class), mConnection, 0);
-        CustomizeWindow.requestCustomTitle(this, "Script Monitor", R.layout.script_monitor);
+        CustomizeWindow.setToolbarTitle(this, "Script Monitor", R.layout.script_monitor);
         mAdapter = new ScriptMonitorAdapter();
         setListAdapter(mAdapter);
         registerForContextMenu(getListView());

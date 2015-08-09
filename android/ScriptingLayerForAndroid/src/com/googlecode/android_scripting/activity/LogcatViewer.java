@@ -97,7 +97,7 @@ public class LogcatViewer extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        CustomizeWindow.requestCustomTitle(this, "Logcat", R.layout.logcat_viewer);
+        CustomizeWindow.setToolbarTitle(this, "Logcat", R.layout.logcat_viewer);
         mLogcatMessages = new LinkedList<String>();
         mOldLastPosition = 0;
         mAdapter = new LogcatViewerAdapter();
