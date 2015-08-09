@@ -30,12 +30,13 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <application
+        android:allowBackup="true"
         android:icon="@drawable/sl4a_logo_48"
         android:label="@string/application_title"
         android:name=".Sl4aApplication"
         android:theme="@style/AppTheme"
         tools:replace="android:label,android:icon">
-        <activity android:name=".activity.ScriptManager"
+        <activity android:name=".activity.MainManager"
             android:configChanges="keyboardHidden|orientation"
             android:windowSoftInputMode="adjustResize" android:launchMode="singleTop">
             <intent-filter>
@@ -79,7 +80,7 @@
                 <action android:name="com.twofortyfouram.locale.intent.action.FIRE_SETTING" />
             </intent-filter>
         </receiver>
-        <activity android:name=".activity.Preferences" android:theme="@android:style/Theme.NoTitleBar" />
+        <activity android:name=".activity.Preferences" />
         <activity android:name="org.connectbot.ConsoleActivity"
             android:theme="@android:style/Theme.NoTitleBar"
             android:configChanges="keyboardHidden|orientation"

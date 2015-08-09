@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Android Open Source Project
+ * Copyright (C) 2009 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,17 +16,28 @@
 
 package com.googlecode.android_scripting.activity;
 
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.MenuItem;
-
 import com.googlecode.android_scripting.R;
-import com.googlecode.android_scripting.fragment.PreferencesFragment;
+import com.googlecode.android_scripting.fragment.ScriptManager;
 
-public class Preferences extends AppCompatActivity {
+/**
+ * Activity that holds the ScriptManager, InterpreterManager, TriggerManager,
+ * and LogcatViewer fragments.
+ *
+ * @author Miguel Palacio (palaciodelgado [at] gmail [dot] com)
+ */
+
+public class MainManager extends AppCompatActivity {
+
+    static String SCRIPTS_FRAGMENT = "scriptsFragment";
 
     Toolbar toolbar;
     ActionBar actionBar;
@@ -34,8 +45,7 @@ public class Preferences extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.preferences);
+        setContentView(R.layout.main_manager);
 
         // Toolbar.
         toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -43,7 +53,6 @@ public class Preferences extends AppCompatActivity {
 
         actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setTitle("Settings");
             actionBar.setHomeButtonEnabled(true);
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
@@ -53,10 +62,27 @@ public class Preferences extends AppCompatActivity {
             getWindow().setStatusBarColor(getResources().getColor(R.color.primary_dark));
         }
 
-        // Display the fragment as the main content.
+        // Display Settings fragment.
         getFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new PreferencesFragment())
+                .replace(R.id.fragment_container, new ScriptManager(), SCRIPTS_FRAGMENT)
                 .commit();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        ((ScriptManager) getFragmentManager().findFragmentByTag(SCRIPTS_FRAGMENT)).handleIntent(intent);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        return (((ScriptManager) getFragmentManager().findFragmentByTag(SCRIPTS_FRAGMENT))
+                .onKeyDown(keyCode)) || super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.terminal, menu);
+        return true;
     }
 
     @Override
@@ -64,14 +90,21 @@ public class Preferences extends AppCompatActivity {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-
         int id = item.getItemId();
 
-        // Make Home button behave as hardware Back button.
-        if (id == android.R.id.home) {
-            onBackPressed();
+        //noinspection SimplifiableIfStatement
+
+/*        // Open the Settings activity.
+        if (id == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
         }
+        // Open the FAQ activity.
+        else if (id == R.id.action_faq) {
+            return true;
+        }*/
 
         return super.onOptionsItemSelected(item);
     }
+
 }

@@ -51,7 +51,7 @@ public class FacadeConfiguration {
 
     static {
 
-        // TODO (Miguel): change this SDK method (string) for SDK_INT.
+        // TODO (miguelpalacio): change this SDK method (string) for SDK_INT.
         if (android.os.Build.VERSION.SDK == null) {
             sSdkLevel = 8; // For documentation purposes.
         } else {

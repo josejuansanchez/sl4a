@@ -525,7 +525,7 @@ public class AndroidFacade extends RpcReceiver {
         });
     }
 
-/*    // TODO (Miguel): remove obviously.
+/*    // TODO (miguelpalacio): remove obviously.
     @Rpc(description = "This is a test method to try that my RPC understanding is correct.")
     public void miguelMethod(@RpcParameter(name = "message") final String message) {
         mHandler.post(new Runnable() {

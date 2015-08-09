@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Documented
 public @interface RpcName {
-    // TODO (Miguel): find out what's this for. The description is wrong.
+    // TODO (miguelpalacio): find out what's this for. The description is wrong.
     /** The default value of the RPC method (?). */
     String name();
 }
