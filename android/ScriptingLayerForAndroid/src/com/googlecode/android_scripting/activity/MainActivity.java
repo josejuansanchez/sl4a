@@ -19,6 +19,7 @@ package com.googlecode.android_scripting.activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -26,6 +27,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import com.googlecode.android_scripting.R;
+import com.googlecode.android_scripting.fragment.NavigationDrawer;
 import com.googlecode.android_scripting.fragment.ScriptManager;
 
 /**
@@ -35,29 +37,35 @@ import com.googlecode.android_scripting.fragment.ScriptManager;
  * @author Miguel Palacio (palaciodelgado [at] gmail [dot] com)
  */
 
-public class MainManager extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
 
     static String SCRIPTS_FRAGMENT = "scriptsFragment";
 
     Toolbar toolbar;
-    ActionBar actionBar;
+    ActionBar mActionBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main_manager);
+
+        setContentView(R.layout.main_activity);
 
         // Toolbar.
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setHomeButtonEnabled(true);
-            actionBar.setDisplayHomeAsUpEnabled(true);
+        mActionBar = getSupportActionBar();
+        if (mActionBar != null) {
+            mActionBar.setHomeButtonEnabled(true);
+            mActionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        // Since Status Bar is transparent in styles.xml, set its color.
+        // Navigation drawer.
+        NavigationDrawer mDrawer = (NavigationDrawer)
+                getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
+        mDrawer.setUp((DrawerLayout) findViewById(R.id.drawer_layout), R.id.navigation_drawer, toolbar);
+
+        // Since Status Bar is transparent in styles.xml, set the appropriate color.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(getResources().getColor(R.color.primary_dark));
         }
@@ -90,7 +98,8 @@ public class MainManager extends AppCompatActivity {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+
+        //int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
 

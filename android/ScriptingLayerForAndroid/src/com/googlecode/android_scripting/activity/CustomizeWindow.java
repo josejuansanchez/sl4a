@@ -36,10 +36,10 @@ public class CustomizeWindow {
         // Temporary if, all will be using Toolbar.
         if (activity instanceof AppCompatActivity) {
 
-            ActionBar actionBar = ((AppCompatActivity) activity).getSupportActionBar();
-            if (actionBar != null) {
-                actionBar.setTitle(title);
-/*            actionBar.setSubtitle("SL4A r" + Version.getVersion(activity));*/
+            ActionBar mActionBar = ((AppCompatActivity) activity).getSupportActionBar();
+            if (mActionBar != null) {
+                mActionBar.setTitle(title);
+/*            mActionBar.setSubtitle("SL4A r" + Version.getVersion(activity));*/
             }
         } else {
             // This was commented out because of problems with Android Lollipop.

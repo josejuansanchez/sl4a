@@ -17,17 +17,16 @@
 package com.googlecode.android_scripting.fragment;
 
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 
 import com.googlecode.android_scripting.R;
 
-public class PreferencesFragment extends PreferenceFragment {
+public class PreferenceList extends PreferenceFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Load the preferences from an XML resource
-        addPreferencesFromResource(R.xml.preferences);
+        addPreferencesFromResource(R.xml.preference_list);
         // Analytics.trackActivity(this);
     }
 }

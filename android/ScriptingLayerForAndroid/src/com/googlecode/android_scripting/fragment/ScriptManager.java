@@ -123,7 +123,7 @@ public class ScriptManager extends ListFragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         activity = getActivity();
-        CustomizeWindow.setToolbarTitle(activity, "Scripts", R.layout.main_manager);
+        CustomizeWindow.setToolbarTitle(activity, "Scripts", R.layout.main_activity);
         if (FileUtils.externalStorageMounted()) {
             File sl4a = mBaseDir.getParentFile();
             if (!sl4a.exists()) {
@@ -290,7 +290,7 @@ public class ScriptManager extends ListFragment {
         buildSwitchActivityMenu(menu);
         menu.add(Menu.NONE, MenuId.SEARCH.getId(), Menu.NONE, "Search").setIcon(
                 R.drawable.ic_menu_search);
-        menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Preferences").setIcon(
+        menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Settings").setIcon(
                 android.R.drawable.ic_menu_preferences);
         menu.add(Menu.NONE, MenuId.REFRESH.getId(), Menu.NONE, "Refresh").setIcon(
                 R.drawable.ic_menu_refresh);

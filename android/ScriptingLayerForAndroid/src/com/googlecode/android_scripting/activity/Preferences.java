@@ -24,7 +24,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 
 import com.googlecode.android_scripting.R;
-import com.googlecode.android_scripting.fragment.PreferencesFragment;
+import com.googlecode.android_scripting.fragment.PreferenceList;
 
 public class Preferences extends AppCompatActivity {
 
@@ -55,7 +55,7 @@ public class Preferences extends AppCompatActivity {
 
         // Display the fragment as the main content.
         getFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new PreferencesFragment())
+                .replace(R.id.fragment_container, new PreferenceList())
                 .commit();
     }
 
