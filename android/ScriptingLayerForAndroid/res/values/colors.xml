@@ -6,4 +6,7 @@
     <color name="highlight">#B6B6B6</color>
 
     <color name="background">#303030</color>
+
+    <!-- ScrimInsetsFrameLayout. -->
+    <color name="inset_foreground">#4000</color>
 </resources>

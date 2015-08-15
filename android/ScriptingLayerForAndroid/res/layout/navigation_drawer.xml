@@ -1,12 +1,37 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
     tools:context="com.googlecode.android_scripting.fragment.NavigationDrawer">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView android:layout_width="match_parent" android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
 
-</RelativeLayout>
+    <!-- ScrimInsetsFrameLayout allows 'drawer under the status bar' effect. -->
+    <com.googlecode.android_scripting.custom_views.ScrimInsetsFrameLayout
+        android:id="@+id/scrimInsetsFrameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:elevation="4dp"
+        android:background="@color/background"
+        android:fitsSystemWindows="true"
+        app:insetForeground="@color/inset_foreground">
+
+        <!-- TODO: Update blank fragment layout -->
+        <TextView android:layout_width="match_parent" android:layout_height="match_parent"
+
+            android:layout_marginTop="@dimen/drawer_margin_top"
+            android:text="@string/hello_blank_fragment" />
+
+        <!-- Actual Navigation Drawer view. -->
+<!--        <android.support.v7.widget.RecyclerView
+            android:id="@+id/drawer_recycler"
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:minHeight="?android:attr/listPreferredItemHeight"
+            android:fitsSystemWindows="true" />-->
+    </com.googlecode.android_scripting.custom_views.ScrimInsetsFrameLayout>
+
+
+</LinearLayout>

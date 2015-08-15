@@ -27,6 +27,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import com.googlecode.android_scripting.R;
+import com.googlecode.android_scripting.custom_views.ScrimInsetsFrameLayout;
 import com.googlecode.android_scripting.fragment.NavigationDrawer;
 import com.googlecode.android_scripting.fragment.ScriptManager;
 
@@ -40,6 +41,8 @@ import com.googlecode.android_scripting.fragment.ScriptManager;
 public class MainActivity extends AppCompatActivity {
 
     static String SCRIPTS_FRAGMENT = "scriptsFragment";
+
+    ScrimInsetsFrameLayout scrimInsetsFrameLayout;
 
     Toolbar toolbar;
     ActionBar mActionBar;
@@ -64,6 +67,9 @@ public class MainActivity extends AppCompatActivity {
         NavigationDrawer mDrawer = (NavigationDrawer)
                 getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
         mDrawer.setUp((DrawerLayout) findViewById(R.id.drawer_layout), R.id.navigation_drawer, toolbar);
+
+        // Set the layout that envelops the Navigation Drawer to be used later.
+        scrimInsetsFrameLayout = (ScrimInsetsFrameLayout) findViewById(R.id.scrimInsetsFrameLayout);
 
         // Since Status Bar is transparent in styles.xml, set the appropriate color.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {

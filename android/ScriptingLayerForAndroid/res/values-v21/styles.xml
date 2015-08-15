@@ -4,17 +4,23 @@
     <!-- Base application theme. Applied only for API version >= 21. -->
     <style name="AppTheme" parent="AppTheme.Base">
 
+        <item name="android:colorPrimary">@color/primary</item>
+        <item name="android:colorPrimaryDark">@color/primary_dark</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:windowTranslucentStatus">true</item>
+
         <!-- Translucent Status Bar for navigation drawer effect. -->
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
+<!--        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>-->
+
 
         <!-- Enable Lollipop effects. -->
-        <item name="android:windowContentTransitions">true</item>
+<!--        <item name="android:windowContentTransitions">true</item>
         <item name="android:windowAllowEnterTransitionOverlap">true</item>
         <item name="android:windowAllowReturnTransitionOverlap">true</item>
         <item name="android:fragmentSharedElementEnterTransition">@android:transition/move</item>
         <item name="android:windowSharedElementExitTransition">@android:transition/move</item>
-        <item name="android:colorControlHighlight">@color/highlight</item>
+        <item name="android:colorControlHighlight">@color/highlight</item>-->
 
     </style>
 </resources>
