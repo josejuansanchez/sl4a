@@ -25,5 +25,5 @@
         android:paddingRight="16dp"
         android:fontFamily="sans-serif-medium"
         android:textSize="16sp"
-        android:textColor="@color/navigation_drawer_item_text"/>
+        android:textColor="@color/navigation_drawer_entry_text"/>
 </LinearLayout>

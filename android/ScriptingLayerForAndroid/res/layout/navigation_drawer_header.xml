@@ -1,15 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="128dp"
+    android:layout_height="120dp"
     android:background="@color/primary"
     android:orientation="vertical">
 
-    <View
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="@color/primary"
-        android:layout_weight="1" />
+        android:orientation="vertical"
+        android:layout_weight="1" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/navigation_drawer_header_title"
+            android:paddingTop="24dp"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:text="SL4A"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/primary_text"
+            android:textSize="26sp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/navigation_drawer_header_subtitle"
+            android:paddingTop="8dp"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:text="SL4A v2312.2"
+            android:fontFamily="sans-serif-medium"
+            android:textStyle="italic"
+            android:textColor="@color/secondary_text"
+            android:textSize="16sp"/>
+    </LinearLayout>
 
     <!-- Padding section of 8dp required by Material Design spec. -->
     <View

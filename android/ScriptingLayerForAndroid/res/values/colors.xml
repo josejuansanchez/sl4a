@@ -14,12 +14,12 @@
     <color name="secondary_text">#B3B3B3</color>
     <color name="disabled_text">#4D4D4D</color>
     <color name="text_background">#303030</color>
-    <color name="navigation_drawer_item_text">#E6E6E6</color>
+    <color name="navigation_drawer_entry_text">#E6E6E6</color>
 
     <!-- Lists. -->
-    <color name="highlight">#575757</color>
-    <color name="selected_item">#EEEEEE</color>
-    <color name="divider">#575757</color>
+    <color name="item_highlighted">#414141</color>
+    <color name="item_selected">#505050</color>
+    <color name="divider">#414141</color>
 
 
     <!-- ScrimInsetsFrameLayout. -->

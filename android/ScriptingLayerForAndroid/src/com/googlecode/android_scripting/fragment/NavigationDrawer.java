@@ -3,6 +3,7 @@ package com.googlecode.android_scripting.fragment;
 import android.content.res.TypedArray;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -14,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.googlecode.android_scripting.R;
+import com.googlecode.android_scripting.Version;
 import com.googlecode.android_scripting.custom_component.NavigationDrawerAdapter;
 
 /**
@@ -31,11 +33,17 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
 
     RecyclerView mDrawerContent;
     RecyclerView.LayoutManager mDrawerLayoutManager;
+
     String[] mDrawerEntries;
     TypedArray mDrawerIcons;
     TypedArray mDrawerIconsHighlighted;
+    String mDrawerHeaderTitle;
+    String mDrawerHeaderSubtitle;
 
     NavigationDrawerAdapter mDrawerAdapter;
+
+    Runnable onDrawerClosedRunnable;
+    Handler mHandler = new Handler();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -63,11 +71,15 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
         mDrawerIcons = getResources().obtainTypedArray(R.array.navigation_drawer_icons);
         mDrawerIconsHighlighted = getResources().obtainTypedArray(R.array.navigation_drawer_icons_highlighted);
 
+        mDrawerHeaderTitle = getString(R.string.navigation_drawer_header_title);
+        mDrawerHeaderSubtitle = getString(R.string.navigation_drawer_header_subtitle);
+        mDrawerHeaderSubtitle += Version.getVersion(getActivity());
+
         mDrawerContent = (RecyclerView) getActivity().findViewById(R.id.navigation_drawer_content);
         mDrawerContent.setHasFixedSize(true);
 
         mDrawerAdapter = new NavigationDrawerAdapter(mDrawerEntries, mDrawerIcons,
-                mDrawerIconsHighlighted, this);
+                mDrawerIconsHighlighted, mDrawerHeaderTitle, mDrawerHeaderSubtitle, this);
         mDrawerContent.setAdapter(mDrawerAdapter);
 
         mDrawerLayoutManager = new LinearLayoutManager(getActivity());
@@ -83,13 +95,17 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
             @Override
             public void onDrawerOpened(View drawerView) {
                 super.onDrawerOpened(drawerView);
-                getActivity().invalidateOptionsMenu();
+/*                getActivity().invalidateOptionsMenu();*/
             }
 
             @Override
             public void onDrawerClosed(View drawerView) {
                 super.onDrawerClosed(drawerView);
-                getActivity().invalidateOptionsMenu();
+/*                getActivity().invalidateOptionsMenu();*/
+                if (onDrawerClosedRunnable != null) {
+                    mHandler.post(onDrawerClosedRunnable);
+                    onDrawerClosedRunnable = null;
+                }
             }
         };
         mDrawerLayout.setDrawerListener(mDrawerToggle);
@@ -104,6 +120,20 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
 
     @Override
     public void onDrawerItemClick(int position) {
+        // Highlight selected item.
+        if (position < 5) {
+            mDrawerAdapter.clearSelection();
+            mDrawerAdapter.toggleSelection(position);
+        }
 
+        // Set a runnable that runs once the drawer closes after clicking on item.
+        onDrawerClosedRunnable = new Runnable() {
+            @Override
+            public void run() {
+            }
+        };
+
+        // Update selected item and title, then close the drawer.
+        mDrawerLayout.closeDrawers();
     }
 }

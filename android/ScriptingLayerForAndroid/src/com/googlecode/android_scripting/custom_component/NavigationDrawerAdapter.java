@@ -15,24 +15,29 @@ import com.googlecode.android_scripting.R;
  */
 public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerAdapter.ViewHolder> {
 
-    private static final int TYPE_HEADER = 0;
-    private static final int TYPE_ROW = 1;
-    private static final int TYPE_DIVIDER = 2;
+    static final int TYPE_HEADER = 0;
+    static final int TYPE_ROW = 1;
+    static final int TYPE_DIVIDER = 2;
 
-    private final String[] entries;
-    private final TypedArray icons;
-    private final TypedArray icons_highlighted;
+    final String[] entries;
+    final TypedArray icons;
+    final TypedArray icons_highlighted;
+    final String headerTitle;
+    final String headerSubtitle;
 
     private ViewHolder.ClickListener clickListener;
 
     // Class constructor.
     public NavigationDrawerAdapter(String[] entries, TypedArray icons, TypedArray icons_highlighted,
+                                   String headerTitle, String headerSubtitle,
                                    ViewHolder.ClickListener clickListener) {
         super();
 
         this.entries = entries;
         this.icons = icons;
         this.icons_highlighted = icons_highlighted;
+        this.headerTitle = headerTitle;
+        this.headerSubtitle = headerSubtitle;
 
         this.clickListener = clickListener;
     }
@@ -42,8 +47,11 @@ public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerA
 
         int holderId;
 
-        TextView entryLabel;
+        TextView entryText;
         ImageView entryIcon;
+
+        TextView title;
+        TextView subtitle;
 
         View itemView;
 
@@ -58,7 +66,7 @@ public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerA
             if (viewType == TYPE_ROW) {
                 holderId = 1;
 
-                entryLabel = (TextView) itemView.findViewById(R.id.drawer_entry_text);
+                entryText = (TextView) itemView.findViewById(R.id.drawer_entry_text);
                 entryIcon = (ImageView) itemView.findViewById(R.id.drawer_entry_icon);
 
                 // Set click listener for the row.
@@ -69,6 +77,9 @@ public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerA
             }
             else {
                 holderId = 0;
+
+                title = (TextView) itemView.findViewById(R.id.navigation_drawer_header_title);
+                subtitle = (TextView) itemView.findViewById(R.id.navigation_drawer_header_subtitle);
             }
         }
 
@@ -119,7 +130,7 @@ public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerA
                 pos = position - 2;
             }
 
-            holder.entryLabel.setText(entries[pos]);
+            holder.entryText.setText(entries[pos]);
 
             // For selected row, highlight background and icon.
             if (isSelected(position) && position < 5) {
@@ -130,7 +141,8 @@ public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerA
                 holder.entryIcon.setImageDrawable(icons.getDrawable(pos));
             }
         } else if (holder.holderId == 0) {
-
+            holder.title.setText(headerTitle);
+            holder.subtitle.setText(headerSubtitle);
         }
     }
 
