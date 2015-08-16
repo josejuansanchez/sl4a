@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- App colors. -->
     <color name="primary">#424242</color>
     <color name="primary_dark">#212121</color>
     <color name="accent">#80CBC4</color>
-    <color name="highlight">#B6B6B6</color>
+<!--    <color name="primary">#004D40</color>
+    <color name="primary_dark">#002922</color>
+    <color name="accent">#009688</color>-->
 
-    <color name="background">#303030</color>
+    <!-- Text. -->
+    <color name="primary_text">#FFF</color>
+    <color name="secondary_text">#B3B3B3</color>
+    <color name="disabled_text">#4D4D4D</color>
+    <color name="text_background">#303030</color>
+    <color name="navigation_drawer_item_text">#E6E6E6</color>
+
+    <!-- Lists. -->
+    <color name="highlight">#575757</color>
+    <color name="selected_item">#EEEEEE</color>
+    <color name="divider">#575757</color>
+
 
     <!-- ScrimInsetsFrameLayout. -->
     <color name="inset_foreground">#4000</color>

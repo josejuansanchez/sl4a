@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-package com.googlecode.android_scripting.custom_views;
+package com.googlecode.android_scripting.custom_component;
 
 import android.content.Context;
 import android.content.res.TypedArray;

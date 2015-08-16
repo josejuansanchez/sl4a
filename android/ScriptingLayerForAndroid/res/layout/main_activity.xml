@@ -28,8 +28,8 @@
 
     <!-- Navigation Drawer. -->
     <fragment
-        android:id="@+id/navigation_drawer"
-        android:layout_width="@dimen/nav_drawer_width"
+        android:id="@+id/navigation_drawer_fragment"
+        android:layout_width="@dimen/navigation_drawer_width"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         app:layout="@layout/navigation_drawer"
