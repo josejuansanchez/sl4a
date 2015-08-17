@@ -5,8 +5,8 @@ import android.content.res.TypedArray;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -29,6 +29,8 @@ import com.googlecode.android_scripting.fragment.ScriptManager;
  * @author Miguel Palacio (palaciodelgado [at] gmail [dot] com)
  */
 public class NavigationDrawer extends Fragment implements NavigationDrawerAdapter.ViewHolder.ClickListener {
+
+    static final String CURRENT_FRAGMENT = "currentFragment";
 
     public static final int HEADER = 0;
     static final int SCRIPTS_ENTRY = 1;
@@ -57,6 +59,8 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
 
     Runnable onDrawerClosedRunnable;
     Handler mHandler = new Handler();
+
+    int currentFragment;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -97,8 +101,21 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
         mDrawerLayoutManager = new LinearLayoutManager(getActivity());
         mDrawerContent.setLayoutManager(mDrawerLayoutManager);
 
-        // Highlight default entry.
-        mDrawerAdapter.toggleSelection(SCRIPTS_ENTRY);
+        // Set entry and its corresponding fragment.
+        int entry;
+        if (savedInstanceState != null) {
+            entry = savedInstanceState.getInt(CURRENT_FRAGMENT);
+        } else {
+            entry = SCRIPTS_ENTRY;
+        }
+        openFragment(entry);
+        mDrawerAdapter.toggleSelection(entry);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(CURRENT_FRAGMENT, currentFragment);
     }
 
     public void setUp(DrawerLayout drawerLayout, int fragmentId, Toolbar toolbar) {
@@ -145,41 +162,56 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
         onDrawerClosedRunnable = new Runnable() {
             @Override
             public void run() {
-
-                switch (position) {
-                    case SCRIPTS_ENTRY:
-                        getActivity().getFragmentManager().beginTransaction()
-                                .replace(R.id.fragment_container, new ScriptManager(),
-                                        MainActivity.SCRIPTS_FRAGMENT)
-                                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                                .commit();
-                        break;
-
-                    case INTERPRETERS_ENTRY:
-                        getActivity().getFragmentManager().beginTransaction()
-                                .replace(R.id.fragment_container, new InterpreterManager(),
-                                        MainActivity.INTERPRETERS_FRAGMENT)
-                                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                                .commit();
-                        break;
-
-                    case TRIGGERS_ENTRY:
-                        break;
-
-                    case LOGCAT_ENTRY:
-                        break;
-
-                    case SETTINGS_ENTRY:
-                        startActivity(new Intent(getActivity(), Preferences.class));
-                        break;
-
-                    default:
-                        break;
-                }
+                openFragment(position);
             }
         };
 
         // Update selected item and title, then close the drawer.
         mDrawerLayout.closeDrawers();
+    }
+
+    private void openFragment(int position) {
+        if (position == currentFragment) {
+            return;
+        } else if (position < DIVIDER) {
+            currentFragment = position;
+        }
+
+        Fragment fragment;
+        String fragmentTag;
+
+        switch (position) {
+            case SCRIPTS_ENTRY:
+                fragment = new ScriptManager();
+                fragmentTag = MainActivity.SCRIPTS_FRAGMENT;
+                break;
+
+            case INTERPRETERS_ENTRY:
+                fragment = new InterpreterManager();
+                fragmentTag = MainActivity.INTERPRETERS_FRAGMENT;
+                break;
+
+            case TRIGGERS_ENTRY:
+                fragment = new Fragment();
+                fragmentTag = MainActivity.TRIGGERS_FRAGMENT;
+                break;
+
+            case LOGCAT_ENTRY:
+                fragment = new Fragment();
+                fragmentTag = MainActivity.LOGCAT_FRAGMENT;
+                break;
+
+            case SETTINGS_ENTRY:
+                startActivity(new Intent(getActivity(), Preferences.class));
+                return;
+
+            default:
+                return;
+        }
+
+        getActivity().getFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, fragment, fragmentTag)
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                .commit();
     }
 }

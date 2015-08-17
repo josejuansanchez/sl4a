@@ -18,7 +18,6 @@ package com.googlecode.android_scripting.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -41,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
 
     public static final String SCRIPTS_FRAGMENT = "scriptsFragment";
     public static final String INTERPRETERS_FRAGMENT = "interpretersFragment";
+    public static final String TRIGGERS_FRAGMENT = "triggersFragment";
+    public static final String LOGCAT_FRAGMENT = "logcatFragment";
 
     Toolbar toolbar;
     ActionBar mActionBar;
@@ -62,17 +63,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Navigation drawer.
-        NavigationDrawer mDrawer = (NavigationDrawer)
-                getSupportFragmentManager().findFragmentById(R.id.navigation_drawer_fragment);
+        NavigationDrawer mDrawer = (NavigationDrawer) getFragmentManager()
+                .findFragmentById(R.id.navigation_drawer_fragment);
         mDrawer.setUp((DrawerLayout) findViewById(R.id.drawer_layout),
                 R.id.navigation_drawer_fragment, toolbar);
-
-
-        // Display ScriptManager fragment.
-        getFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new ScriptManager(), SCRIPTS_FRAGMENT)
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                .commit();
     }
 
     @Override

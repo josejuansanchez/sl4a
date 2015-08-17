@@ -18,7 +18,6 @@ package com.googlecode.android_scripting.fragment;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.app.ListFragment;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -42,7 +41,6 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.googlecode.android_scripting.ActivityFlinger;
 import com.googlecode.android_scripting.BaseApplication;
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FeaturedInterpreters;
@@ -72,7 +70,7 @@ public class InterpreterManager extends ListFragment {
     Activity activity;
 
     private enum MenuId {
-        HELP, ADD, NETWORK, PREFERENCES;
+        HELP, ADD, NETWORK;
         public int getId() {
             return ordinal() + Menu.FIRST;
         }
@@ -136,8 +134,6 @@ public class InterpreterManager extends ListFragment {
         buildInstallLanguagesMenu(menu);
         menu.add(Menu.NONE, MenuId.NETWORK.getId(), Menu.NONE, "Start Server").setIcon(
                 android.R.drawable.ic_menu_share);
-        menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Preferences").setIcon(
-                android.R.drawable.ic_menu_preferences);
         menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
                 android.R.drawable.ic_menu_help);
         super.onCreateOptionsMenu(menu, inflater);
@@ -167,8 +163,6 @@ public class InterpreterManager extends ListFragment {
                 }
             });
             dialog.show();
-        } else if (itemId == MenuId.PREFERENCES.getId()) {
-            startActivity(new Intent(activity, Preferences.class));
         } else if (itemId >= MenuId.values().length + Menu.FIRST) {
             int i = itemId - MenuId.values().length - Menu.FIRST;
             if (i < mFeaturedInterpreters.size()) {
