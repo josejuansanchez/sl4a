@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -17,7 +18,10 @@ import android.view.ViewGroup;
 
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.Version;
+import com.googlecode.android_scripting.activity.MainActivity;
 import com.googlecode.android_scripting.activity.Preferences;
+import com.googlecode.android_scripting.fragment.InterpreterManager;
+import com.googlecode.android_scripting.fragment.ScriptManager;
 
 /**
  * Fragment that holds the navigation drawer.
@@ -144,16 +148,31 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
 
                 switch (position) {
                     case SCRIPTS_ENTRY:
+                        getActivity().getFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, new ScriptManager(),
+                                        MainActivity.SCRIPTS_FRAGMENT)
+                                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                                .commit();
                         break;
+
                     case INTERPRETERS_ENTRY:
+                        getActivity().getFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, new InterpreterManager(),
+                                        MainActivity.INTERPRETERS_FRAGMENT)
+                                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                                .commit();
                         break;
+
                     case TRIGGERS_ENTRY:
                         break;
+
                     case LOGCAT_ENTRY:
                         break;
+
                     case SETTINGS_ENTRY:
                         startActivity(new Intent(getActivity(), Preferences.class));
                         break;
+
                     default:
                         break;
                 }

@@ -126,7 +126,7 @@
             android:configChanges="keyboardHidden|orientation" />
         <service android:name=".activity.ScriptingLayerService" />
         <service android:name=".activity.TriggerService" />
-        <activity android:name=".activity.InterpreterManager"
+        <activity android:name=".fragment.InterpreterManager"
             android:launchMode="singleTask" android:configChanges="keyboardHidden|orientation" />
         <activity android:name=".activity.LogcatViewer"
             android:launchMode="singleTask" android:configChanges="keyboardHidden|orientation" />

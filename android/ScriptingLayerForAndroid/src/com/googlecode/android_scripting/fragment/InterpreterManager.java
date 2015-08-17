@@ -14,10 +14,12 @@
  * the License.
  */
 
-package com.googlecode.android_scripting.activity;
+package com.googlecode.android_scripting.fragment;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.app.ListFragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -29,6 +31,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
@@ -44,6 +47,9 @@ import com.googlecode.android_scripting.BaseApplication;
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FeaturedInterpreters;
 import com.googlecode.android_scripting.R;
+import com.googlecode.android_scripting.activity.CustomizeWindow;
+import com.googlecode.android_scripting.activity.Preferences;
+import com.googlecode.android_scripting.activity.ScriptingLayerService;
 import com.googlecode.android_scripting.dialog.Help;
 import com.googlecode.android_scripting.interpreter.Interpreter;
 import com.googlecode.android_scripting.interpreter.InterpreterConfiguration;
@@ -54,7 +60,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InterpreterManager extends ListActivity {
+public class InterpreterManager extends ListFragment {
 
     private InterpreterManagerAdapter mAdapter;
     private InterpreterListObserver mObserver;
@@ -62,6 +68,8 @@ public class InterpreterManager extends ListActivity {
     private List<String> mFeaturedInterpreters;
     private InterpreterConfiguration mConfiguration;
     private SharedPreferences mPreferences;
+
+    Activity activity;
 
     private enum MenuId {
         HELP, ADD, NETWORK, PREFERENCES;
@@ -73,17 +81,33 @@ public class InterpreterManager extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        CustomizeWindow.setToolbarTitle(this, "Interpreters", R.layout.interpreter_manager);
-        mConfiguration = ((BaseApplication) getApplication()).getInterpreterConfiguration();
+
+        // Enable menu entries to receive calls.
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate layout for this fragment.
+        return inflater.inflate(R.layout.interpreter_manager, container, false);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        activity = getActivity();
+        CustomizeWindow.setToolbarTitle(activity, "Interpreters", R.layout.interpreter_manager);
+        mConfiguration = ((BaseApplication) activity.getApplication()).getInterpreterConfiguration();
         mInterpreters = new ArrayList<>();
         mAdapter = new InterpreterManagerAdapter();
         mObserver = new InterpreterListObserver();
         mAdapter.registerDataSetObserver(mObserver);
         setListAdapter(mAdapter);
-        ActivityFlinger.attachView(getListView(), this);
-        ActivityFlinger.attachView(getWindow().getDecorView(), this);
+        //ActivityFlinger.attachView(getListView(), this);
+        //ActivityFlinger.attachView(getWindow().getDecorView(), this);
         mFeaturedInterpreters = FeaturedInterpreters.getList();
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
         // Analytics.trackActivity(this);
     }
 
@@ -95,7 +119,7 @@ public class InterpreterManager extends ListActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         mAdapter.notifyDataSetInvalidated();
     }
@@ -107,7 +131,7 @@ public class InterpreterManager extends ListActivity {
     }
 
     @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         menu.clear();
         buildInstallLanguagesMenu(menu);
         menu.add(Menu.NONE, MenuId.NETWORK.getId(), Menu.NONE, "Start Server").setIcon(
@@ -116,7 +140,7 @@ public class InterpreterManager extends ListActivity {
                 android.R.drawable.ic_menu_preferences);
         menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
                 android.R.drawable.ic_menu_help);
-        return super.onPrepareOptionsMenu(menu);
+        super.onCreateOptionsMenu(menu, inflater);
     }
 
     private void buildInstallLanguagesMenu(Menu menu) {
@@ -133,9 +157,9 @@ public class InterpreterManager extends ListActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == MenuId.HELP.getId()) {
-            Help.show(this);
+            Help.show(activity);
         } else if (itemId == MenuId.NETWORK.getId()) {
-            AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+            AlertDialog.Builder dialog = new AlertDialog.Builder(activity);
             dialog.setItems(new CharSequence[] { "Public", "Private" }, new OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -144,7 +168,7 @@ public class InterpreterManager extends ListActivity {
             });
             dialog.show();
         } else if (itemId == MenuId.PREFERENCES.getId()) {
-            startActivity(new Intent(this, Preferences.class));
+            startActivity(new Intent(activity, Preferences.class));
         } else if (itemId >= MenuId.values().length + Menu.FIRST) {
             int i = itemId - MenuId.values().length - Menu.FIRST;
             if (i < mFeaturedInterpreters.size()) {
@@ -170,25 +194,25 @@ public class InterpreterManager extends ListActivity {
     }
 
     private void launchService(boolean usePublicIp) {
-        Intent intent = new Intent(this, ScriptingLayerService.class);
+        Intent intent = new Intent(activity, ScriptingLayerService.class);
         intent.setAction(Constants.ACTION_LAUNCH_SERVER);
         intent.putExtra(Constants.EXTRA_USE_EXTERNAL_IP, usePublicIp);
         intent.putExtra(Constants.EXTRA_USE_SERVICE_PORT, getPrefInt("use_service_port", 0));
-        startService(intent);
+        activity.startService(intent);
     }
 
     private void launchTerminal(Interpreter interpreter) {
         if (interpreter instanceof HtmlInterpreter) {
             return;
         }
-        Intent intent = new Intent(this, ScriptingLayerService.class);
+        Intent intent = new Intent(activity, ScriptingLayerService.class);
         intent.setAction(Constants.ACTION_LAUNCH_INTERPRETER);
         intent.putExtra(Constants.EXTRA_INTERPRETER_NAME, interpreter.getName());
-        startService(intent);
+        activity.startService(intent);
     }
 
     @Override
-    protected void onListItemClick(ListView list, View view, int position, long id) {
+    public void onListItemClick(ListView list, View view, int position, long id) {
         Interpreter interpreter = (Interpreter) list.getItemAtPosition(position);
         launchTerminal(interpreter);
     }
@@ -212,7 +236,7 @@ public class InterpreterManager extends ListActivity {
 
         @Override
         public void onConfigurationChanged() {
-            runOnUiThread(new Runnable() {
+            activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     mAdapter.notifyDataSetChanged();
@@ -246,7 +270,7 @@ public class InterpreterManager extends ListActivity {
 
             if (convertView == null) {
                 LayoutInflater inflater =
-                        (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                        (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 container = (LinearLayout) inflater.inflate(R.layout.list_item, null);
             } else {
                 container = (LinearLayout) convertView;
@@ -254,8 +278,7 @@ public class InterpreterManager extends ListActivity {
             ImageView img = (ImageView) container.findViewById(R.id.list_item_icon);
 
             int imgId =
-                    FeaturedInterpreters.getInterpreterIcon(InterpreterManager.this,
-                            interpreter.getExtension());
+                    FeaturedInterpreters.getInterpreterIcon(activity, interpreter.getExtension());
             if (imgId == 0) {
                 imgId = R.drawable.sl4a_logo_32;
             }

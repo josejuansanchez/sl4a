@@ -18,6 +18,7 @@ package com.googlecode.android_scripting.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -38,7 +39,8 @@ import com.googlecode.android_scripting.fragment.ScriptManager;
 
 public class MainActivity extends AppCompatActivity {
 
-    static String SCRIPTS_FRAGMENT = "scriptsFragment";
+    public static final String SCRIPTS_FRAGMENT = "scriptsFragment";
+    public static final String INTERPRETERS_FRAGMENT = "interpretersFragment";
 
     Toolbar toolbar;
     ActionBar mActionBar;
@@ -69,18 +71,29 @@ public class MainActivity extends AppCompatActivity {
         // Display ScriptManager fragment.
         getFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, new ScriptManager(), SCRIPTS_FRAGMENT)
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
                 .commit();
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
-        ((ScriptManager) getFragmentManager().findFragmentByTag(SCRIPTS_FRAGMENT)).handleIntent(intent);
+        ScriptManager scriptManager = (ScriptManager) getFragmentManager()
+                .findFragmentByTag(SCRIPTS_FRAGMENT);
+        if (scriptManager != null) {
+            scriptManager.handleIntent(intent);
+        }
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return (((ScriptManager) getFragmentManager().findFragmentByTag(SCRIPTS_FRAGMENT))
-                .onKeyDown(keyCode)) || super.onKeyDown(keyCode, event);
+        ScriptManager scriptManager = (ScriptManager) getFragmentManager()
+                .findFragmentByTag(SCRIPTS_FRAGMENT);
+        if (scriptManager != null) {
+            return scriptManager.onKeyDown(keyCode);
+        }
+        return super.onKeyDown(keyCode, event);
+/*        return (((ScriptManager) getFragmentManager().findFragmentByTag(SCRIPTS_FRAGMENT))
+                .onKeyDown(keyCode)) || super.onKeyDown(keyCode, event);*/
     }
 
     @Override

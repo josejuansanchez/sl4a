@@ -42,9 +42,7 @@ import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.ScriptListAdapter;
 import com.googlecode.android_scripting.ScriptStorageAdapter;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
-import com.googlecode.android_scripting.activity.InterpreterManager;
 import com.googlecode.android_scripting.activity.LogcatViewer;
-import com.googlecode.android_scripting.activity.Preferences;
 import com.googlecode.android_scripting.activity.ScriptingLayerService;
 import com.googlecode.android_scripting.activity.TriggerManager;
 import com.googlecode.android_scripting.dialog.Help;
@@ -97,7 +95,7 @@ public class ScriptManager extends ListFragment {
     }
 
     private enum MenuId {
-        DELETE, HELP, FOLDER_ADD, QRCODE_ADD, INTERPRETER_MANAGER, PREFERENCES, LOGCAT_VIEWER,
+        DELETE, HELP, FOLDER_ADD, QRCODE_ADD, INTERPRETER_MANAGER, LOGCAT_VIEWER,
         TRIGGER_MANAGER, REFRESH, SEARCH, RENAME, EXTERNAL;
         public int getId() {
             return ordinal() + Menu.FIRST;
@@ -283,6 +281,7 @@ public class ScriptManager extends ListFragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        // TODO (miguelpalacio): I'm calling a super method that does not correspond...
         super.onPrepareOptionsMenu(menu);
         menu.clear();
         buildMenuIdMaps();
@@ -290,8 +289,6 @@ public class ScriptManager extends ListFragment {
         buildSwitchActivityMenu(menu);
         menu.add(Menu.NONE, MenuId.SEARCH.getId(), Menu.NONE, "Search").setIcon(
                 R.drawable.ic_menu_search);
-        menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Settings").setIcon(
-                android.R.drawable.ic_menu_preferences);
         menu.add(Menu.NONE, MenuId.REFRESH.getId(), Menu.NONE, "Refresh").setIcon(
                 R.drawable.ic_menu_refresh);
         menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
@@ -361,8 +358,6 @@ public class ScriptManager extends ListFragment {
             startActivityForResult(intent, RequestCode.QRCODE_ADD.ordinal());
         } else if (itemId == MenuId.FOLDER_ADD.getId()) {
             addFolder();
-        } else if (itemId == MenuId.PREFERENCES.getId()) {
-            startActivity(new Intent(activity, Preferences.class));
         } else if (itemId == MenuId.TRIGGER_MANAGER.getId()) {
             startActivity(new Intent(activity, TriggerManager.class));
         } else if (itemId == MenuId.LOGCAT_VIEWER.getId()) {
