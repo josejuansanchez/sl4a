@@ -1,5 +1,6 @@
-package com.googlecode.android_scripting.fragment;
+package com.googlecode.android_scripting.custom_component;
 
+import android.content.Intent;
 import android.content.res.TypedArray;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,7 +17,7 @@ import android.view.ViewGroup;
 
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.Version;
-import com.googlecode.android_scripting.custom_component.NavigationDrawerAdapter;
+import com.googlecode.android_scripting.activity.Preferences;
 
 /**
  * Fragment that holds the navigation drawer.
@@ -24,6 +25,14 @@ import com.googlecode.android_scripting.custom_component.NavigationDrawerAdapter
  * @author Miguel Palacio (palaciodelgado [at] gmail [dot] com)
  */
 public class NavigationDrawer extends Fragment implements NavigationDrawerAdapter.ViewHolder.ClickListener {
+
+    public static final int HEADER = 0;
+    static final int SCRIPTS_ENTRY = 1;
+    static final int INTERPRETERS_ENTRY = 2;
+    static final int TRIGGERS_ENTRY = 3;
+    static final int LOGCAT_ENTRY = 4;
+    public static final int DIVIDER = 5;
+    static final int SETTINGS_ENTRY = 6;
 
     /*    ScrimInsetsFrameLayout scrimInsetsFrameLayout;*/
 
@@ -66,7 +75,6 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
         }
 
         // Navigation drawer content.
-
         mDrawerEntries = getResources().getStringArray(R.array.navigation_drawer_entries);
         mDrawerIcons = getResources().obtainTypedArray(R.array.navigation_drawer_icons);
         mDrawerIconsHighlighted = getResources().obtainTypedArray(R.array.navigation_drawer_icons_highlighted);
@@ -84,6 +92,9 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
 
         mDrawerLayoutManager = new LinearLayoutManager(getActivity());
         mDrawerContent.setLayoutManager(mDrawerLayoutManager);
+
+        // Highlight default entry.
+        mDrawerAdapter.toggleSelection(SCRIPTS_ENTRY);
     }
 
     public void setUp(DrawerLayout drawerLayout, int fragmentId, Toolbar toolbar) {
@@ -119,9 +130,9 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
     }
 
     @Override
-    public void onDrawerItemClick(int position) {
+    public void onDrawerItemClick(final int position) {
         // Highlight selected item.
-        if (position < 5) {
+        if (position < DIVIDER) {
             mDrawerAdapter.clearSelection();
             mDrawerAdapter.toggleSelection(position);
         }
@@ -130,6 +141,22 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
         onDrawerClosedRunnable = new Runnable() {
             @Override
             public void run() {
+
+                switch (position) {
+                    case SCRIPTS_ENTRY:
+                        break;
+                    case INTERPRETERS_ENTRY:
+                        break;
+                    case TRIGGERS_ENTRY:
+                        break;
+                    case LOGCAT_ENTRY:
+                        break;
+                    case SETTINGS_ENTRY:
+                        startActivity(new Intent(getActivity(), Preferences.class));
+                        break;
+                    default:
+                        break;
+                }
             }
         };
 

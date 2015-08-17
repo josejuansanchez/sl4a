@@ -64,7 +64,7 @@ public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerA
 
             // Set the view according with its type.
             if (viewType == TYPE_ROW) {
-                holderId = 1;
+                holderId = TYPE_ROW;
 
                 entryText = (TextView) itemView.findViewById(R.id.drawer_entry_text);
                 entryIcon = (ImageView) itemView.findViewById(R.id.drawer_entry_icon);
@@ -73,10 +73,10 @@ public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerA
                 this.listener = listener;
                 itemView.setOnClickListener(this);
             } else if (viewType == TYPE_DIVIDER) {
-                holderId = 2;
+                holderId = TYPE_DIVIDER;
             }
             else {
-                holderId = 0;
+                holderId = TYPE_HEADER;
 
                 title = (TextView) itemView.findViewById(R.id.navigation_drawer_header_title);
                 subtitle = (TextView) itemView.findViewById(R.id.navigation_drawer_header_subtitle);
@@ -119,28 +119,28 @@ public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerA
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
 
-        if (holder.holderId == 1) {
+        if (holder.holderId == TYPE_ROW) {
 
             int pos;
-            if (position < 6) {
-                // Main entries.
+            if (position < NavigationDrawer.DIVIDER) {
+                // Entries before divider.
                 pos = position - 1;
             } else {
-                // Settings.
+                // Entries after divider.
                 pos = position - 2;
             }
 
             holder.entryText.setText(entries[pos]);
 
             // For selected row, highlight background and icon.
-            if (isSelected(position) && position < 5) {
+            if (isSelected(position) && position < NavigationDrawer.DIVIDER) {
                 holder.itemView.setBackgroundResource(R.drawable.custom_bg_selected);
                 holder.entryIcon.setImageDrawable(icons_highlighted.getDrawable(pos));
             } else {
                 holder.itemView.setBackgroundResource(R.drawable.custom_bg);
                 holder.entryIcon.setImageDrawable(icons.getDrawable(pos));
             }
-        } else if (holder.holderId == 0) {
+        } else if (holder.holderId == TYPE_HEADER) {
             holder.title.setText(headerTitle);
             holder.subtitle.setText(headerSubtitle);
         }
@@ -155,9 +155,9 @@ public class NavigationDrawerAdapter extends SelectableAdapter<NavigationDrawerA
     // Return the type of the view that is being passed.
     @Override
     public int getItemViewType(int position) {
-        if (position == 0) {
+        if (position == NavigationDrawer.HEADER) {
             return TYPE_HEADER;
-        } else if (position == 5) {
+        } else if (position == NavigationDrawer.DIVIDER) {
             return TYPE_DIVIDER;
         } else {
             return TYPE_ROW;

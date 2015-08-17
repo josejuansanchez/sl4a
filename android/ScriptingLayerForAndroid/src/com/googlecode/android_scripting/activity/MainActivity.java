@@ -26,7 +26,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import com.googlecode.android_scripting.R;
-import com.googlecode.android_scripting.fragment.NavigationDrawer;
+import com.googlecode.android_scripting.custom_component.NavigationDrawer;
 import com.googlecode.android_scripting.fragment.ScriptManager;
 
 /**
@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 R.id.navigation_drawer_fragment, toolbar);
 
 
-        // Display Settings fragment.
+        // Display ScriptManager fragment.
         getFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, new ScriptManager(), SCRIPTS_FRAGMENT)
                 .commit();
