@@ -22,6 +22,7 @@ import com.googlecode.android_scripting.activity.MainActivity;
 import com.googlecode.android_scripting.activity.Preferences;
 import com.googlecode.android_scripting.fragment.InterpreterManager;
 import com.googlecode.android_scripting.fragment.ScriptManager;
+import com.googlecode.android_scripting.fragment.TriggerManager;
 
 /**
  * Fragment that holds the navigation drawer.
@@ -192,7 +193,7 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
                 break;
 
             case TRIGGERS_ENTRY:
-                fragment = new Fragment();
+                fragment = new TriggerManager();
                 fragmentTag = MainActivity.TRIGGERS_FRAGMENT;
                 break;
 

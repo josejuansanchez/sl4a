@@ -107,7 +107,7 @@
         </activity>
         <activity android:name=".activity.ApiPrompt" android:theme="@android:style/Theme.NoTitleBar"
             android:configChanges="keyboardHidden|orientation" />
-        <activity android:name=".activity.TriggerManager"
+        <activity android:name=".fragment.TriggerManager"
             android:launchMode="singleTask" android:configChanges="keyboardHidden|orientation" />
         <activity android:name=".activity.BluetoothDeviceList"
             android:configChanges="keyboardHidden|orientation" />

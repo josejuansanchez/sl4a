@@ -14,16 +14,20 @@
  * the License.
  */
 
-package com.googlecode.android_scripting.activity;
+package com.googlecode.android_scripting.fragment;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.app.ListFragment;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
 import android.view.ContextMenu;
+import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,6 +43,9 @@ import com.googlecode.android_scripting.BaseApplication;
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.Log;
 import com.googlecode.android_scripting.R;
+import com.googlecode.android_scripting.activity.CustomizeWindow;
+import com.googlecode.android_scripting.activity.Preferences;
+import com.googlecode.android_scripting.activity.ScriptPicker;
 import com.googlecode.android_scripting.dialog.Help;
 import com.googlecode.android_scripting.facade.FacadeConfiguration;
 import com.googlecode.android_scripting.rpc.MethodDescriptor;
@@ -52,20 +59,22 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class TriggerManager extends ListActivity {
+public class TriggerManager extends ListFragment {
     private final List<ScriptTrigger> mTriggers = Lists.newArrayList();
 
     private ScriptTriggerAdapter mAdapter;
     private TriggerRepository mTriggerRepository;
 
-    private static enum ContextMenuId {
+    Activity activity;
+
+    private enum ContextMenuId {
         REMOVE;
         public int getId() {
             return ordinal() + Menu.FIRST;
         }
     }
 
-    private static enum MenuId {
+    private enum MenuId {
         ADD, PREFERENCES, HELP;
         public int getId() {
             return ordinal() + Menu.FIRST;
@@ -73,40 +82,56 @@ public class TriggerManager extends ListActivity {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        CustomizeWindow.setToolbarTitle(this, "Triggers", R.layout.trigger_manager);
+
+        // Enable menu entries to receive calls.
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate layout for this fragment.
+        return inflater.inflate(R.layout.trigger_manager, container, false);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        activity = getActivity();
+        CustomizeWindow.setToolbarTitle(activity, "Triggers", R.layout.trigger_manager);
         ScriptTriggerListObserver observer = new ScriptTriggerListObserver();
         mAdapter = new ScriptTriggerAdapter();
         setListAdapter(mAdapter);
         registerForContextMenu(getListView());
-        mTriggerRepository = ((BaseApplication) getApplication()).getTriggerRepository();
+        mTriggerRepository = ((BaseApplication) activity.getApplication()).getTriggerRepository();
         mTriggerRepository.bootstrapObserver(observer);
-        ActivityFlinger.attachView(getListView(), this);
-        ActivityFlinger.attachView(getWindow().getDecorView(), this);
+        //ActivityFlinger.attachView(getListView(), activity);
+        //ActivityFlinger.attachView(activity.getWindow().getDecorView(), activity);
         // Analytics.trackActivity(this);
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         menu.add(Menu.NONE, MenuId.ADD.getId(), Menu.NONE, "Add").setIcon(
                 android.R.drawable.ic_menu_add);
         menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Preferences").setIcon(
                 android.R.drawable.ic_menu_preferences);
         menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
                 android.R.drawable.ic_menu_help);
-        return true;
+        super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == MenuId.HELP.getId()) {
-            Help.show(this);
+            Help.show(activity);
         } else if (itemId == MenuId.PREFERENCES.getId()) {
-            startActivity(new Intent(this, Preferences.class));
+            startActivity(new Intent(activity, Preferences.class));
         } else if (itemId != Menu.NONE) {
-            Intent intent = new Intent(this, ScriptPicker.class);
+            Intent intent = new Intent(activity, ScriptPicker.class);
             intent.setAction(Intent.ACTION_PICK);
             startActivityForResult(intent, itemId);
         }
@@ -180,22 +205,22 @@ public class TriggerManager extends ListActivity {
         @Override
         public View getView(final int position, View convertView, ViewGroup parent) {
             ScriptTrigger trigger = mTriggers.get(position);
-            TextView textView = new TextView(TriggerManager.this);
+            TextView textView = new TextView(activity);
             textView.setText(trigger.getEventName() + " " + trigger.getScript().getName());
             return textView;
         }
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == Activity.RESULT_OK) {
             final File script = new File(data.getStringExtra(Constants.EXTRA_SCRIPT_PATH));
             if (requestCode == MenuId.ADD.getId()) {
                 Map<String, MethodDescriptor> eventMethodDescriptors =
                         FacadeConfiguration.collectStartEventMethodDescriptors();
                 final List<String> eventNames = Lists.newArrayList(eventMethodDescriptors.keySet());
                 Collections.sort(eventNames);
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
                 builder.setItems(eventNames.toArray(new CharSequence[eventNames.size()]),
                         new OnClickListener() {
                             @Override
@@ -208,7 +233,7 @@ public class TriggerManager extends ListActivity {
         }
     }
 
-    public void clickCancel(View v) {
+    public void clickCancel() {
         for (Trigger t : mTriggerRepository.getAllTriggers().values()) {
             mTriggerRepository.remove(t);
         }

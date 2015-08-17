@@ -35,6 +35,7 @@ import com.googlecode.android_scripting.facade.EventFacade;
 import com.googlecode.android_scripting.facade.EventFacade.EventObserver;
 import com.googlecode.android_scripting.facade.FacadeConfiguration;
 import com.googlecode.android_scripting.facade.FacadeManager;
+import com.googlecode.android_scripting.fragment.TriggerManager;
 import com.googlecode.android_scripting.trigger.EventGenerationControllingObserver;
 import com.googlecode.android_scripting.trigger.Trigger;
 import com.googlecode.android_scripting.trigger.TriggerRepository;

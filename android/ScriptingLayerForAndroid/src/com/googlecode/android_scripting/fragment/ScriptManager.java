@@ -44,7 +44,6 @@ import com.googlecode.android_scripting.ScriptStorageAdapter;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
 import com.googlecode.android_scripting.activity.LogcatViewer;
 import com.googlecode.android_scripting.activity.ScriptingLayerService;
-import com.googlecode.android_scripting.activity.TriggerManager;
 import com.googlecode.android_scripting.dialog.Help;
 import com.googlecode.android_scripting.dialog.UsageTrackingConfirmation;
 import com.googlecode.android_scripting.facade.FacadeConfiguration;
@@ -121,7 +120,7 @@ public class ScriptManager extends ListFragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         activity = getActivity();
-        CustomizeWindow.setToolbarTitle(activity, "Scripts", R.layout.main_activity);
+        CustomizeWindow.setToolbarTitle(activity, "Scripts", R.layout.script_manager);
         if (FileUtils.externalStorageMounted()) {
             File sl4a = mBaseDir.getParentFile();
             if (!sl4a.exists()) {
@@ -281,8 +280,6 @@ public class ScriptManager extends ListFragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // TODO (miguelpalacio): I'm calling a super method that does not correspond...
-        super.onPrepareOptionsMenu(menu);
         menu.clear();
         buildMenuIdMaps();
         buildAddMenu(menu);

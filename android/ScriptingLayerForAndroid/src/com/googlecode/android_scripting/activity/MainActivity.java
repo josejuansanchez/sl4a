@@ -25,9 +25,12 @@ import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.custom_component.NavigationDrawer;
 import com.googlecode.android_scripting.fragment.ScriptManager;
+import com.googlecode.android_scripting.fragment.TriggerManager;
 
 /**
  * Activity that holds the ScriptManager, InterpreterManager, TriggerManager,
@@ -117,6 +120,14 @@ public class MainActivity extends AppCompatActivity {
         }*/
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void cancelTriggers(View v) {
+        TriggerManager triggerManager = (TriggerManager) getFragmentManager()
+                .findFragmentByTag(TRIGGERS_FRAGMENT);
+        if (triggerManager != null) {
+            triggerManager.clickCancel();
+        }
     }
 
 }
