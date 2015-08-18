@@ -57,7 +57,7 @@ public class LogcatViewer extends ListFragment {
     Activity activity;
 
     private enum MenuId {
-        HELP, PREFERENCES, JUMP_TO_BOTTOM, SHARE, COPY;
+        HELP, JUMP_TO_BOTTOM, SHARE, COPY;
         public int getId() {
             return ordinal() + Menu.FIRST;
         }
@@ -131,9 +131,7 @@ public class LogcatViewer extends ListFragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-        menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Preferences").setIcon(
-                android.R.drawable.ic_menu_preferences);
+        menu.clear();
         menu.add(Menu.NONE, MenuId.JUMP_TO_BOTTOM.getId(), Menu.NONE, "Jump to Bottom").setIcon(
                 android.R.drawable.ic_menu_revert);
         menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
@@ -142,6 +140,7 @@ public class LogcatViewer extends ListFragment {
                 android.R.drawable.ic_menu_share);
         menu.add(Menu.NONE, MenuId.COPY.getId(), Menu.NONE, "Copy").setIcon(
                 android.R.drawable.ic_menu_edit);
+        super.onCreateOptionsMenu(menu, inflater);
     }
 
     private String getAsString() {
@@ -159,8 +158,6 @@ public class LogcatViewer extends ListFragment {
             Help.show(activity);
         } else if (itemId == MenuId.JUMP_TO_BOTTOM.getId()) {
             getListView().setSelection(mLogcatMessages.size() - 1);
-        } else if (itemId == MenuId.PREFERENCES.getId()) {
-            startActivity(new Intent(activity, Preferences.class));
         } else if (itemId == MenuId.SHARE.getId()) {
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.putExtra(Intent.EXTRA_TEXT, getAsString().toString());

@@ -93,8 +93,7 @@ public class ScriptManager extends ListFragment {
     }
 
     private enum MenuId {
-        DELETE, HELP, FOLDER_ADD, QRCODE_ADD, INTERPRETER_MANAGER, LOGCAT_VIEWER,
-        TRIGGER_MANAGER, REFRESH, SEARCH, RENAME, EXTERNAL;
+        DELETE, HELP, FOLDER_ADD, QRCODE_ADD, REFRESH, SEARCH, RENAME, EXTERNAL;
         public int getId() {
             return ordinal() + Menu.FIRST;
         }
@@ -282,7 +281,7 @@ public class ScriptManager extends ListFragment {
         menu.clear();
         buildMenuIdMaps();
         buildAddMenu(menu);
-        buildSwitchActivityMenu(menu);
+        //buildSwitchActivityMenu(menu);
         menu.add(Menu.NONE, MenuId.SEARCH.getId(), Menu.NONE, "Search").setIcon(
                 R.drawable.ic_menu_search);
         menu.add(Menu.NONE, MenuId.REFRESH.getId(), Menu.NONE, "Refresh").setIcon(
@@ -292,14 +291,14 @@ public class ScriptManager extends ListFragment {
         super.onCreateOptionsMenu(menu, inflater);
     }
 
-    private void buildSwitchActivityMenu(Menu menu) {
+/*    private void buildSwitchActivityMenu(Menu menu) {
         Menu subMenu =
                 menu.addSubMenu(Menu.NONE, Menu.NONE, Menu.NONE, "View").setIcon(
                         android.R.drawable.ic_menu_more);
         subMenu.add(Menu.NONE, MenuId.INTERPRETER_MANAGER.getId(), Menu.NONE, "Interpreters");
         subMenu.add(Menu.NONE, MenuId.TRIGGER_MANAGER.getId(), Menu.NONE, "Triggers");
         subMenu.add(Menu.NONE, MenuId.LOGCAT_VIEWER.getId(), Menu.NONE, "Logcat");
-    }
+    }*/
 
     private void buildMenuIdMaps() {
         mAddMenuIds = new LinkedHashMap<>();
@@ -333,10 +332,6 @@ public class ScriptManager extends ListFragment {
         int itemId = item.getItemId();
         if (itemId == MenuId.HELP.getId()) {
             Help.show(activity);
-        } else if (itemId == MenuId.INTERPRETER_MANAGER.getId()) {
-            // Show interpreter manger.
-            Intent i = new Intent(activity, InterpreterManager.class);
-            startActivity(i);
         } else if (mAddMenuIds.containsKey(itemId)) {
             // Add a new script.
             Intent intent = new Intent(Constants.ACTION_EDIT_SCRIPT);
@@ -354,10 +349,6 @@ public class ScriptManager extends ListFragment {
             startActivityForResult(intent, RequestCode.QRCODE_ADD.ordinal());
         } else if (itemId == MenuId.FOLDER_ADD.getId()) {
             addFolder();
-        } else if (itemId == MenuId.TRIGGER_MANAGER.getId()) {
-            startActivity(new Intent(activity, TriggerManager.class));
-        } else if (itemId == MenuId.LOGCAT_VIEWER.getId()) {
-            startActivity(new Intent(activity, LogcatViewer.class));
         } else if (itemId == MenuId.REFRESH.getId()) {
             updateAndFilterScriptList(mQuery);
             mAdapter.notifyDataSetChanged();

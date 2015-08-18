@@ -74,7 +74,7 @@ public class TriggerManager extends ListFragment {
     }
 
     private enum MenuId {
-        ADD, PREFERENCES, HELP;
+        ADD, HELP;
         public int getId() {
             return ordinal() + Menu.FIRST;
         }
@@ -113,10 +113,9 @@ public class TriggerManager extends ListFragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        menu.clear();
         menu.add(Menu.NONE, MenuId.ADD.getId(), Menu.NONE, "Add").setIcon(
                 android.R.drawable.ic_menu_add);
-        menu.add(Menu.NONE, MenuId.PREFERENCES.getId(), Menu.NONE, "Preferences").setIcon(
-                android.R.drawable.ic_menu_preferences);
         menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
                 android.R.drawable.ic_menu_help);
         super.onCreateOptionsMenu(menu, inflater);
@@ -127,8 +126,6 @@ public class TriggerManager extends ListFragment {
         int itemId = item.getItemId();
         if (itemId == MenuId.HELP.getId()) {
             Help.show(activity);
-        } else if (itemId == MenuId.PREFERENCES.getId()) {
-            startActivity(new Intent(activity, Preferences.class));
         } else if (itemId != Menu.NONE) {
             Intent intent = new Intent(activity, ScriptPicker.class);
             intent.setAction(Intent.ACTION_PICK);
