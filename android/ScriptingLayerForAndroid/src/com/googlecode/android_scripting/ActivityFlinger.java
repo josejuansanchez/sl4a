@@ -25,8 +25,7 @@ import android.view.View;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.View.OnTouchListener;
 
-import com.googlecode.android_scripting.activity.LogcatViewer;
-import com.googlecode.android_scripting.fragment.TriggerManager;
+import com.googlecode.android_scripting.fragment.LogcatViewer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,7 +60,7 @@ public class ActivityFlinger {
         //entries.add(MainActivity.class);
         //entries.add(InterpreterManager.class);
         //entries.add(TriggerManager.class);
-        entries.add(LogcatViewer.class);
+        //entries.add(LogcatViewer.class);
 
         Class<? extends Activity> left = null;
         Class<? extends Activity> current = null;

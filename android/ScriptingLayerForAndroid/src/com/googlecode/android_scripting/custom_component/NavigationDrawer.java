@@ -21,6 +21,7 @@ import com.googlecode.android_scripting.Version;
 import com.googlecode.android_scripting.activity.MainActivity;
 import com.googlecode.android_scripting.activity.Preferences;
 import com.googlecode.android_scripting.fragment.InterpreterManager;
+import com.googlecode.android_scripting.fragment.LogcatViewer;
 import com.googlecode.android_scripting.fragment.ScriptManager;
 import com.googlecode.android_scripting.fragment.TriggerManager;
 
@@ -198,7 +199,7 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
                 break;
 
             case LOGCAT_ENTRY:
-                fragment = new Fragment();
+                fragment = new LogcatViewer();
                 fragmentTag = MainActivity.LOGCAT_FRAGMENT;
                 break;
 

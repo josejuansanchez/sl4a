@@ -42,7 +42,6 @@ import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.ScriptListAdapter;
 import com.googlecode.android_scripting.ScriptStorageAdapter;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
-import com.googlecode.android_scripting.activity.LogcatViewer;
 import com.googlecode.android_scripting.activity.ScriptingLayerService;
 import com.googlecode.android_scripting.dialog.Help;
 import com.googlecode.android_scripting.dialog.UsageTrackingConfirmation;
