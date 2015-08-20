@@ -17,19 +17,19 @@
 package com.googlecode.android_scripting.fragment;
 
 import android.app.Activity;
-import android.app.ListFragment;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.ClipboardManager;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,7 +37,7 @@ import com.googlecode.android_scripting.Log;
 import com.googlecode.android_scripting.Process;
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
-import com.googlecode.android_scripting.activity.Preferences;
+import com.googlecode.android_scripting.custom_component.item_lists.LogcatListAdapter;
 import com.googlecode.android_scripting.dialog.Help;
 
 import java.io.BufferedReader;
@@ -47,14 +47,19 @@ import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
 
-public class LogcatViewer extends ListFragment {
+public class LogcatViewer extends Fragment {
 
     private List<String> mLogcatMessages;
     private int mOldLastPosition;
-    private LogcatViewerAdapter mAdapter;
     private Process mLogcatProcess;
 
     Activity activity;
+
+    RecyclerView logcatListView;
+    RecyclerView.LayoutManager logcatListLayoutManager;
+    LogcatListAdapter logcatListAdapter;
+
+    TextView emptyLogcatMessage;
 
     private enum MenuId {
         HELP, JUMP_TO_BOTTOM, SHARE, COPY;
@@ -80,13 +85,15 @@ public class LogcatViewer extends ListFragment {
                         @Override
                         public void run() {
                             mLogcatMessages.add(line);
-                            mAdapter.notifyDataSetInvalidated();
+                            emptyLogcatMessage.setVisibility(View.GONE);
+                            logcatListAdapter.notifyDataSetChanged();
                             // This logic performs what transcriptMode="normal" should do. Since that doesn't seem
                             // to work, we do it this way.
-                            int lastVisiblePosition = getListView().getLastVisiblePosition();
+                            LinearLayoutManager llm = ((LinearLayoutManager) logcatListView.getLayoutManager());
+                            int lastVisiblePosition = llm.findLastVisibleItemPosition();
                             int lastPosition = mLogcatMessages.size() - 1;
                             if (lastVisiblePosition == mOldLastPosition || lastVisiblePosition == -1) {
-                                getListView().setSelection(lastPosition);
+                                llm.scrollToPosition(lastPosition);
                             }
                             mOldLastPosition = lastPosition;
                         }
@@ -122,8 +129,17 @@ public class LogcatViewer extends ListFragment {
         CustomizeWindow.setToolbarTitle(activity, "Logcat", R.layout.logcat_viewer);
         mLogcatMessages = new LinkedList<>();
         mOldLastPosition = 0;
-        mAdapter = new LogcatViewerAdapter();
-        setListAdapter(mAdapter);
+
+        if (getView() != null) {
+            emptyLogcatMessage = (TextView) getView().findViewById(R.id.logcat_list_empty);
+        }
+
+        logcatListView = (RecyclerView) getActivity().findViewById(R.id.logcat_list);
+        logcatListAdapter = new LogcatListAdapter(mLogcatMessages);
+        logcatListView.setAdapter(logcatListAdapter);
+        logcatListLayoutManager = new LinearLayoutManager(getActivity());
+        logcatListView.setLayoutManager(logcatListLayoutManager);
+
         //ActivityFlinger.attachView(getListView(), this);
         //ActivityFlinger.attachView(activity.getWindow().getDecorView(), this);
         // Analytics.trackActivity(this);
@@ -157,7 +173,8 @@ public class LogcatViewer extends ListFragment {
         if (itemId == MenuId.HELP.getId()) {
             Help.show(activity);
         } else if (itemId == MenuId.JUMP_TO_BOTTOM.getId()) {
-            getListView().setSelection(mLogcatMessages.size() - 1);
+            logcatListView.scrollToPosition(mLogcatMessages.size() - 1);
+            //getListView().setSelection(mLogcatMessages.size() - 1);
         } else if (itemId == MenuId.SHARE.getId()) {
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.putExtra(Intent.EXTRA_TEXT, getAsString().toString());
@@ -179,7 +196,7 @@ public class LogcatViewer extends ListFragment {
         Thread logcatWatcher = new Thread(new LogcatWatcher());
         logcatWatcher.setPriority(Thread.NORM_PRIORITY - 1);
         logcatWatcher.start();
-        mAdapter.notifyDataSetInvalidated();
+        logcatListAdapter.notifyDataSetChanged();
         super.onStart();
     }
 
@@ -187,31 +204,5 @@ public class LogcatViewer extends ListFragment {
     public void onPause() {
         super.onPause();
         mLogcatProcess.kill();
-    }
-
-    private class LogcatViewerAdapter extends BaseAdapter {
-
-        @Override
-        public int getCount() {
-            return mLogcatMessages.size();
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return mLogcatMessages.get(position);
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-        @Override
-        public View getView(final int position, View convertView, ViewGroup parent) {
-            TextView view = new TextView(activity);
-            view.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
-            view.setText(mLogcatMessages.get(position));
-            return view;
-        }
     }
 }

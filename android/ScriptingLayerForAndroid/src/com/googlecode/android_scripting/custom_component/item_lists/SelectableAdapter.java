@@ -1,4 +1,4 @@
-package com.googlecode.android_scripting.custom_component;
+package com.googlecode.android_scripting.custom_component.item_lists;
 
 import android.support.v7.widget.RecyclerView;
 import android.util.SparseBooleanArray;

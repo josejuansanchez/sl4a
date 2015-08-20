@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.googlecode.android_scripting.R;
+import com.googlecode.android_scripting.custom_component.item_lists.SelectableAdapter;
 
 /**
  * @author Miguel Palacio (palaciodelgado [at] gmail [dot] com)

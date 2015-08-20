@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-  xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent"
-  android:layout_height="fill_parent">
-  <ListView
-    android:id="@+id/android:list"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent" />
-  <TextView
-    android:id="@+id/android:empty"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="No logcat messages." />
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
+
+    <TextView
+        android:id="@+id/logcat_list_empty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textColor="@color/primary_text"
+        android:text="@string/logcat_list_empty"
+        android:visibility="visible"/>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/logcat_list"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/text_background"
+        android:scrollbars="vertical"
+        android:minHeight="?android:attr/listPreferredItemHeight" />
+
 </LinearLayout>

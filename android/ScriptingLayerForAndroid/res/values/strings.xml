@@ -191,6 +191,7 @@
     <string name="navigation_drawer_close">Close</string>
     <string name="navigation_drawer_header_title">SL4A</string>
     <string name="navigation_drawer_header_subtitle">SL4A r</string>
+    <string name="logcat_list_empty">No logcat messages.</string>
 
 
 </resources>
