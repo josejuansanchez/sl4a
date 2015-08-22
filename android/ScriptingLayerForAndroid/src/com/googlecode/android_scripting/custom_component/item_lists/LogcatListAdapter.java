@@ -11,7 +11,7 @@ import com.googlecode.android_scripting.R;
 import java.util.List;
 
 /**
- * Adapter for vertically scrolling lists of items using RecyclerView.
+ * Adapter for a vertically scrolling list of logs using RecyclerView.
  *
  * @author Miguel Palacio (palaciodelgado [at] gmail [dot] com)
  */

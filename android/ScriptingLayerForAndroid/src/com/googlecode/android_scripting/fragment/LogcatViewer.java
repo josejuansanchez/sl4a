@@ -59,7 +59,7 @@ public class LogcatViewer extends Fragment {
     RecyclerView.LayoutManager logcatListLayoutManager;
     LogcatListAdapter logcatListAdapter;
 
-    TextView emptyLogcatMessage;
+    TextView noLogsMessage;
 
     private enum MenuId {
         HELP, JUMP_TO_BOTTOM, SHARE, COPY;
@@ -85,8 +85,11 @@ public class LogcatViewer extends Fragment {
                         @Override
                         public void run() {
                             mLogcatMessages.add(line);
-                            emptyLogcatMessage.setVisibility(View.GONE);
-                            logcatListAdapter.notifyDataSetChanged();
+                            noLogsMessage.setVisibility(View.GONE);
+                            logcatListView.setVisibility(View.VISIBLE);
+                            //logcatListAdapter.notifyDataSetChanged();
+                            //logcatListAdapter.notifyItemInserted(mLogcatMessages.size());
+                            logcatListAdapter.notifyItemInserted(logcatListAdapter.getItemCount());
                             // This logic performs what transcriptMode="normal" should do. Since that doesn't seem
                             // to work, we do it this way.
                             LinearLayoutManager llm = ((LinearLayoutManager) logcatListView.getLayoutManager());
@@ -131,7 +134,7 @@ public class LogcatViewer extends Fragment {
         mOldLastPosition = 0;
 
         if (getView() != null) {
-            emptyLogcatMessage = (TextView) getView().findViewById(R.id.logcat_list_empty);
+            noLogsMessage = (TextView) getView().findViewById(R.id.logcat_list_empty);
         }
 
         logcatListView = (RecyclerView) getActivity().findViewById(R.id.logcat_list);
@@ -173,7 +176,8 @@ public class LogcatViewer extends Fragment {
         if (itemId == MenuId.HELP.getId()) {
             Help.show(activity);
         } else if (itemId == MenuId.JUMP_TO_BOTTOM.getId()) {
-            logcatListView.scrollToPosition(mLogcatMessages.size() - 1);
+            //logcatListView.scrollToPosition(mLogcatMessages.size() - 1);
+            logcatListView.scrollToPosition(logcatListAdapter.getItemCount() - 1);
             //getListView().setSelection(mLogcatMessages.size() - 1);
         } else if (itemId == MenuId.SHARE.getId()) {
             Intent intent = new Intent(Intent.ACTION_SEND);
@@ -196,7 +200,8 @@ public class LogcatViewer extends Fragment {
         Thread logcatWatcher = new Thread(new LogcatWatcher());
         logcatWatcher.setPriority(Thread.NORM_PRIORITY - 1);
         logcatWatcher.start();
-        logcatListAdapter.notifyDataSetChanged();
+        //logcatListAdapter.notifyDataSetChanged();
+        logcatListAdapter.notifyItemRangeRemoved(0, logcatListAdapter.getItemCount());
         super.onStart();
     }
 

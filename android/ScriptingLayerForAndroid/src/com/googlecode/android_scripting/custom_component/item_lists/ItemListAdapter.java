@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class ItemListAdapter extends SelectableAdapter<ItemListAdapter.ViewHolder> {
 
-    static final int TYPE_ROW = 0;
+    static final int TYPE_LIST_ITEM = 0;
     static final int TYPE_HEADER = 1;
     static final int TYPE_FOOTER = 2;
 
@@ -82,8 +82,8 @@ public class ItemListAdapter extends SelectableAdapter<ItemListAdapter.ViewHolde
             // Set the view according with its type.
             if (viewType == TYPE_HEADER) {
                 holderId = TYPE_HEADER;
-            } else if (viewType == TYPE_ROW) {
-                holderId = TYPE_ROW;
+            } else if (viewType == TYPE_LIST_ITEM) {
+                holderId = TYPE_LIST_ITEM;
 
 /*                titleTextView = (TextView) itemView.findViewById(R.id.list_item_title);
                 summaryTextView = (TextView) itemView.findViewById(R.id.list_item_summary);*/
@@ -123,7 +123,7 @@ public class ItemListAdapter extends SelectableAdapter<ItemListAdapter.ViewHolde
         final int layout;
         if (viewType == TYPE_HEADER) {
             layout = headerLayoutId;
-        } else if (viewType == TYPE_ROW) {
+        } else if (viewType == TYPE_LIST_ITEM) {
             layout = rowLayoutId;
         } else {
             layout = footerLayoutId;
@@ -137,8 +137,8 @@ public class ItemListAdapter extends SelectableAdapter<ItemListAdapter.ViewHolde
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         int pos = headerLayoutId == 0 ? position : position - 1;
-        // TODO: differentiate type of list (with header, with footer, etc).
-        if (holder.holderId == 1) {
+        // TODO (miguelpalacio): differentiate type of list (with header, with footer, etc).
+        if (holder.holderId == TYPE_LIST_ITEM) {
             holder.titleTextView.setText(titles.get(pos));
             holder.summaryTextView.setText(summaries.get(pos));
         }
@@ -164,7 +164,7 @@ public class ItemListAdapter extends SelectableAdapter<ItemListAdapter.ViewHolde
         } else if (position == getItemCount() - 1 && footerLayoutId != 0) {
             return TYPE_FOOTER;
         } else {
-            return TYPE_ROW;
+            return TYPE_LIST_ITEM;
         }
     }
 }

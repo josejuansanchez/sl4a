@@ -1,15 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout
-  xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent"
-  android:layout_height="fill_parent">
-  <ListView
-    android:id="@+id/android:list"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent" />
-  <TextView
-    android:id="@+id/android:empty"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="No interpreters." />
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
+
+    <TextView
+        android:id="@+id/interpreter_list_empty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="16dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:textSize="16sp"
+        android:textColor="@color/secondary_text"
+        android:text="@string/interpreter_list_empty"
+        android:visibility="gone"/>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/interpreter_list"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/text_background"
+        android:scrollbars="vertical"
+        android:visibility="visible"
+        android:minHeight="?android:attr/listPreferredItemHeight" />
+
+<!--    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+        <ListView
+            android:id="@+id/android:list"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" />
+        <TextView
+            android:id="@+id/android:empty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No interpreters." />
+    </LinearLayout>-->
+
 </LinearLayout>

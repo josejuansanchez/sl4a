@@ -8,8 +8,11 @@
         android:id="@+id/logcat_list_empty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingTop="16dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
         android:textSize="16sp"
-        android:textColor="@color/primary_text"
+        android:textColor="@color/secondary_text"
         android:text="@string/logcat_list_empty"
         android:visibility="visible"/>
 
@@ -19,6 +22,7 @@
         android:layout_height="wrap_content"
         android:background="@color/text_background"
         android:scrollbars="vertical"
+        android:visibility="gone"
         android:minHeight="?android:attr/listPreferredItemHeight" />
 
 </LinearLayout>

@@ -18,7 +18,7 @@ package com.googlecode.android_scripting.fragment;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ListFragment;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -28,6 +28,8 @@ import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -40,14 +42,16 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.googlecode.android_scripting.BaseApplication;
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FeaturedInterpreters;
+import com.googlecode.android_scripting.Log;
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
-import com.googlecode.android_scripting.activity.Preferences;
 import com.googlecode.android_scripting.activity.ScriptingLayerService;
+import com.googlecode.android_scripting.custom_component.item_lists.InterpreterListAdapter;
 import com.googlecode.android_scripting.dialog.Help;
 import com.googlecode.android_scripting.interpreter.Interpreter;
 import com.googlecode.android_scripting.interpreter.InterpreterConfiguration;
@@ -58,9 +62,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InterpreterManager extends ListFragment {
+public class InterpreterManager extends Fragment implements
+        InterpreterListAdapter.ViewHolder.ClickListener {
 
-    private InterpreterManagerAdapter mAdapter;
+    //private InterpreterManagerAdapter mAdapter;
     private InterpreterListObserver mObserver;
     private List<Interpreter> mInterpreters;
     private List<String> mFeaturedInterpreters;
@@ -68,6 +73,12 @@ public class InterpreterManager extends ListFragment {
     private SharedPreferences mPreferences;
 
     Activity activity;
+
+    RecyclerView interpreterListView;
+    RecyclerView.LayoutManager interpreterListLayoutManager;
+    InterpreterListAdapter interpreterListAdapter;
+
+    TextView noInterpretersMessage;
 
     private enum MenuId {
         HELP, ADD, NETWORK;
@@ -79,7 +90,6 @@ public class InterpreterManager extends ListFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         // Enable menu entries to receive calls.
         setHasOptionsMenu(true);
     }
@@ -98,10 +108,22 @@ public class InterpreterManager extends ListFragment {
         CustomizeWindow.setToolbarTitle(activity, "Interpreters", R.layout.interpreter_manager);
         mConfiguration = ((BaseApplication) activity.getApplication()).getInterpreterConfiguration();
         mInterpreters = new ArrayList<>();
-        mAdapter = new InterpreterManagerAdapter();
+        //mInterpreters = mConfiguration.getInteractiveInterpreters();
+        //mAdapter = new InterpreterManagerAdapter();
         mObserver = new InterpreterListObserver();
-        mAdapter.registerDataSetObserver(mObserver);
-        setListAdapter(mAdapter);
+        //mAdapter.registerDataSetObserver(mObserver);
+
+        if (getView() != null) {
+            noInterpretersMessage = (TextView) getView().findViewById(R.id.interpreter_list_empty);
+        }
+
+        interpreterListView = (RecyclerView) getActivity().findViewById(R.id.interpreter_list);
+        interpreterListAdapter = new InterpreterListAdapter(getActivity(), mInterpreters, this);
+        interpreterListView.setAdapter(interpreterListAdapter);
+        interpreterListLayoutManager = new LinearLayoutManager(getActivity());
+        interpreterListView.setLayoutManager(interpreterListLayoutManager);
+        //setListAdapter(mAdapter);
+
         //ActivityFlinger.attachView(getListView(), this);
         //ActivityFlinger.attachView(getWindow().getDecorView(), this);
         mFeaturedInterpreters = FeaturedInterpreters.getList();
@@ -113,19 +135,38 @@ public class InterpreterManager extends ListFragment {
     public void onStart() {
         super.onStart();
         mConfiguration.registerObserver(mObserver);
-        mAdapter.notifyDataSetInvalidated();
+        //interpreterListAdapter.registerAdapterDataObserver(mObserver);
+        //mAdapter.notifyDataSetInvalidated();
+        //interpreterListAdapter.notifyItemRangeRemoved(0, interpreterListAdapter.getItemCount());
+        //interpreterListAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        mAdapter.notifyDataSetInvalidated();
+        //mAdapter.notifyDataSetInvalidated();
+        //interpreterListAdapter.notifyItemRangeRemoved(0, interpreterListAdapter.getItemCount());
+        // TODO (miguelpalacio): check why is not updating data set!!!
+        mInterpreters = mConfiguration.getInteractiveInterpreters();
+/*        Log.d("Number of elements in Adapter BEFORE insertion: " + interpreterListAdapter.getItemCount());
+        Log.d("Number of elements in Adapter AFTER insertion: " + interpreterListAdapter.getItemCount());
+        Log.d("onResume of InterpreterManager");
+        Log.d("mInterpreters: " + mInterpreters.toString());
+        Log.d("Adapter has observers? " + interpreterListAdapter.hasObservers());*/
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                interpreterListAdapter.notifyDataSetChanged();
+            }
+        });
+        //interpreterListAdapter.notifyItemRangeInserted(0, 2);
     }
 
     @Override
     public void onStop() {
         super.onStop();
         mConfiguration.unregisterObserver(mObserver);
+        //interpreterListAdapter.unregisterAdapterDataObserver(mObserver);
     }
 
     @Override
@@ -205,10 +246,15 @@ public class InterpreterManager extends ListFragment {
         activity.startService(intent);
     }
 
-    @Override
+/*    @Override
     public void onListItemClick(ListView list, View view, int position, long id) {
         Interpreter interpreter = (Interpreter) list.getItemAtPosition(position);
         launchTerminal(interpreter);
+    }*/
+
+    @Override
+    public void onListItemClick(int position) {
+        launchTerminal(mInterpreters.get(position));
     }
 
     @Override
@@ -217,7 +263,7 @@ public class InterpreterManager extends ListFragment {
         mConfiguration.unregisterObserver(mObserver);
     }
 
-    private class InterpreterListObserver extends DataSetObserver implements ConfigurationObserver {
+/*    private class InterpreterListObserver extends DataSetObserver implements ConfigurationObserver {
         @Override
         public void onInvalidated() {
             mInterpreters = mConfiguration.getInteractiveInterpreters();
@@ -237,9 +283,43 @@ public class InterpreterManager extends ListFragment {
                 }
             });
         }
+    }*/
+
+    private class InterpreterListObserver extends RecyclerView.AdapterDataObserver
+            implements ConfigurationObserver {
+        @Override
+        public void onItemRangeRemoved(int positionStart, int itemCount) {
+/*            // When the entire data becomes invalid.
+            if (positionStart == 0 && itemCount == interpreterListAdapter.getItemCount()) {
+                mInterpreters = mConfiguration.getInteractiveInterpreters();
+            }*/
+        }
+
+        @Override
+        public void onChanged() {
+/*            //mInterpreters = mConfiguration.getInteractiveInterpreters();
+            if (mInterpreters.size() > 0) {
+                interpreterListView.setVisibility(View.VISIBLE);
+                noInterpretersMessage.setVisibility(View.GONE);
+            } else {
+                interpreterListView.setVisibility(View.GONE);
+                noInterpretersMessage.setVisibility(View.VISIBLE);
+            }*/
+        }
+
+        @Override
+        public void onConfigurationChanged() {
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //mAdapter.notifyDataSetChanged();
+                    //interpreterListAdapter.notifyDataSetChanged();
+                }
+            });
+        }
     }
 
-    private class InterpreterManagerAdapter extends BaseAdapter {
+/*    private class InterpreterManagerAdapter extends BaseAdapter {
 
         @Override
         public int getCount() {
@@ -284,5 +364,5 @@ public class InterpreterManager extends ListFragment {
             text.setText(interpreter.getNiceName());
             return container;
         }
-    }
+    }*/
 }
