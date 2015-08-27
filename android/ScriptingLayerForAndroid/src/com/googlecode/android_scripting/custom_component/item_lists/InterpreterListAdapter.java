@@ -24,11 +24,11 @@ public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAda
     static final int TYPE_LIST_ITEM = 0;
     static final int TYPE_FOOTER = 1;
 
-    Activity activity;
+    private Activity activity;
 
-    List<Interpreter> mInterpreters;
+    private List<Interpreter> mInterpreters;
 
-    ViewHolder.ClickListener clickListener;
+    private ViewHolder.ClickListener clickListener;
 
     public InterpreterListAdapter(Activity activity, List<Interpreter> mInterpreters,
                                   ViewHolder.ClickListener clickListener) {
@@ -128,5 +128,11 @@ public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAda
         } else {
             return TYPE_LIST_ITEM;
         }
+    }
+
+    // mInterpreters has to be set in this way since mInterpreters changes reference
+    // to object in InterpreterManager.
+    public void setmInterpreters(List<Interpreter> mInterpreters) {
+        this.mInterpreters = mInterpreters;
     }
 }

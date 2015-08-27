@@ -27,6 +27,7 @@ import android.content.SharedPreferences;
 import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -108,7 +109,6 @@ public class InterpreterManager extends Fragment implements
         CustomizeWindow.setToolbarTitle(activity, "Interpreters", R.layout.interpreter_manager);
         mConfiguration = ((BaseApplication) activity.getApplication()).getInterpreterConfiguration();
         mInterpreters = new ArrayList<>();
-        //mInterpreters = mConfiguration.getInteractiveInterpreters();
         //mAdapter = new InterpreterManagerAdapter();
         mObserver = new InterpreterListObserver();
         //mAdapter.registerDataSetObserver(mObserver);
@@ -135,10 +135,11 @@ public class InterpreterManager extends Fragment implements
     public void onStart() {
         super.onStart();
         mConfiguration.registerObserver(mObserver);
-        //interpreterListAdapter.registerAdapterDataObserver(mObserver);
+        interpreterListAdapter.registerAdapterDataObserver(mObserver);
         //mAdapter.notifyDataSetInvalidated();
-        //interpreterListAdapter.notifyItemRangeRemoved(0, interpreterListAdapter.getItemCount());
-        //interpreterListAdapter.notifyDataSetChanged();
+/*        mInterpreters = mConfiguration.getInteractiveInterpreters();
+        interpreterListAdapter.setmInterpreters(mInterpreters);
+        interpreterListAdapter.notifyDataSetChanged();*/
     }
 
     @Override
@@ -146,27 +147,16 @@ public class InterpreterManager extends Fragment implements
         super.onResume();
         //mAdapter.notifyDataSetInvalidated();
         //interpreterListAdapter.notifyItemRangeRemoved(0, interpreterListAdapter.getItemCount());
-        // TODO (miguelpalacio): check why is not updating data set!!!
         mInterpreters = mConfiguration.getInteractiveInterpreters();
-/*        Log.d("Number of elements in Adapter BEFORE insertion: " + interpreterListAdapter.getItemCount());
-        Log.d("Number of elements in Adapter AFTER insertion: " + interpreterListAdapter.getItemCount());
-        Log.d("onResume of InterpreterManager");
-        Log.d("mInterpreters: " + mInterpreters.toString());
-        Log.d("Adapter has observers? " + interpreterListAdapter.hasObservers());*/
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                interpreterListAdapter.notifyDataSetChanged();
-            }
-        });
-        //interpreterListAdapter.notifyItemRangeInserted(0, 2);
+        interpreterListAdapter.setmInterpreters(mInterpreters);
+        interpreterListAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void onStop() {
         super.onStop();
         mConfiguration.unregisterObserver(mObserver);
-        //interpreterListAdapter.unregisterAdapterDataObserver(mObserver);
+        interpreterListAdapter.unregisterAdapterDataObserver(mObserver);
     }
 
     @Override
@@ -246,12 +236,6 @@ public class InterpreterManager extends Fragment implements
         activity.startService(intent);
     }
 
-/*    @Override
-    public void onListItemClick(ListView list, View view, int position, long id) {
-        Interpreter interpreter = (Interpreter) list.getItemAtPosition(position);
-        launchTerminal(interpreter);
-    }*/
-
     @Override
     public void onListItemClick(int position) {
         launchTerminal(mInterpreters.get(position));
@@ -260,7 +244,7 @@ public class InterpreterManager extends Fragment implements
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mConfiguration.unregisterObserver(mObserver);
+        //mConfiguration.unregisterObserver(mObserver);
     }
 
 /*    private class InterpreterListObserver extends DataSetObserver implements ConfigurationObserver {
@@ -287,24 +271,24 @@ public class InterpreterManager extends Fragment implements
 
     private class InterpreterListObserver extends RecyclerView.AdapterDataObserver
             implements ConfigurationObserver {
-        @Override
+/*        @Override
         public void onItemRangeRemoved(int positionStart, int itemCount) {
-/*            // When the entire data becomes invalid.
+            // When the entire data becomes invalid.
             if (positionStart == 0 && itemCount == interpreterListAdapter.getItemCount()) {
                 mInterpreters = mConfiguration.getInteractiveInterpreters();
-            }*/
-        }
+            }
+        }*/
 
         @Override
         public void onChanged() {
-/*            //mInterpreters = mConfiguration.getInteractiveInterpreters();
+            mInterpreters = mConfiguration.getInteractiveInterpreters();
             if (mInterpreters.size() > 0) {
                 interpreterListView.setVisibility(View.VISIBLE);
                 noInterpretersMessage.setVisibility(View.GONE);
             } else {
                 interpreterListView.setVisibility(View.GONE);
                 noInterpretersMessage.setVisibility(View.VISIBLE);
-            }*/
+            }
         }
 
         @Override
@@ -314,55 +298,10 @@ public class InterpreterManager extends Fragment implements
                 public void run() {
                     //mAdapter.notifyDataSetChanged();
                     //interpreterListAdapter.notifyDataSetChanged();
+                    interpreterListAdapter.setmInterpreters(mInterpreters);
+                    interpreterListAdapter.notifyDataSetChanged();
                 }
             });
         }
     }
-
-/*    private class InterpreterManagerAdapter extends BaseAdapter {
-
-        @Override
-        public int getCount() {
-            return mInterpreters.size();
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return mInterpreters.get(position);
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            LinearLayout container;
-
-            Interpreter interpreter = mInterpreters.get(position);
-
-            if (convertView == null) {
-                LayoutInflater inflater =
-                        (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                container = (LinearLayout) inflater.inflate(R.layout.list_item, null);
-            } else {
-                container = (LinearLayout) convertView;
-            }
-            ImageView img = (ImageView) container.findViewById(R.id.list_item_icon);
-
-            int imgId =
-                    FeaturedInterpreters.getInterpreterIcon(activity, interpreter.getExtension());
-            if (imgId == 0) {
-                imgId = R.drawable.sl4a_logo_32;
-            }
-
-            img.setImageResource(imgId);
-
-            TextView text = (TextView) container.findViewById(R.id.list_item_title);
-
-            text.setText(interpreter.getNiceName());
-            return container;
-        }
-    }*/
 }
