@@ -19,15 +19,12 @@ package com.googlecode.android_scripting.fragment;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -38,17 +35,11 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.googlecode.android_scripting.BaseApplication;
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FeaturedInterpreters;
-import com.googlecode.android_scripting.Log;
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
 import com.googlecode.android_scripting.activity.ScriptingLayerService;
@@ -109,9 +100,7 @@ public class InterpreterManager extends Fragment implements
         CustomizeWindow.setToolbarTitle(activity, "Interpreters", R.layout.interpreter_manager);
         mConfiguration = ((BaseApplication) activity.getApplication()).getInterpreterConfiguration();
         mInterpreters = new ArrayList<>();
-        //mAdapter = new InterpreterManagerAdapter();
         mObserver = new InterpreterListObserver();
-        //mAdapter.registerDataSetObserver(mObserver);
 
         if (getView() != null) {
             noInterpretersMessage = (TextView) getView().findViewById(R.id.interpreter_list_empty);
@@ -122,7 +111,6 @@ public class InterpreterManager extends Fragment implements
         interpreterListView.setAdapter(interpreterListAdapter);
         interpreterListLayoutManager = new LinearLayoutManager(getActivity());
         interpreterListView.setLayoutManager(interpreterListLayoutManager);
-        //setListAdapter(mAdapter);
 
         //ActivityFlinger.attachView(getListView(), this);
         //ActivityFlinger.attachView(getWindow().getDecorView(), this);
@@ -136,7 +124,6 @@ public class InterpreterManager extends Fragment implements
         super.onStart();
         mConfiguration.registerObserver(mObserver);
         interpreterListAdapter.registerAdapterDataObserver(mObserver);
-        //mAdapter.notifyDataSetInvalidated();
 /*        mInterpreters = mConfiguration.getInteractiveInterpreters();
         interpreterListAdapter.setmInterpreters(mInterpreters);
         interpreterListAdapter.notifyDataSetChanged();*/
@@ -145,8 +132,6 @@ public class InterpreterManager extends Fragment implements
     @Override
     public void onResume() {
         super.onResume();
-        //mAdapter.notifyDataSetInvalidated();
-        //interpreterListAdapter.notifyItemRangeRemoved(0, interpreterListAdapter.getItemCount());
         mInterpreters = mConfiguration.getInteractiveInterpreters();
         interpreterListAdapter.setmInterpreters(mInterpreters);
         interpreterListAdapter.notifyDataSetChanged();
@@ -241,43 +226,8 @@ public class InterpreterManager extends Fragment implements
         launchTerminal(mInterpreters.get(position));
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        //mConfiguration.unregisterObserver(mObserver);
-    }
-
-/*    private class InterpreterListObserver extends DataSetObserver implements ConfigurationObserver {
-        @Override
-        public void onInvalidated() {
-            mInterpreters = mConfiguration.getInteractiveInterpreters();
-        }
-
-        @Override
-        public void onChanged() {
-            mInterpreters = mConfiguration.getInteractiveInterpreters();
-        }
-
-        @Override
-        public void onConfigurationChanged() {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mAdapter.notifyDataSetChanged();
-                }
-            });
-        }
-    }*/
-
     private class InterpreterListObserver extends RecyclerView.AdapterDataObserver
             implements ConfigurationObserver {
-/*        @Override
-        public void onItemRangeRemoved(int positionStart, int itemCount) {
-            // When the entire data becomes invalid.
-            if (positionStart == 0 && itemCount == interpreterListAdapter.getItemCount()) {
-                mInterpreters = mConfiguration.getInteractiveInterpreters();
-            }
-        }*/
 
         @Override
         public void onChanged() {

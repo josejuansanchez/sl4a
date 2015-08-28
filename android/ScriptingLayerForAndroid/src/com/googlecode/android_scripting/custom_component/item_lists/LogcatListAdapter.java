@@ -56,7 +56,7 @@ public class LogcatListAdapter extends SelectableAdapter<LogcatListAdapter.ViewH
         if (viewType == TYPE_LIST_ITEM) {
             layout = R.layout.list_item_logcat;
         } else {
-            layout = R.layout.list_item_empty;
+            layout = R.layout.list_item_empty_24dp;
         }
         View v = LayoutInflater.from(parent.getContext()).inflate(layout, parent, false);
         return new ViewHolder(v, viewType);

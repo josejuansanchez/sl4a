@@ -22,7 +22,8 @@ import java.util.List;
 public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAdapter.ViewHolder> {
 
     static final int TYPE_LIST_ITEM = 0;
-    static final int TYPE_FOOTER = 1;
+    static final int TYPE_HEADER = 1;
+    static final int TYPE_FOOTER = 2;
 
     private Activity activity;
 
@@ -66,6 +67,8 @@ public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAda
                 // Set click listeners for the row.
                 this.listener = listener;
                 itemView.setOnClickListener(this);
+            } else if (viewType == TYPE_HEADER) {
+                holderId = TYPE_HEADER;
             } else {
                 holderId = TYPE_FOOTER;
             }
@@ -74,7 +77,7 @@ public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAda
         @Override
         public void onClick(View v) {
             if (listener != null) {
-                listener.onListItemClick(getAdapterPosition());
+                listener.onListItemClick(getAdapterPosition() - 1);
             }
         }
 
@@ -90,8 +93,10 @@ public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAda
         final int layout;
         if (viewType == TYPE_LIST_ITEM) {
             layout = R.layout.list_item_one_line_icon;
+        } else if (viewType == TYPE_HEADER) {
+            layout = R.layout.list_item_empty_8dp;
         } else {
-            layout = R.layout.list_item_empty;
+            layout = R.layout.list_item_empty_24dp;
         }
 
         View v = LayoutInflater.from(parent.getContext()).inflate(layout, parent, false);
@@ -103,7 +108,7 @@ public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAda
     public void onBindViewHolder(ViewHolder holder, int position) {
         if (holder.holderId == TYPE_LIST_ITEM) {
 
-            Interpreter interpreter = mInterpreters.get(position);
+            Interpreter interpreter = mInterpreters.get(position - 1);
             int iconId = FeaturedInterpreters.getInterpreterIcon(activity, interpreter.getExtension());
             if (iconId == 0) {
                 iconId = R.drawable.sl4a_logo_32;
@@ -114,16 +119,18 @@ public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAda
         }
     }
 
-    // Return the number of items present in the list (rows + [footer]).
+    // Return the number of items present in the list ([header] + rows + [footer]).
     @Override
     public int getItemCount() {
-        return mInterpreters.size() + 1;
+        return mInterpreters.size() + 2;
     }
 
     // Return the type of the view that is being passed.
     @Override
     public int getItemViewType(int position) {
-        if (position == getItemCount() - 1) {
+        if (position == 0) {
+            return TYPE_HEADER;
+        } else if (position == getItemCount() - 1) {
             return TYPE_FOOTER;
         } else {
             return TYPE_LIST_ITEM;

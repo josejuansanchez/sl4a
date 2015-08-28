@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/list_item_title_summary"
     android:layout_width="match_parent"
-    android:layout_height="48dp"
+    android:layout_height="56dp"
     android:clickable="true"
     android:background="@drawable/custom_bg"
     android:orientation="vertical">
@@ -13,10 +13,12 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
+        <!-- 32dp drawable. -->
         <ImageView
             android:id="@+id/list_item_one_line_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
             android:paddingStart="16dp"/>
@@ -25,9 +27,9 @@
             android:id="@+id/list_item_one_line_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
+            android:layout_gravity="center_vertical"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:textSize="16sp"
             android:textColor="@color/navigation_drawer_entry_text"/>
     </LinearLayout>
