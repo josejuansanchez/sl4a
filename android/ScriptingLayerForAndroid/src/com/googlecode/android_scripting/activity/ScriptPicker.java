@@ -31,7 +31,7 @@ import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FeaturedInterpreters;
 import com.googlecode.android_scripting.IntentBuilders;
 import com.googlecode.android_scripting.R;
-import com.googlecode.android_scripting.ScriptListAdapter;
+import com.googlecode.android_scripting.ScriptListAdapterOld;
 import com.googlecode.android_scripting.ScriptStorageAdapter;
 import com.googlecode.android_scripting.interpreter.InterpreterConfiguration;
 import com.googlecode.android_scripting.interpreter.InterpreterConstants;
@@ -50,7 +50,7 @@ import net.londatiga.android.QuickAction;
 public class ScriptPicker extends ListActivity {
 
     private List<File> mScripts;
-    private ScriptPickerAdapter mAdapter;
+    private ScriptPickerAdapterOld mAdapter;
     private InterpreterConfiguration mConfiguration;
     private File mCurrentDir;
     private final File mBaseDir = new File(InterpreterConstants.SCRIPTS_ROOT);
@@ -62,7 +62,7 @@ public class ScriptPicker extends ListActivity {
         mCurrentDir = mBaseDir;
         mConfiguration = ((BaseApplication) getApplication()).getInterpreterConfiguration();
         mScripts = ScriptStorageAdapter.listExecutableScripts(null, mConfiguration);
-        mAdapter = new ScriptPickerAdapter(this);
+        mAdapter = new ScriptPickerAdapterOld(this);
         mAdapter.registerDataSetObserver(new ScriptListObserver());
         setListAdapter(mAdapter);
         // Analytics.trackActivity(this);
@@ -188,9 +188,9 @@ public class ScriptPicker extends ListActivity {
         }
     }
 
-    private class ScriptPickerAdapter extends ScriptListAdapter {
+    private class ScriptPickerAdapterOld extends ScriptListAdapterOld {
 
-        public ScriptPickerAdapter(Context context) {
+        public ScriptPickerAdapterOld(Context context) {
             super(context);
         }
 

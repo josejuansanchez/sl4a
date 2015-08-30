@@ -28,12 +28,12 @@ import android.widget.TextView;
 import java.io.File;
 import java.util.List;
 
-public abstract class ScriptListAdapter extends BaseAdapter {
+public abstract class ScriptListAdapterOld extends BaseAdapter {
 
     protected final Context mContext;
     protected final LayoutInflater mInflater;
 
-    public ScriptListAdapter(Context context) {
+    public ScriptListAdapterOld(Context context) {
         mContext = context;
         mInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }

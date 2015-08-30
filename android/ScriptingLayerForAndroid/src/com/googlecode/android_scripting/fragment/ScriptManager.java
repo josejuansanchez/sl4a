@@ -1,7 +1,7 @@
 package com.googlecode.android_scripting.fragment;
 
 import android.app.Activity;
-import android.app.ListFragment;
+import android.app.Fragment;
 
 import android.app.AlertDialog;
 import android.app.SearchManager;
@@ -14,6 +14,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -39,10 +41,11 @@ import com.googlecode.android_scripting.FileUtils;
 import com.googlecode.android_scripting.IntentBuilders;
 import com.googlecode.android_scripting.Log;
 import com.googlecode.android_scripting.R;
-import com.googlecode.android_scripting.ScriptListAdapter;
+import com.googlecode.android_scripting.ScriptListAdapterOld;
 import com.googlecode.android_scripting.ScriptStorageAdapter;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
 import com.googlecode.android_scripting.activity.ScriptingLayerService;
+import com.googlecode.android_scripting.custom_component.item_lists.ScriptListAdapter;
 import com.googlecode.android_scripting.dialog.Help;
 import com.googlecode.android_scripting.dialog.UsageTrackingConfirmation;
 import com.googlecode.android_scripting.facade.FacadeConfiguration;
@@ -52,6 +55,7 @@ import com.googlecode.android_scripting.interpreter.InterpreterConfiguration.Con
 import com.googlecode.android_scripting.interpreter.InterpreterConstants;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -68,14 +72,20 @@ import net.londatiga.android.QuickAction;
  * @author Damon Kohler (damonkohler@gmail.com)
  */
 
-public class ScriptManager extends ListFragment {
+public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHolder.ClickListener {
 
     private final static String EMPTY = "";
 
     Activity activity;
 
+    RecyclerView scriptListView;
+    RecyclerView.LayoutManager scriptListLayoutManager;
+    ScriptListAdapter scriptListAdapter;
+
+    TextView noScriptsMessage;
+
     private List<File> mScripts;
-    private ScriptManagerAdapter mAdapter;
+    //private ScriptManagerAdapterOld mAdapter;
     private SharedPreferences mPreferences;
     private HashMap<Integer, Interpreter> mAddMenuIds;
     private ScriptListObserver mObserver;
@@ -145,15 +155,26 @@ public class ScriptManager extends ListFragment {
 
         mCurrentDir = mBaseDir;
         mPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
-        mAdapter = new ScriptManagerAdapter(activity);
+        //mAdapter = new ScriptManagerAdapterOld(activity);
         mObserver = new ScriptListObserver();
-        mAdapter.registerDataSetObserver(mObserver);
+        //mAdapter.registerDataSetObserver(mObserver);
         mConfiguration = ((BaseApplication) activity.getApplication()).getInterpreterConfiguration();
         mManager = (SearchManager) activity.getSystemService(Context.SEARCH_SERVICE);
 
-        registerForContextMenu(getListView());
+        if (getView() != null) {
+            noScriptsMessage = (TextView) getView().findViewById(R.id.script_list_empty);
+        }
+
+        scriptListView = (RecyclerView) getActivity().findViewById(R.id.script_list);
+        scriptListAdapter = new ScriptListAdapter(getActivity(), mScripts, this);
+        scriptListView.setAdapter(scriptListAdapter);
+        scriptListLayoutManager = new LinearLayoutManager(getActivity());
+        scriptListView.setLayoutManager(scriptListLayoutManager);
+
+        //registerForContextMenu(getListView());
+        registerForContextMenu(scriptListView);
         updateAndFilterScriptList(mQuery);
-        setListAdapter(mAdapter);
+        //setListAdapter(mAdapter);
         //ActivityFlinger.attachView(getListView(), activity);
         //ActivityFlinger.attachView(activity.getWindow().getDecorView(), activity);
         activity.startService(IntentBuilders.buildTriggerServiceIntent());
@@ -190,7 +211,8 @@ public class ScriptManager extends ListFragment {
         }
 
         if (mScripts.size() == 0) {
-            ((TextView) activity.findViewById(android.R.id.empty)).setText("No matches found.");
+            // TODO (miguelpalacio): solve this for queries.
+            //((TextView) activity.findViewById(android.R.id.empty)).setText("No matches found.");
         }
 
         // TODO(damonkohler): Extending the File class here seems odd.
@@ -207,6 +229,10 @@ public class ScriptManager extends ListFragment {
                 }
             });
         }
+
+        // TODO (miguelpalacio): I did this as a "invalidateDataSet", but not sure.
+        scriptListAdapter.setmScripts(mScripts);
+        scriptListAdapter.notifyDataSetChanged();
     }
 
     public void handleIntent(Intent intent) {
@@ -214,7 +240,10 @@ public class ScriptManager extends ListFragment {
             mInSearchResultMode = true;
             String query = intent.getStringExtra(SearchManager.QUERY);
             updateAndFilterScriptList(query);
-            mAdapter.notifyDataSetChanged();
+            scriptListAdapter.setmScripts(mScripts);
+            scriptListAdapter.notifyDataSetChanged();
+            // (TO REMOVE)
+            //mAdapter.notifyDataSetChanged();
         }
     }
 
@@ -233,7 +262,9 @@ public class ScriptManager extends ListFragment {
             Log.e("Bad menuInfo", e);
             return false;
         }
-        File file = (File) mAdapter.getItem(info.position);
+        File file = mScripts.get(info.position);
+        // (TO REMOVE)
+        //File file = (File) mAdapter.getItem(info.position);
         int itemId = item.getItemId();
         if (itemId == MenuId.DELETE.getId()) {
             delete(file);
@@ -248,7 +279,11 @@ public class ScriptManager extends ListFragment {
     public boolean onKeyDown(int keyCode) {
         if (keyCode == KeyEvent.KEYCODE_BACK && mInSearchResultMode) {
             mInSearchResultMode = false;
-            mAdapter.notifyDataSetInvalidated();
+
+            scriptListAdapter.setmScripts(mScripts);
+            scriptListAdapter.notifyDataSetChanged();
+            // (TO REMOVE)
+            //mAdapter.notifyDataSetInvalidated();
             return true;
         }
         return false;
@@ -270,10 +305,20 @@ public class ScriptManager extends ListFragment {
     public void onResume() {
         super.onResume();
         if (!mInSearchResultMode) {
-            ((TextView) getView().findViewById(android.R.id.empty)).setText(R.string.no_scripts_message);
+            // TODO (miguelpalacio): showing of no scripts message has to be solved.
+/*            scriptListView.setVisibility(View.GONE);
+            noScriptsMessage.setVisibility(View.VISIBLE);*/
+            // (TO REMOVE)
+            //((TextView) getView().findViewById(android.R.id.empty)).setText(R.string.no_scripts_message);
+        } else {
+/*            scriptListView.setVisibility(View.VISIBLE);
+            noScriptsMessage.setVisibility(View.GONE);*/
         }
         updateAndFilterScriptList(mQuery);
-        mAdapter.notifyDataSetChanged();
+        scriptListAdapter.setmScripts(mScripts);
+        scriptListAdapter.notifyDataSetChanged();
+        // (TO REMOVE)
+        //mAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -351,7 +396,10 @@ public class ScriptManager extends ListFragment {
             addFolder();
         } else if (itemId == MenuId.REFRESH.getId()) {
             updateAndFilterScriptList(mQuery);
-            mAdapter.notifyDataSetChanged();
+            scriptListAdapter.setmScripts(mScripts);
+            scriptListAdapter.notifyDataSetChanged();
+            // (TO REMOVE)
+            //mAdapter.notifyDataSetChanged();
         } else if (itemId == MenuId.SEARCH.getId()) {
             activity.onSearchRequested();
         }
@@ -359,12 +407,20 @@ public class ScriptManager extends ListFragment {
     }
 
     @Override
-    public void onListItemClick(ListView list, View view, int position, long id) {
-        final File file = (File) list.getItemAtPosition(position);
+    public void onListItemClick(int position) {
+
+/*    @Override
+    public void onListItemClick(ListView list, View view, int position, long id) {*/
+/*        final File file = (File) list.getItemAtPosition(position);*/
+        final File file = mScripts.get(position);
         mCurrent = file;
         if (file.isDirectory()) {
             mCurrentDir = file;
-            mAdapter.notifyDataSetInvalidated();
+
+            //scriptListAdapter.setmScripts(new ArrayList<File>());
+            updateAndFilterScriptList(EMPTY);
+            // (TO REMOVE)
+            //mAdapter.notifyDataSetInvalidated();
             return;
         }
         if (FacadeConfiguration.getSdkLevel() <= 3 || !mPreferences.getBoolean("use_quick_menu", true)) {
@@ -372,7 +428,9 @@ public class ScriptManager extends ListFragment {
             return;
         }
 
-        final QuickAction actionMenu = new QuickAction(view);
+        // position + 1 because LayoutManager also takes into consideration the header.
+        final QuickAction actionMenu =
+                new QuickAction(scriptListLayoutManager.findViewByPosition(position + 1));
 
         ActionItem terminal = new ActionItem();
         terminal.setIcon(getResources().getDrawable(R.drawable.terminal));
@@ -528,7 +586,11 @@ public class ScriptManager extends ListFragment {
             public void onClick(DialogInterface dialog, int whichButton) {
                 FileUtils.delete(file);
                 mScripts.remove(file);
-                mAdapter.notifyDataSetChanged();
+
+                scriptListAdapter.setmScripts(mScripts);
+                scriptListAdapter.notifyDataSetChanged();
+                // (TO REMOVE)
+                //mAdapter.notifyDataSetChanged();
             }
         });
         alert.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -563,7 +625,10 @@ public class ScriptManager extends ListFragment {
                 if (!FileUtils.makeDirectories(dir, 0755)) {
                     Log.e(activity, String.format("Cannot create folder \"%s\".", name));
                 }
-                mAdapter.notifyDataSetInvalidated();
+
+                updateAndFilterScriptList(EMPTY);
+                // (TO REMOVE)
+                //mAdapter.notifyDataSetInvalidated();
             }
         });
         alert.show();
@@ -592,7 +657,10 @@ public class ScriptManager extends ListFragment {
                 if (!FileUtils.rename(file, name)) {
                     throw new RuntimeException(String.format("Cannot rename \"%s\".", file.getPath()));
                 }
-                mAdapter.notifyDataSetInvalidated();
+
+                updateAndFilterScriptList(EMPTY);
+                // (TO REMOVE)
+                //mAdapter.notifyDataSetInvalidated();
             }
         });
         alert.show();
@@ -617,7 +685,10 @@ public class ScriptManager extends ListFragment {
                     break;
             }
         }
-        mAdapter.notifyDataSetInvalidated();
+
+        updateAndFilterScriptList(EMPTY);
+        // (TO REMOVE)
+        //mAdapter.notifyDataSetInvalidated();
     }
 
     private void writeScriptFromBarcode(Intent data) {
@@ -644,7 +715,7 @@ public class ScriptManager extends ListFragment {
         mManager.setOnCancelListener(null);
     }
 
-    private class ScriptListObserver extends DataSetObserver implements ConfigurationObserver {
+/*    private class ScriptListObserver extends DataSetObserver implements ConfigurationObserver {
         @Override
         public void onInvalidated() {
             updateAndFilterScriptList(EMPTY);
@@ -660,16 +731,26 @@ public class ScriptManager extends ListFragment {
                 }
             });
         }
-    }
+    }*/
 
-    private class ScriptManagerAdapter extends ScriptListAdapter {
-        public ScriptManagerAdapter(Context context) {
-            super(context);
-        }
+    private class ScriptListObserver extends RecyclerView.AdapterDataObserver
+            implements ConfigurationObserver {
+
+        // TODO (miguelpalacio): implement "onInvalidated".
 
         @Override
-        protected List<File> getScriptList() {
-            return mScripts;
+        public void onConfigurationChanged() {
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    updateAndFilterScriptList(mQuery);
+
+                    scriptListAdapter.setmScripts(mScripts);
+                    scriptListAdapter.notifyDataSetChanged();
+                    // (TO REMOVE)
+                    //mAdapter.notifyDataSetChanged();
+                }
+            });
         }
     }
 

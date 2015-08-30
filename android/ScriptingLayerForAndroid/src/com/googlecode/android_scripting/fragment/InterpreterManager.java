@@ -125,7 +125,7 @@ public class InterpreterManager extends Fragment implements
         mConfiguration.registerObserver(mObserver);
         interpreterListAdapter.registerAdapterDataObserver(mObserver);
 /*        mInterpreters = mConfiguration.getInteractiveInterpreters();
-        interpreterListAdapter.setmInterpreters(mInterpreters);
+        interpreterListAdapter.setmScripts(mInterpreters);
         interpreterListAdapter.notifyDataSetChanged();*/
     }
 
