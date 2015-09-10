@@ -28,7 +28,6 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,7 +40,6 @@ import com.googlecode.android_scripting.FileUtils;
 import com.googlecode.android_scripting.IntentBuilders;
 import com.googlecode.android_scripting.Log;
 import com.googlecode.android_scripting.R;
-import com.googlecode.android_scripting.ScriptListAdapterOld;
 import com.googlecode.android_scripting.ScriptStorageAdapter;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
 import com.googlecode.android_scripting.activity.ScriptingLayerService;
@@ -155,9 +153,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
 
         mCurrentDir = mBaseDir;
         mPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
-        //mAdapter = new ScriptManagerAdapterOld(activity);
         mObserver = new ScriptListObserver();
-        //mAdapter.registerDataSetObserver(mObserver);
         mConfiguration = ((BaseApplication) activity.getApplication()).getInterpreterConfiguration();
         mManager = (SearchManager) activity.getSystemService(Context.SEARCH_SERVICE);
 
@@ -171,12 +167,8 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
         scriptListLayoutManager = new LinearLayoutManager(getActivity());
         scriptListView.setLayoutManager(scriptListLayoutManager);
 
-        //registerForContextMenu(getListView());
         registerForContextMenu(scriptListView);
         updateAndFilterScriptList(mQuery);
-        //setListAdapter(mAdapter);
-        //ActivityFlinger.attachView(getListView(), activity);
-        //ActivityFlinger.attachView(activity.getWindow().getDecorView(), activity);
         activity.startService(IntentBuilders.buildTriggerServiceIntent());
         handleIntent(activity.getIntent());
         UsageTrackingConfirmation.show(activity);
@@ -230,7 +222,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
             });
         }
 
-        // TODO (miguelpalacio): I did this as a "invalidateDataSet", but not sure.
+        // TODO (miguelpalacio): I did this as a "invalidateDataSet" (still not not sure) if correct.
         scriptListAdapter.setmScripts(mScripts);
         scriptListAdapter.notifyDataSetChanged();
     }
@@ -242,8 +234,6 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
             updateAndFilterScriptList(query);
             scriptListAdapter.setmScripts(mScripts);
             scriptListAdapter.notifyDataSetChanged();
-            // (TO REMOVE)
-            //mAdapter.notifyDataSetChanged();
         }
     }
 
@@ -282,8 +272,6 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
 
             scriptListAdapter.setmScripts(mScripts);
             scriptListAdapter.notifyDataSetChanged();
-            // (TO REMOVE)
-            //mAdapter.notifyDataSetInvalidated();
             return true;
         }
         return false;
@@ -317,8 +305,6 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
         updateAndFilterScriptList(mQuery);
         scriptListAdapter.setmScripts(mScripts);
         scriptListAdapter.notifyDataSetChanged();
-        // (TO REMOVE)
-        //mAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -335,15 +321,6 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
                 android.R.drawable.ic_menu_help);
         super.onCreateOptionsMenu(menu, inflater);
     }
-
-/*    private void buildSwitchActivityMenu(Menu menu) {
-        Menu subMenu =
-                menu.addSubMenu(Menu.NONE, Menu.NONE, Menu.NONE, "View").setIcon(
-                        android.R.drawable.ic_menu_more);
-        subMenu.add(Menu.NONE, MenuId.INTERPRETER_MANAGER.getId(), Menu.NONE, "Interpreters");
-        subMenu.add(Menu.NONE, MenuId.TRIGGER_MANAGER.getId(), Menu.NONE, "Triggers");
-        subMenu.add(Menu.NONE, MenuId.LOGCAT_VIEWER.getId(), Menu.NONE, "Logcat");
-    }*/
 
     private void buildMenuIdMaps() {
         mAddMenuIds = new LinkedHashMap<>();
@@ -398,8 +375,6 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
             updateAndFilterScriptList(mQuery);
             scriptListAdapter.setmScripts(mScripts);
             scriptListAdapter.notifyDataSetChanged();
-            // (TO REMOVE)
-            //mAdapter.notifyDataSetChanged();
         } else if (itemId == MenuId.SEARCH.getId()) {
             activity.onSearchRequested();
         }
@@ -409,18 +384,11 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
     @Override
     public void onListItemClick(int position) {
 
-/*    @Override
-    public void onListItemClick(ListView list, View view, int position, long id) {*/
-/*        final File file = (File) list.getItemAtPosition(position);*/
         final File file = mScripts.get(position);
         mCurrent = file;
         if (file.isDirectory()) {
             mCurrentDir = file;
-
-            //scriptListAdapter.setmScripts(new ArrayList<File>());
             updateAndFilterScriptList(EMPTY);
-            // (TO REMOVE)
-            //mAdapter.notifyDataSetInvalidated();
             return;
         }
         if (FacadeConfiguration.getSdkLevel() <= 3 || !mPreferences.getBoolean("use_quick_menu", true)) {
@@ -428,7 +396,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
             return;
         }
 
-        // position + 1 because LayoutManager also takes into consideration the header.
+        // "position + 1" because LayoutManager also takes into consideration the header.
         final QuickAction actionMenu =
                 new QuickAction(scriptListLayoutManager.findViewByPosition(position + 1));
 
@@ -586,11 +554,8 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
             public void onClick(DialogInterface dialog, int whichButton) {
                 FileUtils.delete(file);
                 mScripts.remove(file);
-
                 scriptListAdapter.setmScripts(mScripts);
                 scriptListAdapter.notifyDataSetChanged();
-                // (TO REMOVE)
-                //mAdapter.notifyDataSetChanged();
             }
         });
         alert.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -625,10 +590,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
                 if (!FileUtils.makeDirectories(dir, 0755)) {
                     Log.e(activity, String.format("Cannot create folder \"%s\".", name));
                 }
-
                 updateAndFilterScriptList(EMPTY);
-                // (TO REMOVE)
-                //mAdapter.notifyDataSetInvalidated();
             }
         });
         alert.show();
@@ -657,10 +619,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
                 if (!FileUtils.rename(file, name)) {
                     throw new RuntimeException(String.format("Cannot rename \"%s\".", file.getPath()));
                 }
-
                 updateAndFilterScriptList(EMPTY);
-                // (TO REMOVE)
-                //mAdapter.notifyDataSetInvalidated();
             }
         });
         alert.show();
@@ -685,10 +644,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
                     break;
             }
         }
-
         updateAndFilterScriptList(EMPTY);
-        // (TO REMOVE)
-        //mAdapter.notifyDataSetInvalidated();
     }
 
     private void writeScriptFromBarcode(Intent data) {
@@ -736,19 +692,14 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
     private class ScriptListObserver extends RecyclerView.AdapterDataObserver
             implements ConfigurationObserver {
 
-        // TODO (miguelpalacio): implement "onInvalidated".
-
         @Override
         public void onConfigurationChanged() {
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     updateAndFilterScriptList(mQuery);
-
                     scriptListAdapter.setmScripts(mScripts);
                     scriptListAdapter.notifyDataSetChanged();
-                    // (TO REMOVE)
-                    //mAdapter.notifyDataSetChanged();
                 }
             });
         }

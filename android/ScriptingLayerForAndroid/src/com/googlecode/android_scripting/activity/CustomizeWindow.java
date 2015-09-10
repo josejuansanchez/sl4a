@@ -32,6 +32,7 @@ public class CustomizeWindow {
         // Utility class.
     }
 
+    // TODO (miguelpalacio): this class hasn't been correctly redefined.
     public static void setToolbarTitle(Activity activity, String title, int contentViewLayoutResId) {
         // Temporary if, all will be using Toolbar.
         if (activity instanceof AppCompatActivity) {

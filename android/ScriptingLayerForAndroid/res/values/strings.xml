@@ -71,8 +71,9 @@
     <string
       name="default_value_controlkey_preference">0</string>
     <string
-      name="no_scripts_message">Start adding scripts and interpreters by pressing the menu
-    button.</string>
+      name="no_scripts_message">Start adding scripts and interpreters using the menu.</string>
+    <string
+        name="no_scripts_message2">There are no scripts yet.</string>
     <string
       name="no_apis_message">No matching APIs found.</string>
     <string
@@ -195,5 +196,6 @@
     <!-- -->
     <string name="logcat_list_empty">No logcat messages.</string>
     <string name="interpreter_list_empty">No interpreters.</string>
+    <string name="button_cancel_triggers">Cancel All</string>
 
 </resources>

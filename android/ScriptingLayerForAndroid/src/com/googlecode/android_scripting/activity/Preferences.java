@@ -48,10 +48,10 @@ public class Preferences extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        // Since Status Bar is transparent in styles.xml, set its color.
+/*        // Since Status Bar is transparent in styles.xml, set its color.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(getResources().getColor(R.color.primary_dark));
-        }
+        }*/
 
         // Display the fragment as the main content.
         getFragmentManager().beginTransaction()
@@ -61,17 +61,11 @@ public class Preferences extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
         int id = item.getItemId();
-
         // Make Home button behave as hardware Back button.
         if (id == android.R.id.home) {
             onBackPressed();
         }
-
         return super.onOptionsItemSelected(item);
     }
 }

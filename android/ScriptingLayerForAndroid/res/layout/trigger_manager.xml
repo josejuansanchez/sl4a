@@ -8,7 +8,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/btnTriggerCancel"
         android:onClick="cancelTriggers"
-        android:text="Cancel All"/>
+        android:text="@string/button_cancel_triggers"/>
     <ListView
         android:id="@+id/android:list"
         android:layout_width="fill_parent"

@@ -16,23 +16,26 @@
 
 package com.googlecode.android_scripting.activity;
 
-import android.app.ListActivity;
-import android.content.Context;
 import android.content.Intent;
-import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.ListView;
+import android.widget.TextView;
 
 import com.googlecode.android_scripting.BaseApplication;
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.FeaturedInterpreters;
 import com.googlecode.android_scripting.IntentBuilders;
 import com.googlecode.android_scripting.R;
-import com.googlecode.android_scripting.ScriptListAdapterOld;
 import com.googlecode.android_scripting.ScriptStorageAdapter;
+import com.googlecode.android_scripting.custom_component.item_lists.ScriptListAdapter;
 import com.googlecode.android_scripting.interpreter.InterpreterConfiguration;
 import com.googlecode.android_scripting.interpreter.InterpreterConstants;
 
@@ -47,10 +50,18 @@ import net.londatiga.android.QuickAction;
  *
  * @author Damon Kohler (damonkohler@gmail.com)
  */
-public class ScriptPicker extends ListActivity {
+public class ScriptPicker extends AppCompatActivity implements ScriptListAdapter.ViewHolder.ClickListener {
+
+    Toolbar toolbar;
+    ActionBar mActionBar;
+
+    RecyclerView scriptListView;
+    RecyclerView.LayoutManager scriptListLayoutManager;
+    ScriptListAdapter scriptListAdapter;
+
+    TextView noScriptsMessage;
 
     private List<File> mScripts;
-    private ScriptPickerAdapterOld mAdapter;
     private InterpreterConfiguration mConfiguration;
     private File mCurrentDir;
     private final File mBaseDir = new File(InterpreterConstants.SCRIPTS_ROOT);
@@ -58,27 +69,80 @@ public class ScriptPicker extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.script_picker);
+
+        // Toolbar.
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        mActionBar = getSupportActionBar();
+        if (mActionBar != null) {
+            mActionBar.setHomeButtonEnabled(true);
+            mActionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
         CustomizeWindow.setToolbarTitle(this, "Scripts", R.layout.main_activity);
         mCurrentDir = mBaseDir;
         mConfiguration = ((BaseApplication) getApplication()).getInterpreterConfiguration();
         mScripts = ScriptStorageAdapter.listExecutableScripts(null, mConfiguration);
-        mAdapter = new ScriptPickerAdapterOld(this);
-        mAdapter.registerDataSetObserver(new ScriptListObserver());
-        setListAdapter(mAdapter);
+
+        noScriptsMessage = (TextView) findViewById(R.id.script_list_empty);
+
+        scriptListView = (RecyclerView) findViewById(R.id.script_list);
+        scriptListAdapter = new ScriptListAdapter(this, mScripts, this);
+        scriptListView.setAdapter(scriptListAdapter);
+        scriptListLayoutManager = new LinearLayoutManager(this);
+        scriptListView.setLayoutManager(scriptListLayoutManager);
+
+        if (mScripts.size() == 0) {
+            noScriptsMessage.setVisibility(View.VISIBLE);
+        }
         // Analytics.trackActivity(this);
     }
 
     @Override
-    protected void onListItemClick(ListView list, View view, int position, long id) {
-        final File script = (File) list.getItemAtPosition(position);
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        // Make Home button behave as hardware Back button.
+        if (id == android.R.id.home) {
+            onBackPressed();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onListItemClick(int position) {
+
+        final File script = mScripts.get(position);
 
         if (script.isDirectory()) {
             mCurrentDir = script;
-            mAdapter.notifyDataSetInvalidated();
+
+            mScripts = ScriptStorageAdapter.listExecutableScripts(mCurrentDir, mConfiguration);
+            // TODO(damonkohler): Extending the File class here seems odd.
+            if (!mCurrentDir.equals(mBaseDir)) {
+                mScripts.add(0, new File(mCurrentDir.getParent()) {
+                    @Override
+                    public boolean isDirectory() {
+                        return true;
+                    }
+
+                    @Override
+                    public String getName() {
+                        return "..";
+                    }
+                });
+            }
+            scriptListAdapter.setmScripts(mScripts);
+            scriptListAdapter.notifyDataSetChanged();
             return;
         }
 
-        QuickAction actionMenu = new QuickAction(view);
+        // "position + 1" because LayoutManager also takes into consideration the header.
+        final QuickAction actionMenu =
+                new QuickAction(scriptListLayoutManager.findViewByPosition(position + 1));
+
         ActionItem terminal = new ActionItem();
         terminal.setIcon(getResources().getDrawable(R.drawable.terminal));
         ActionItem background = new ActionItem();
@@ -164,40 +228,5 @@ public class ScriptPicker extends ListActivity {
 
         actionMenu.setAnimStyle(QuickAction.ANIM_GROW_FROM_CENTER);
         actionMenu.show();
-    }
-
-    private class ScriptListObserver extends DataSetObserver {
-        @SuppressWarnings("serial")
-        @Override
-        public void onInvalidated() {
-            mScripts = ScriptStorageAdapter.listExecutableScripts(mCurrentDir, mConfiguration);
-            // TODO(damonkohler): Extending the File class here seems odd.
-            if (!mCurrentDir.equals(mBaseDir)) {
-                mScripts.add(0, new File(mCurrentDir.getParent()) {
-                    @Override
-                    public boolean isDirectory() {
-                        return true;
-                    }
-
-                    @Override
-                    public String getName() {
-                        return "..";
-                    }
-                });
-            }
-        }
-    }
-
-    private class ScriptPickerAdapterOld extends ScriptListAdapterOld {
-
-        public ScriptPickerAdapterOld(Context context) {
-            super(context);
-        }
-
-        @Override
-        protected List<File> getScriptList() {
-            return mScripts;
-        }
-
     }
 }
