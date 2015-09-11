@@ -151,4 +151,8 @@
         <item>@drawable/drawer_logcat_highlighted</item>
         <item>@drawable/drawer_settings_highlighted</item>
     </array>
+
+    <array name="context_menu_triggers">
+        <item>Remove</item>
+    </array>
 </resources>

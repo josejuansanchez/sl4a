@@ -18,12 +18,15 @@ package com.googlecode.android_scripting.fragment;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Fragment;
 import android.app.ListActivity;
 import android.app.ListFragment;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -45,6 +48,7 @@ import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
 import com.googlecode.android_scripting.activity.Preferences;
 import com.googlecode.android_scripting.activity.ScriptPicker;
+import com.googlecode.android_scripting.custom_component.item_lists.TriggerListAdapter;
 import com.googlecode.android_scripting.dialog.Help;
 import com.googlecode.android_scripting.facade.FacadeConfiguration;
 import com.googlecode.android_scripting.rpc.MethodDescriptor;
@@ -58,20 +62,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class TriggerManager extends ListFragment {
-    private final List<ScriptTrigger> mTriggers = Lists.newArrayList();
+public class TriggerManager extends Fragment implements TriggerListAdapter.ViewHolder.ClickListener {
 
-    private ScriptTriggerAdapter mAdapter;
+    private final List<ScriptTrigger> mTriggers = Lists.newArrayList();
     private TriggerRepository mTriggerRepository;
 
     Activity activity;
 
-    private enum ContextMenuId {
-        REMOVE;
-        public int getId() {
-            return ordinal() + Menu.FIRST;
-        }
-    }
+    RecyclerView triggerListView;
+    RecyclerView.LayoutManager triggerListLayoutManager;
+    TriggerListAdapter triggerListAdapter;
+
+    TextView noTriggersMessage;
 
     private enum MenuId {
         ADD, HELP;
@@ -101,9 +103,18 @@ public class TriggerManager extends ListFragment {
         activity = getActivity();
         CustomizeWindow.setToolbarTitle(activity, "Triggers", R.layout.trigger_manager);
         ScriptTriggerListObserver observer = new ScriptTriggerListObserver();
-        mAdapter = new ScriptTriggerAdapter();
-        setListAdapter(mAdapter);
-        registerForContextMenu(getListView());
+
+        if (getView() != null) {
+            noTriggersMessage = (TextView) getView().findViewById(R.id.script_list_empty);
+        }
+
+        triggerListView = (RecyclerView) getActivity().findViewById(R.id.script_list);
+        triggerListAdapter = new TriggerListAdapter(mTriggers, this);
+        triggerListView.setAdapter(triggerListAdapter);
+        triggerListLayoutManager = new LinearLayoutManager(getActivity());
+        triggerListView.setLayoutManager(triggerListLayoutManager);
+
+        registerForContextMenu(triggerListView);
         mTriggerRepository = ((BaseApplication) activity.getApplication()).getTriggerRepository();
         mTriggerRepository.bootstrapObserver(observer);
         //ActivityFlinger.attachView(getListView(), activity);
@@ -135,35 +146,23 @@ public class TriggerManager extends ListFragment {
     }
 
     @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        menu.add(Menu.NONE, ContextMenuId.REMOVE.getId(), Menu.NONE, "Remove");
-    }
+    public boolean onItemLongClicked(final int position) {
 
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        AdapterView.AdapterContextMenuInfo info;
-        try {
-            info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        } catch (ClassCastException e) {
-            Log.e("Bad menuInfo", e);
-            return false;
-        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
-        Trigger trigger = mAdapter.getItem(info.position);
-        if (trigger == null) {
-            Log.v("No trigger selected.");
-            return false;
-        }
+        builder.setItems(R.array.context_menu_triggers, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
 
-        if (item.getItemId() == ContextMenuId.REMOVE.getId()) {
-            mTriggerRepository.remove(trigger);
-        }
+                if (which == 0) {
+                    Trigger trigger = mTriggers.get(position);
+                    mTriggerRepository.remove(trigger);
+                }
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
         return true;
-    }
-
-    @Override
-    public void onListItemClick(ListView l, View v, int position, long id) {
-        mAdapter.notifyDataSetInvalidated();
     }
 
     private class ScriptTriggerListObserver implements TriggerRepositoryObserver {
@@ -171,39 +170,23 @@ public class TriggerManager extends ListFragment {
         @Override
         public void onPut(Trigger trigger) {
             mTriggers.add((ScriptTrigger) trigger);
-            mAdapter.notifyDataSetInvalidated();
+            triggerListAdapter.notifyDataSetChanged();
+            // Show list of triggers.
+            if (triggerListView.getVisibility() == View.GONE) {
+                noTriggersMessage.setVisibility(View.GONE);
+                triggerListView.setVisibility(View.VISIBLE);
+            }
         }
 
         @Override
         public void onRemove(Trigger trigger) {
             mTriggers.remove(trigger);
-            mAdapter.notifyDataSetInvalidated();
-        }
-    }
-
-    private class ScriptTriggerAdapter extends BaseAdapter {
-
-        @Override
-        public int getCount() {
-            return mTriggers.size();
-        }
-
-        @Override
-        public Trigger getItem(int position) {
-            return mTriggers.get(position);
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-        @Override
-        public View getView(final int position, View convertView, ViewGroup parent) {
-            ScriptTrigger trigger = mTriggers.get(position);
-            TextView textView = new TextView(activity);
-            textView.setText(trigger.getEventName() + " " + trigger.getScript().getName());
-            return textView;
+            triggerListAdapter.notifyDataSetChanged();
+            // Show "no triggers" message.
+            if (mTriggers.size() == 0) {
+                noTriggersMessage.setVisibility(View.VISIBLE);
+                triggerListView.setVisibility(View.GONE);
+            }
         }
     }
 

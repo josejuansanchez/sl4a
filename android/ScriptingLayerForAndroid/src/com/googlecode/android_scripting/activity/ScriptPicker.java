@@ -96,6 +96,7 @@ public class ScriptPicker extends AppCompatActivity implements ScriptListAdapter
         scriptListView.setLayoutManager(scriptListLayoutManager);
 
         if (mScripts.size() == 0) {
+            scriptListView.setVisibility(View.GONE);
             noScriptsMessage.setVisibility(View.VISIBLE);
         }
         // Analytics.trackActivity(this);

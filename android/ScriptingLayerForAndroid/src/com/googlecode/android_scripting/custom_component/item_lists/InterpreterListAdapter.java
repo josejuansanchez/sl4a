@@ -61,8 +61,8 @@ public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAda
             if (viewType == TYPE_LIST_ITEM) {
                 holderId = TYPE_LIST_ITEM;
 
-                interpreterTextView = (TextView) itemView.findViewById(R.id.list_item_one_line_title);
-                interpreterImageView = (ImageView) itemView.findViewById(R.id.list_item_one_line_icon);
+                interpreterTextView = (TextView) itemView.findViewById(R.id.list_item_title);
+                interpreterImageView = (ImageView) itemView.findViewById(R.id.list_item_icon);
 
                 // Set click listeners for the row.
                 this.listener = listener;
@@ -87,12 +87,12 @@ public class InterpreterListAdapter extends SelectableAdapter<InterpreterListAda
         }
     }
 
-    // Inflate list_item_title_summary.xml or item_list_row_last in accordance with viewType.
+    // Inflate list_item_summary.xmlem_list_row_last in accordance with viewType.
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         final int layout;
         if (viewType == TYPE_LIST_ITEM) {
-            layout = R.layout.list_item_one_line_icon;
+            layout = R.layout.list_item_icon;
         } else if (viewType == TYPE_HEADER) {
             layout = R.layout.list_item_empty_8dp;
         } else {

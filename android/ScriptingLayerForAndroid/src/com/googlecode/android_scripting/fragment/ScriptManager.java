@@ -243,6 +243,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
         menu.add(Menu.NONE, MenuId.DELETE.getId(), Menu.NONE, "Delete");
     }
 
+    // TODO (miguelpalacio): Contextual Menu for RecyclerView, this has to be solved.
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo info;

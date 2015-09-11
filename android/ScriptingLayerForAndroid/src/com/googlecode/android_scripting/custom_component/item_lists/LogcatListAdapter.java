@@ -49,7 +49,7 @@ public class LogcatListAdapter extends SelectableAdapter<LogcatListAdapter.ViewH
         }
     }
 
-    // Inflate list_item_title_summary.xml or item_list_row_last in accordance with viewType.
+    // Inflate list_item_summaryr item_list_row_last in accordance with viewType.
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         final int layout;

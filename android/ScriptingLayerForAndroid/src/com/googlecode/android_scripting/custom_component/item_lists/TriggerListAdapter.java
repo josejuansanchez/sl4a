@@ -8,45 +8,41 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.googlecode.android_scripting.FeaturedInterpreters;
 import com.googlecode.android_scripting.R;
+import com.googlecode.android_scripting.trigger.ScriptTrigger;
 
 import java.io.File;
 import java.util.List;
 
 /**
- * Adapter for a vertically scrolling list of scripts using RecyclerView.
+ * Adapter for a vertically scrolling list of triggers using RecyclerView.
  *
  * @author Miguel Palacio (palaciodelgado [at] gmail [dot] com)
  */
-public class ScriptListAdapter extends SelectableAdapter<ScriptListAdapter.ViewHolder> {
+public class TriggerListAdapter extends SelectableAdapter<TriggerListAdapter.ViewHolder> {
 
     static final int TYPE_LIST_ITEM = 0;
     static final int TYPE_HEADER = 1;
     static final int TYPE_FOOTER = 2;
 
-    private Activity activity;
-
-    private List<File> mScripts;
+    private List<ScriptTrigger> mTriggers;
 
     private ViewHolder.ClickListener clickListener;
 
-    public ScriptListAdapter(Activity activity, List<File> mScripts,
-                             ViewHolder.ClickListener clickListener) {
+    public TriggerListAdapter(List<ScriptTrigger> mTriggers, ViewHolder.ClickListener clickListener) {
         super();
-        this.activity = activity;
-        this.mScripts = mScripts;
+        this.mTriggers = mTriggers;
         this.clickListener = clickListener;
     }
 
     // ViewHolder Inner Class.
     public static class ViewHolder extends RecyclerView.ViewHolder
-            implements View.OnClickListener {
+            implements View.OnLongClickListener {
 
         int holderId;
 
-        TextView scriptTextView;
-        ImageView scriptImageView;
+        TextView triggerName;
+        TextView triggerEvent;
 
         View itemView;
 
@@ -61,12 +57,12 @@ public class ScriptListAdapter extends SelectableAdapter<ScriptListAdapter.ViewH
             if (viewType == TYPE_LIST_ITEM) {
                 holderId = TYPE_LIST_ITEM;
 
-                scriptTextView = (TextView) itemView.findViewById(R.id.list_item_title);
-                scriptImageView = (ImageView) itemView.findViewById(R.id.list_item_icon);
+                triggerName = (TextView) itemView.findViewById(R.id.list_item_title);
+                triggerEvent = (TextView) itemView.findViewById(R.id.list_item_summary);
 
                 // Set click listeners for the row.
                 this.listener = listener;
-                itemView.setOnClickListener(this);
+                itemView.setOnLongClickListener(this);
             } else if (viewType == TYPE_HEADER) {
                 holderId = TYPE_HEADER;
             } else {
@@ -75,26 +71,25 @@ public class ScriptListAdapter extends SelectableAdapter<ScriptListAdapter.ViewH
         }
 
         @Override
-        public void onClick(View v) {
-            if (listener != null) {
-                listener.onListItemClick(getAdapterPosition() - 1);
-            }
+        public boolean onLongClick(View v) {
+            // Do not consider header.
+            return listener!= null && listener.onItemLongClicked(getAdapterPosition() - 1);
         }
 
         // Interface to route back click events to Activity.
         public interface ClickListener {
-            void onListItemClick(int position);
+            boolean onItemLongClicked(int position);
         }
     }
 
-    // Inflate list_item_summaryr item_list_row_last in accordance with viewType.
+    // Inflate the corresponding layout.
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         final int layout;
         if (viewType == TYPE_LIST_ITEM) {
-            layout = R.layout.list_item_icon;
+            layout = R.layout.list_item_summary;
         } else if (viewType == TYPE_HEADER) {
-            layout = R.layout.list_item_empty_8dp;
+            layout = R.layout.trigger_manager_header;
         } else {
             layout = R.layout.list_item_empty_24dp;
         }
@@ -108,26 +103,17 @@ public class ScriptListAdapter extends SelectableAdapter<ScriptListAdapter.ViewH
     public void onBindViewHolder(ViewHolder holder, int position) {
         if (holder.holderId == TYPE_LIST_ITEM) {
 
-            File script = mScripts.get(position - 1);
-            int resourceId;
-            if (script.isDirectory()) {
-                resourceId = R.drawable.folder;
-            } else {
-                resourceId = FeaturedInterpreters.getInterpreterIcon(activity, script.getName());
-                if (resourceId == 0) {
-                    resourceId = R.drawable.sl4a_logo_32;
-                }
-            }
+            ScriptTrigger trigger = mTriggers.get(position - 1);
 
-            holder.scriptImageView.setImageResource(resourceId);
-            holder.scriptTextView.setText(script.getName());
+            holder.triggerName.setText(trigger.getScript().getName());
+            holder.triggerEvent.setText(trigger.getEventName());
         }
     }
 
     // Return the number of items present in the list ([header] + rows + [footer]).
     @Override
     public int getItemCount() {
-        return mScripts.size() + 2;
+        return mTriggers.size() + 2;
     }
 
     // Return the type of the view that is being passed.
@@ -140,11 +126,5 @@ public class ScriptListAdapter extends SelectableAdapter<ScriptListAdapter.ViewH
         } else {
             return TYPE_LIST_ITEM;
         }
-    }
-
-    // mScripts has to be set in this way since mScripts changes reference
-    // to object in ScriptManager.
-    public void setmScripts(List<File> mScripts) {
-        this.mScripts = mScripts;
     }
 }
