@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.DataSetObserver;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,6 +29,8 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -81,6 +84,9 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
     ScriptListAdapter scriptListAdapter;
 
     TextView noScriptsMessage;
+
+    SearchView searchView;
+    ImageView searchButton;
 
     private List<File> mScripts;
     //private ScriptManagerAdapterOld mAdapter;
@@ -279,15 +285,42 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         menu.clear();
         buildMenuIdMaps();
+        MenuItem searchEntry = menu.add(Menu.NONE, MenuId.SEARCH.getId(), Menu.NONE, "Search").setIcon(
+                R.drawable.ic_search_white_24dp);
         buildAddMenu(menu);
-        //buildSwitchActivityMenu(menu);
-        menu.add(Menu.NONE, MenuId.SEARCH.getId(), Menu.NONE, "Search").setIcon(
-                R.drawable.ic_menu_search);
         menu.add(Menu.NONE, MenuId.REFRESH.getId(), Menu.NONE, "Refresh").setIcon(
                 R.drawable.ic_menu_refresh);
         menu.add(Menu.NONE, MenuId.HELP.getId(), Menu.NONE, "Help").setIcon(
                 android.R.drawable.ic_menu_help);
         super.onCreateOptionsMenu(menu, inflater);
+
+        // Search widget.
+
+        searchEntry.setActionView(new SearchView(getActivity()));
+        searchEntry.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM |
+                MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
+
+        SearchManager searchManager = (SearchManager) activity.getSystemService(Context.SEARCH_SERVICE);
+        searchView = (SearchView) menu.findItem(MenuId.SEARCH.getId()).getActionView();
+
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(activity.getComponentName()));
+        searchView.setIconifiedByDefault(false);
+
+        // Customize search widget.
+
+        int searchButtonId = searchView.getContext().getResources().
+                getIdentifier("android:id/search_mag_icon", null, null);
+        searchButton = (ImageView) searchView.findViewById(searchButtonId);
+
+        int searchPlateId = searchView.getContext().getResources().
+                getIdentifier("android:id/search_plate", null, null);
+        View mSearchPlate = searchView.findViewById(searchPlateId);
+        mSearchPlate.setBackgroundColor(getResources().getColor(R.color.primary));
+
+        int searchCloseId = searchView.getContext().getResources().
+                getIdentifier("android:id/search_close_btn", null, null);
+        ImageView searchCloseButton = (ImageView) searchView.findViewById(searchCloseId);
+        searchCloseButton.setImageResource(R.drawable.ic_clear_white_24dp);
     }
 
     private void buildMenuIdMaps() {
@@ -344,7 +377,10 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
             scriptListAdapter.setmScripts(mScripts);
             scriptListAdapter.notifyDataSetChanged();
         } else if (itemId == MenuId.SEARCH.getId()) {
-            activity.onSearchRequested();
+            //activity.onSearchRequested();
+            searchView.setFocusable(true);
+            searchView.requestFocusFromTouch();
+            searchButton.setVisibility(View.GONE);
         }
         return true;
     }
