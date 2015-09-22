@@ -200,8 +200,8 @@ public class LogcatViewer extends Fragment {
         Thread logcatWatcher = new Thread(new LogcatWatcher());
         logcatWatcher.setPriority(Thread.NORM_PRIORITY - 1);
         logcatWatcher.start();
-        //logcatListAdapter.notifyDataSetChanged();
-        logcatListAdapter.notifyItemRangeRemoved(0, logcatListAdapter.getItemCount());
+        logcatListAdapter.notifyDataSetChanged();
+        //logcatListAdapter.notifyItemRangeRemoved(0, logcatListAdapter.getItemCount());
         super.onStart();
     }
 

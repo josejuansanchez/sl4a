@@ -73,27 +73,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
-        ScriptManager scriptManager = (ScriptManager) getFragmentManager()
-                .findFragmentByTag(SCRIPTS_FRAGMENT);
-        if (scriptManager != null) {
-            scriptManager.handleIntent(intent);
-        }
-    }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        ScriptManager scriptManager = (ScriptManager) getFragmentManager()
-                .findFragmentByTag(SCRIPTS_FRAGMENT);
-        if (scriptManager != null) {
-            return scriptManager.onKeyDown(keyCode);
-        }
-        return super.onKeyDown(keyCode, event);
-/*        return (((ScriptManager) getFragmentManager().findFragmentByTag(SCRIPTS_FRAGMENT))
-                .onKeyDown(keyCode)) || super.onKeyDown(keyCode, event);*/
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.terminal, menu);
         return true;
@@ -121,6 +100,31 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    // ScriptManager callbacks.
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        ScriptManager scriptManager = (ScriptManager) getFragmentManager()
+                .findFragmentByTag(SCRIPTS_FRAGMENT);
+        if (scriptManager != null) {
+            scriptManager.handleIntent(intent);
+        }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            ScriptManager scriptManager = (ScriptManager) getFragmentManager()
+                    .findFragmentByTag(SCRIPTS_FRAGMENT);
+            if (scriptManager != null) {
+                scriptManager.onKeyDown(keyCode);
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    // TriggerManager callbacks.
 
     public void cancelTriggers(View v) {
         TriggerManager triggerManager = (TriggerManager) getFragmentManager()

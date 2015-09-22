@@ -152,6 +152,11 @@
         <item>@drawable/drawer_settings_highlighted</item>
     </array>
 
+    <!-- Contextual menus entries. -->
+    <array name="context_menu_scripts">
+        <item>Rename</item>
+        <item>Delete</item>
+    </array>
     <array name="context_menu_triggers">
         <item>Remove</item>
     </array>

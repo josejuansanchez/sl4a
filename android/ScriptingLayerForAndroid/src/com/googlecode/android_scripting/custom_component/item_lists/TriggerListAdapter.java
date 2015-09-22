@@ -1,17 +1,14 @@
 package com.googlecode.android_scripting.custom_component.item_lists;
 
-import android.app.Activity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.trigger.ScriptTrigger;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -73,12 +70,12 @@ public class TriggerListAdapter extends SelectableAdapter<TriggerListAdapter.Vie
         @Override
         public boolean onLongClick(View v) {
             // Do not consider header.
-            return listener!= null && listener.onItemLongClicked(getAdapterPosition() - 1);
+            return listener!= null && listener.onItemLongClick(getAdapterPosition() - 1);
         }
 
         // Interface to route back click events to Activity.
         public interface ClickListener {
-            boolean onItemLongClicked(int position);
+            boolean onItemLongClick(int position);
         }
     }
 

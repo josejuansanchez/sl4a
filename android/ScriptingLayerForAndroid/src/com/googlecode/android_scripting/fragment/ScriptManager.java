@@ -222,7 +222,6 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
             });
         }
 
-        // TODO (miguelpalacio): I did this as a "invalidateDataSet" (still not not sure) if correct.
         scriptListAdapter.setmScripts(mScripts);
         scriptListAdapter.notifyDataSetChanged();
     }
@@ -237,45 +236,13 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
         }
     }
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        menu.add(Menu.NONE, MenuId.RENAME.getId(), Menu.NONE, "Rename");
-        menu.add(Menu.NONE, MenuId.DELETE.getId(), Menu.NONE, "Delete");
-    }
-
-    // TODO (miguelpalacio): Contextual Menu for RecyclerView, this has to be solved.
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        AdapterView.AdapterContextMenuInfo info;
-        try {
-            info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        } catch (ClassCastException e) {
-            Log.e("Bad menuInfo", e);
-            return false;
-        }
-        File file = mScripts.get(info.position);
-        // (TO REMOVE)
-        //File file = (File) mAdapter.getItem(info.position);
-        int itemId = item.getItemId();
-        if (itemId == MenuId.DELETE.getId()) {
-            delete(file);
-            return true;
-        } else if (itemId == MenuId.RENAME.getId()) {
-            rename(file);
-            return true;
-        }
-        return false;
-    }
-
-    public boolean onKeyDown(int keyCode) {
+    public void onKeyDown(int keyCode) {
         if (keyCode == KeyEvent.KEYCODE_BACK && mInSearchResultMode) {
             mInSearchResultMode = false;
 
             scriptListAdapter.setmScripts(mScripts);
             scriptListAdapter.notifyDataSetChanged();
-            return true;
         }
-        return false;
     }
 
     @Override
@@ -294,7 +261,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
     public void onResume() {
         super.onResume();
         if (!mInSearchResultMode) {
-            // TODO (miguelpalacio): showing of no scripts message has to be solved.
+            // TODO (miguelpalacio): display of "no scripts" message has to be solved.
 /*            scriptListView.setVisibility(View.GONE);
             noScriptsMessage.setVisibility(View.VISIBLE);*/
             // (TO REMOVE)
@@ -471,6 +438,30 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
         actionMenu.setAnimStyle(QuickAction.ANIM_GROW_FROM_CENTER);
         actionMenu.show();
     }
+
+    @Override
+    public boolean onItemLongClick(final int position) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
+        builder.setItems(R.array.context_menu_scripts, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+
+                File file = mScripts.get(position);
+
+                if (which == 0) {
+                    rename(file);
+                } else if (which == 1) {
+                    delete(file);
+                }
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        return false;
+    }
+
 
     // Quickedit chokes on sdk 3 or below, and some Android builds. Provides alternative menu.
     private void doDialogMenu() {

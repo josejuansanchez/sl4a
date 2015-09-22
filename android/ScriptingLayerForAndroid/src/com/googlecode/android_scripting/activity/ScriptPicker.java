@@ -230,4 +230,9 @@ public class ScriptPicker extends AppCompatActivity implements ScriptListAdapter
         actionMenu.setAnimStyle(QuickAction.ANIM_GROW_FROM_CENTER);
         actionMenu.show();
     }
+
+    @Override
+    public boolean onItemLongClick(int position) {
+        return false;
+    }
 }

@@ -19,34 +19,25 @@ package com.googlecode.android_scripting.fragment;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
-import android.app.ListActivity;
-import android.app.ListFragment;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.widget.AdapterView;
-import android.widget.BaseAdapter;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import com.google.common.collect.Lists;
 import com.googlecode.android_scripting.BaseApplication;
 import com.googlecode.android_scripting.Constants;
-import com.googlecode.android_scripting.Log;
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
-import com.googlecode.android_scripting.activity.Preferences;
 import com.googlecode.android_scripting.activity.ScriptPicker;
 import com.googlecode.android_scripting.custom_component.item_lists.TriggerListAdapter;
 import com.googlecode.android_scripting.dialog.Help;
@@ -146,7 +137,7 @@ public class TriggerManager extends Fragment implements TriggerListAdapter.ViewH
     }
 
     @Override
-    public boolean onItemLongClicked(final int position) {
+    public boolean onItemLongClick(final int position) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 

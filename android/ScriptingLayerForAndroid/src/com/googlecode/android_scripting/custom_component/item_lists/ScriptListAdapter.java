@@ -41,7 +41,7 @@ public class ScriptListAdapter extends SelectableAdapter<ScriptListAdapter.ViewH
 
     // ViewHolder Inner Class.
     public static class ViewHolder extends RecyclerView.ViewHolder
-            implements View.OnClickListener {
+            implements View.OnClickListener, View.OnLongClickListener {
 
         int holderId;
 
@@ -67,6 +67,7 @@ public class ScriptListAdapter extends SelectableAdapter<ScriptListAdapter.ViewH
                 // Set click listeners for the row.
                 this.listener = listener;
                 itemView.setOnClickListener(this);
+                itemView.setOnLongClickListener(this);
             } else if (viewType == TYPE_HEADER) {
                 holderId = TYPE_HEADER;
             } else {
@@ -76,14 +77,22 @@ public class ScriptListAdapter extends SelectableAdapter<ScriptListAdapter.ViewH
 
         @Override
         public void onClick(View v) {
+            // Do not consider header.
             if (listener != null) {
                 listener.onListItemClick(getAdapterPosition() - 1);
             }
         }
 
+        @Override
+        public boolean onLongClick(View v) {
+            // Do not consider header.
+            return listener!= null && listener.onItemLongClick(getAdapterPosition() - 1);
+        }
+
         // Interface to route back click events to Activity.
         public interface ClickListener {
             void onListItemClick(int position);
+            boolean onItemLongClick(int position);
         }
     }
 
