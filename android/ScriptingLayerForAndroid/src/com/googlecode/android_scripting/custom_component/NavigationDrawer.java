@@ -1,5 +1,6 @@
 package com.googlecode.android_scripting.custom_component;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.os.Build;
@@ -120,7 +121,7 @@ public class NavigationDrawer extends Fragment implements NavigationDrawerAdapte
         outState.putInt(CURRENT_FRAGMENT, currentFragment);
     }
 
-    public void setUp(DrawerLayout drawerLayout, int fragmentId, Toolbar toolbar) {
+    public void setUp(final DrawerLayout drawerLayout, int fragmentId, Toolbar toolbar) {
         containerView = getActivity().findViewById(fragmentId);
         mDrawerLayout = drawerLayout;
         mDrawerToggle = new ActionBarDrawerToggle(getActivity(), drawerLayout, toolbar,

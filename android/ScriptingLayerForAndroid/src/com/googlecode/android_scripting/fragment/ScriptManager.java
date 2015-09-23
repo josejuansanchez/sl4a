@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.ContextMenu;
@@ -27,9 +28,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,6 +50,7 @@ import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.ScriptStorageAdapter;
 import com.googlecode.android_scripting.activity.CustomizeWindow;
 import com.googlecode.android_scripting.activity.ScriptingLayerService;
+import com.googlecode.android_scripting.custom_component.NavigationDrawer;
 import com.googlecode.android_scripting.custom_component.item_lists.ScriptListAdapter;
 import com.googlecode.android_scripting.dialog.Help;
 import com.googlecode.android_scripting.dialog.UsageTrackingConfirmation;
@@ -85,6 +90,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
 
     TextView noScriptsMessage;
 
+    MenuItem searchEntry;
     SearchView searchView;
     ImageView searchButton;
 
@@ -210,6 +216,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
 
         if (mScripts.size() == 0) {
             // TODO (miguelpalacio): solve this for queries.
+            // TODO: idea: check if a search is being performed to search a message.
             //((TextView) activity.findViewById(android.R.id.empty)).setText("No matches found.");
         }
 
@@ -242,14 +249,40 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
         }
     }
 
-    public void onKeyDown(int keyCode) {
+/*    public void onKeyDown(int keyCode) {
         if (keyCode == KeyEvent.KEYCODE_BACK && mInSearchResultMode) {
             mInSearchResultMode = false;
 
             scriptListAdapter.setmScripts(mScripts);
             scriptListAdapter.notifyDataSetChanged();
         }
+        else if (keyCode == KeyEvent.KEYCODE_BACK) {
+            searchView.setIconified(true);
+            searchEntry.collapseActionView();
+        }
+    }*/
+
+    public void onBackPressed() {
+        if (mInSearchResultMode) {
+            mInSearchResultMode = false;
+
+            scriptListAdapter.setmScripts(mScripts);
+            scriptListAdapter.notifyDataSetChanged();
+        }
+        else {
+            searchView.setIconified(true);
+            searchEntry.collapseActionView();
+        }
     }
+
+/*    public void onToolbarBackPressed() {
+        View view = activity.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager)
+                    activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }*/
 
     @Override
     public void onStop() {
@@ -285,7 +318,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         menu.clear();
         buildMenuIdMaps();
-        MenuItem searchEntry = menu.add(Menu.NONE, MenuId.SEARCH.getId(), Menu.NONE, "Search").setIcon(
+        searchEntry = menu.add(Menu.NONE, MenuId.SEARCH.getId(), Menu.NONE, "Search").setIcon(
                 R.drawable.ic_search_white_24dp);
         buildAddMenu(menu);
         menu.add(Menu.NONE, MenuId.REFRESH.getId(), Menu.NONE, "Refresh").setIcon(
@@ -308,10 +341,6 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
 
         // Customize search widget.
 
-        int searchButtonId = searchView.getContext().getResources().
-                getIdentifier("android:id/search_mag_icon", null, null);
-        searchButton = (ImageView) searchView.findViewById(searchButtonId);
-
         int searchPlateId = searchView.getContext().getResources().
                 getIdentifier("android:id/search_plate", null, null);
         View mSearchPlate = searchView.findViewById(searchPlateId);
@@ -321,6 +350,34 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
                 getIdentifier("android:id/search_close_btn", null, null);
         ImageView searchCloseButton = (ImageView) searchView.findViewById(searchCloseId);
         searchCloseButton.setImageResource(R.drawable.ic_clear_white_24dp);
+
+        int searchButtonId = searchView.getContext().getResources().
+                getIdentifier("android:id/search_mag_icon", null, null);
+        searchButton = (ImageView) searchView.findViewById(searchButtonId);
+        searchButton.setAdjustViewBounds(true);
+        searchButton.setMaxWidth(0);
+        searchButton.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        searchButton.setImageDrawable(null);
+
+        MenuItemCompat.setOnActionExpandListener(searchEntry,new MenuItemCompat.OnActionExpandListener() {
+            @Override
+            public boolean onMenuItemActionExpand(MenuItem item) {
+                return true;
+            }
+
+            @Override
+            public boolean onMenuItemActionCollapse(MenuItem item) {
+                // Hide soft keyboard upon collapse of search widget.
+                View view = activity.getCurrentFocus();
+                if (view != null) {
+                    InputMethodManager imm = (InputMethodManager)
+                            activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                }
+                return true;
+            }
+        });
     }
 
     private void buildMenuIdMaps() {
@@ -379,8 +436,8 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
         } else if (itemId == MenuId.SEARCH.getId()) {
             //activity.onSearchRequested();
             searchView.setFocusable(true);
+            searchView.setIconified(false);
             searchView.requestFocusFromTouch();
-            searchButton.setVisibility(View.GONE);
         }
         return true;
     }

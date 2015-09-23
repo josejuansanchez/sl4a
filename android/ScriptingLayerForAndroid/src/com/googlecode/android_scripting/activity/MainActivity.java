@@ -16,16 +16,17 @@
 
 package com.googlecode.android_scripting.activity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.custom_component.NavigationDrawer;
@@ -40,6 +41,7 @@ import com.googlecode.android_scripting.fragment.TriggerManager;
  */
 
 public class MainActivity extends AppCompatActivity {
+    //public class MainActivity extends AppCompatActivity implements NavigationDrawer.OnBackPressed {
 
     public static final String SCRIPTS_FRAGMENT = "scriptsFragment";
     public static final String INTERPRETERS_FRAGMENT = "interpretersFragment";
@@ -84,8 +86,6 @@ public class MainActivity extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
 
-        //int id = item.getItemId();
-
         //noinspection SimplifiableIfStatement
 
 /*        // Open the Settings activity.
@@ -113,15 +113,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            ScriptManager scriptManager = (ScriptManager) getFragmentManager()
-                    .findFragmentByTag(SCRIPTS_FRAGMENT);
-            if (scriptManager != null) {
-                scriptManager.onKeyDown(keyCode);
-            }
+    public void onBackPressed() {
+        ScriptManager scriptManager = (ScriptManager) getFragmentManager()
+                .findFragmentByTag(SCRIPTS_FRAGMENT);
+        if (scriptManager != null) {
+            scriptManager.onBackPressed();
         }
-        return super.onKeyDown(keyCode, event);
+        super.onBackPressed();
     }
 
     // TriggerManager callbacks.
@@ -133,5 +131,4 @@ public class MainActivity extends AppCompatActivity {
             triggerManager.clickCancel();
         }
     }
-
 }
