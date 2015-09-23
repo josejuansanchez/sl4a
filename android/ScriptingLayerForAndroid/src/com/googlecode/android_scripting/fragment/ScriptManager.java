@@ -138,7 +138,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         activity = getActivity();
-        CustomizeWindow.setToolbarTitle(activity, "Scripts", R.layout.script_manager);
+        CustomizeWindow.setToolbarTitle(activity, getString(R.string.toolbar_title_scripts), R.layout.script_manager);
         if (FileUtils.externalStorageMounted()) {
             File sl4a = mBaseDir.getParentFile();
             if (!sl4a.exists()) {
@@ -204,20 +204,26 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
 
         synchronized (mQuery) {
             if (!mQuery.equals(query)) {
-                // TODO (miguelpalacio): this calls views in the title layout, yields null.
                 if (query == null || query.equals(EMPTY)) {
-                    ((TextView) getView().findViewById(R.id.left_text)).setText("Scripts");
+                    CustomizeWindow.setToolbarTitle(activity, getString(R.string.toolbar_title_scripts));
                 } else {
-                    ((TextView) getView().findViewById(R.id.left_text)).setText(query);
+                    CustomizeWindow.setToolbarTitle(activity, query);
                 }
                 mQuery = query;
             }
         }
 
         if (mScripts.size() == 0) {
-            // TODO (miguelpalacio): solve this for queries.
-            // TODO: idea: check if a search is being performed to search a message.
-            //((TextView) activity.findViewById(android.R.id.empty)).setText("No matches found.");
+            scriptListView.setVisibility(View.GONE);
+            noScriptsMessage.setVisibility(View.VISIBLE);
+            if (mInSearchResultMode) {
+                noScriptsMessage.setText(getText(R.string.no_scripts_found));
+            } else {
+                noScriptsMessage.setText(getText(R.string.no_scripts_message));
+            }
+        } else {
+            scriptListView.setVisibility(View.VISIBLE);
+            noScriptsMessage.setVisibility(View.GONE);
         }
 
         // TODO(damonkohler): Extending the File class here seems odd.
@@ -261,19 +267,6 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
             searchEntry.collapseActionView();
         }
     }*/
-
-    public void onBackPressed() {
-        if (mInSearchResultMode) {
-            mInSearchResultMode = false;
-
-            scriptListAdapter.setmScripts(mScripts);
-            scriptListAdapter.notifyDataSetChanged();
-        }
-        else {
-            searchView.setIconified(true);
-            searchEntry.collapseActionView();
-        }
-    }
 
 /*    public void onToolbarBackPressed() {
         View view = activity.getCurrentFocus();
@@ -374,6 +367,17 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
                     InputMethodManager imm = (InputMethodManager)
                             activity.getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                }
+
+                // If a query was performed, refresh list.
+                if (mInSearchResultMode) {
+                    mInSearchResultMode = false;
+
+                    updateAndFilterScriptList(EMPTY);
+                    scriptListAdapter.setmScripts(mScripts);
+                    scriptListAdapter.notifyDataSetChanged();
+
+                    CustomizeWindow.setToolbarTitle(activity, getString(R.string.toolbar_title_scripts));
                 }
                 return true;
             }

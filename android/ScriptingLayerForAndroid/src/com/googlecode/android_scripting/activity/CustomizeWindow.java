@@ -55,6 +55,15 @@ public class CustomizeWindow {
         }
     }
 
+    public static void setToolbarTitle(Activity activity, String title) {
+        if (activity instanceof AppCompatActivity) {
+            ActionBar mActionBar = ((AppCompatActivity) activity).getSupportActionBar();
+            if (mActionBar != null) {
+                mActionBar.setTitle(title);
+            }
+        }
+    }
+
     public static void toggleProgressBarVisibility(Activity activity, boolean on) {
         ((ProgressBar) activity.findViewById(R.id.progress_bar)).setVisibility(on ? View.VISIBLE
                 : View.GONE);

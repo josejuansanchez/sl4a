@@ -112,16 +112,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onBackPressed() {
-        ScriptManager scriptManager = (ScriptManager) getFragmentManager()
-                .findFragmentByTag(SCRIPTS_FRAGMENT);
-        if (scriptManager != null) {
-            scriptManager.onBackPressed();
-        }
-        super.onBackPressed();
-    }
-
     // TriggerManager callbacks.
 
     public void cancelTriggers(View v) {
