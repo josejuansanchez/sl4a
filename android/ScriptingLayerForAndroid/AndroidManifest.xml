@@ -88,7 +88,6 @@
             android:finishOnTaskLaunch="true" android:launchMode="singleTask" />
 
         <activity android:name=".activity.ScriptEditor"
-            android:theme="@android:style/Theme.NoTitleBar"
             android:configChanges="keyboardHidden|orientation"
             android:windowSoftInputMode="stateAlwaysVisible|adjustResize">
             <intent-filter>

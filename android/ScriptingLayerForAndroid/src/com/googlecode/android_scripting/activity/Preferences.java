@@ -16,7 +16,6 @@
 
 package com.googlecode.android_scripting.activity;
 
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -29,7 +28,7 @@ import com.googlecode.android_scripting.fragment.PreferenceList;
 public class Preferences extends AppCompatActivity {
 
     Toolbar toolbar;
-    ActionBar actionBar;
+    ActionBar mActionBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,11 +40,11 @@ public class Preferences extends AppCompatActivity {
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setTitle("Settings");
-            actionBar.setHomeButtonEnabled(true);
-            actionBar.setDisplayHomeAsUpEnabled(true);
+        mActionBar = getSupportActionBar();
+        if (mActionBar != null) {
+            mActionBar.setTitle(R.string.toolbar_title_preferences);
+            mActionBar.setHomeButtonEnabled(true);
+            mActionBar.setDisplayHomeAsUpEnabled(true);
         }
 
 /*        // Since Status Bar is transparent in styles.xml, set its color.

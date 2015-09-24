@@ -41,7 +41,6 @@ import com.googlecode.android_scripting.fragment.TriggerManager;
  */
 
 public class MainActivity extends AppCompatActivity {
-    //public class MainActivity extends AppCompatActivity implements NavigationDrawer.OnBackPressed {
 
     public static final String SCRIPTS_FRAGMENT = "scriptsFragment";
     public static final String INTERPRETERS_FRAGMENT = "interpretersFragment";

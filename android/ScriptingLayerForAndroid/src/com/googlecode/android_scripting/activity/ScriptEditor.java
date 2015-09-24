@@ -16,7 +16,6 @@
 
 package com.googlecode.android_scripting.activity;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -27,6 +26,9 @@ import android.content.SharedPreferences.Editor;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -66,7 +68,11 @@ import java.util.regex.Pattern;
  *
  * @author Damon Kohler (damonkohler@gmail.com)
  */
-public class ScriptEditor extends Activity implements OnClickListener {
+public class ScriptEditor extends AppCompatActivity implements OnClickListener {
+
+    Toolbar toolbar;
+    ActionBar mActionBar;
+
     private static final int DIALOG_FIND_REPLACE = 2;
     private static final int DIALOG_LINE = 1;
     private EditText mNameText;
@@ -91,14 +97,14 @@ public class ScriptEditor extends Activity implements OnClickListener {
     private CheckBox mSearchAll;
     private CheckBox mSearchStart;
 
-    private static enum MenuId {
+    private enum MenuId {
         SAVE, SAVE_AND_RUN, PREFERENCES, API_BROWSER, HELP, SHARE, GOTO, SEARCH;
         public int getId() {
             return ordinal() + Menu.FIRST;
         }
     }
 
-    private static enum RequestCode {
+    private enum RequestCode {
         RPC_HELP
     }
 
@@ -117,6 +123,18 @@ public class ScriptEditor extends Activity implements OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.script_editor);
+
+        // Toolbar.
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        mActionBar = getSupportActionBar();
+        if (mActionBar != null) {
+            mActionBar.setTitle(R.string.toolbar_title_script_editor);
+            mActionBar.setHomeButtonEnabled(true);
+            mActionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
         mNameText = (EditText) findViewById(R.id.script_editor_title);
         mContentText = (EditText) findViewById(R.id.script_editor_body);
         mHistory = new EditHistory();
@@ -195,10 +213,14 @@ public class ScriptEditor extends Activity implements OnClickListener {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == MenuId.SAVE.getId()) {
+        int itemId = item.getItemId();
+        if (itemId == android.R.id.home) {
+            exit();
+        }
+        else if (itemId == MenuId.SAVE.getId()) {
             save();
             finish();
-        } else if (item.getItemId() == MenuId.SAVE_AND_RUN.getId()) {
+        } else if (itemId == MenuId.SAVE_AND_RUN.getId()) {
             save();
             Interpreter interpreter =
                     mConfiguration.getInterpreterForScript(mNameText.getText().toString());
@@ -212,26 +234,26 @@ public class ScriptEditor extends Activity implements OnClickListener {
                 Toast.makeText(this, "Can't run this type.", Toast.LENGTH_SHORT).show();
             }
             finish();
-        } else if (item.getItemId() == MenuId.PREFERENCES.getId()) {
+        } else if (itemId == MenuId.PREFERENCES.getId()) {
             startActivity(new Intent(this, Preferences.class));
-        } else if (item.getItemId() == MenuId.API_BROWSER.getId()) {
+        } else if (itemId == MenuId.API_BROWSER.getId()) {
             Intent intent = new Intent(this, ApiBrowser.class);
             intent.putExtra(Constants.EXTRA_SCRIPT_PATH, mNameText.getText().toString());
             intent.putExtra(Constants.EXTRA_INTERPRETER_NAME,
                     mConfiguration.getInterpreterForScript(mNameText.getText().toString()).getName());
             intent.putExtra(Constants.EXTRA_SCRIPT_TEXT, mContentText.getText().toString());
             startActivityForResult(intent, RequestCode.RPC_HELP.ordinal());
-        } else if (item.getItemId() == MenuId.HELP.getId()) {
+        } else if (itemId == MenuId.HELP.getId()) {
             Help.show(this);
-        } else if (item.getItemId() == MenuId.SHARE.getId()) {
+        } else if (itemId == MenuId.SHARE.getId()) {
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.putExtra(Intent.EXTRA_TEXT, mContentText.getText().toString());
             intent.putExtra(Intent.EXTRA_SUBJECT, "Share " + mNameText.getText().toString());
             intent.setType("text/plain");
             startActivity(Intent.createChooser(intent, "Send Script to:"));
-        } else if (item.getItemId() == MenuId.GOTO.getId()) {
+        } else if (itemId == MenuId.GOTO.getId()) {
             showDialog(DIALOG_LINE);
-        } else if (item.getItemId() == MenuId.SEARCH.getId()) {
+        } else if (itemId == MenuId.SEARCH.getId()) {
             showDialog(DIALOG_FIND_REPLACE);
         }
         return super.onOptionsItemSelected(item);
@@ -280,28 +302,8 @@ public class ScriptEditor extends Activity implements OnClickListener {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && hasContentChanged()) {
-            AlertDialog.Builder alert = new AlertDialog.Builder(this);
-            setVolumeControlStream(AudioManager.STREAM_MUSIC);
-            alert.setCancelable(false);
-            alert.setTitle("Confirm exit");
-            alert.setMessage("Would you like to save?");
-            alert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-                    save();
-                    finish();
-                }
-            });
-            alert.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-                    finish();
-                }
-            });
-            alert.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-                }
-            });
-            alert.show();
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            exit();
             return true;
         } else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
             redo();
@@ -570,6 +572,32 @@ public class ScriptEditor extends Activity implements OnClickListener {
             text.removeSpan(o);
         }
         Selection.setSelection(text, edit.mmAfter == null ? start : (start + edit.mmAfter.length()));
+    }
+
+    private void exit() {
+        if (hasContentChanged()) {
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+            setVolumeControlStream(AudioManager.STREAM_MUSIC);
+            alert.setCancelable(false);
+            alert.setTitle("Confirm exit");
+            alert.setMessage("Would you like to save?");
+            alert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    save();
+                    finish();
+                }
+            });
+            alert.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    finish();
+                }
+            });
+            alert.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                }
+            });
+            alert.show();
+        }
     }
 
     @Override

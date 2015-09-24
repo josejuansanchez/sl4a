@@ -200,5 +200,7 @@
 
     <!-- Toolbar titles. -->
     <string name="toolbar_title_scripts">Scripts</string>
+    <string name="toolbar_title_preferences">Settings</string>
+    <string name="toolbar_title_script_editor">Script Editor</string>
 
 </resources>
