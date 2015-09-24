@@ -597,6 +597,8 @@ public class ScriptEditor extends AppCompatActivity implements OnClickListener {
                 }
             });
             alert.show();
+        } else {
+            finish();
         }
     }
 

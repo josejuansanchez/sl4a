@@ -213,7 +213,7 @@ public class ScriptManager extends Fragment implements ScriptListAdapter.ViewHol
             }
         }
 
-        if (mScripts.size() == 0) {
+        if (mScripts.size() == 0 && mCurrentDir.equals(mBaseDir)) {
             scriptListView.setVisibility(View.GONE);
             noScriptsMessage.setVisibility(View.VISIBLE);
             if (mInSearchResultMode) {
