@@ -17,6 +17,7 @@
 package com.googlecode.android_scripting.activity;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v7.app.ActionBar;
@@ -80,6 +81,11 @@ public class ScriptPicker extends AppCompatActivity implements ScriptListAdapter
         if (mActionBar != null) {
             mActionBar.setHomeButtonEnabled(true);
             mActionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
+        // Since Status Bar is transparent in styles.xml, set its color.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(getResources().getColor(R.color.primary_dark));
         }
 
         CustomizeWindow.setToolbarTitle(this, "Scripts", R.layout.main_activity);

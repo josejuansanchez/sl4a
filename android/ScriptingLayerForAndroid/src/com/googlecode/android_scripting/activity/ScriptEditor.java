@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
@@ -133,6 +134,11 @@ public class ScriptEditor extends AppCompatActivity implements OnClickListener {
             mActionBar.setTitle(R.string.toolbar_title_script_editor);
             mActionBar.setHomeButtonEnabled(true);
             mActionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
+        // Since Status Bar is transparent in styles.xml, set its color.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(getResources().getColor(R.color.primary_dark));
         }
 
         mNameText = (EditText) findViewById(R.id.script_editor_title);

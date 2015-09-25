@@ -16,6 +16,7 @@
 
 package com.googlecode.android_scripting.activity;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -47,10 +48,10 @@ public class Preferences extends AppCompatActivity {
             mActionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-/*        // Since Status Bar is transparent in styles.xml, set its color.
+        // Since Status Bar is transparent in styles.xml, set its color.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(getResources().getColor(R.color.primary_dark));
-        }*/
+        }
 
         // Display the fragment as the main content.
         getFragmentManager().beginTransaction()
