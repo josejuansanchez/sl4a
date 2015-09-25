@@ -149,7 +149,8 @@ public class AndroidFacade extends RpcReceiver {
         getClipboardManager().setText(text);
     }
 
-    @Rpc(description = "Read text from the clipboard.", returns = "The text in the clipboard.")
+    @Rpc(description = "Read text from the clipboard.",
+            returns = "The text in the clipboard, or null if clipboard is empty.")
     public String getClipboard() {
         CharSequence text = getClipboardManager().getText();
         return text == null ? null : text.toString();
