@@ -21,6 +21,8 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -34,8 +36,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.StatFs;
 import android.os.Vibrator;
-/*import android.content.ClipboardManager;*/
-import android.text.ClipboardManager;
+import android.content.ClipboardManager;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.widget.EditText;
@@ -121,17 +122,15 @@ public class AndroidFacade extends RpcReceiver {
     }
 
     ClipboardManager getClipboardManager() {
-        Object clipboard = null;
         if (mClipboard == null) {
             try {
-                clipboard = mService.getSystemService(Context.CLIPBOARD_SERVICE);
+                mClipboard = (ClipboardManager) mService.getSystemService(Context.CLIPBOARD_SERVICE);
             } catch (Exception e) {
-                Looper.prepare(); // Clipboard manager won't work without this on higher SDK levels...
-                clipboard = mService.getSystemService(Context.CLIPBOARD_SERVICE);
+                Looper.prepare(); // Needed in higher SDK levels because it's not the main thread.
+                mClipboard = (ClipboardManager) mService.getSystemService(Context.CLIPBOARD_SERVICE);
             }
-            mClipboard = (ClipboardManager) clipboard;
             if (mClipboard == null) {
-                Log.w("Clipboard managed not accessible.");
+                Log.w("Clipboard manager not accessible.");
             }
         }
         return mClipboard;
@@ -146,13 +145,24 @@ public class AndroidFacade extends RpcReceiver {
 
     @Rpc(description = "Put text in the clipboard.")
     public void setClipboard(@RpcParameter(name = "text") String text) {
-        getClipboardManager().setText(text);
+        ClipData clip = ClipData.newPlainText("put text", text);
+        getClipboardManager().setPrimaryClip(clip);
     }
 
     @Rpc(description = "Read text from the clipboard.",
             returns = "The text in the clipboard, or null if clipboard is empty.")
     public String getClipboard() {
-        CharSequence text = getClipboardManager().getText();
+        CharSequence text;
+
+        if (!getClipboardManager().hasPrimaryClip()) {
+            return null;
+        } else if (!getClipboardManager().getPrimaryClipDescription().
+                hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)) {
+            return null;
+        }
+        ClipData.Item item = getClipboardManager().getPrimaryClip().getItemAt(0);
+        text = item.getText();
+
         return text == null ? null : text.toString();
     }
 
