@@ -2,6 +2,7 @@
 <resources>
 
     <!-- Base application theme. Applied only for API version >= 21. -->
+
     <style name="AppTheme" parent="AppTheme.Base">
 
         <!-- Translucent Status Bar for navigation drawer effect. -->
@@ -15,6 +16,19 @@
         <item name="android:fragmentSharedElementEnterTransition">@android:transition/move</item>
         <item name="android:windowSharedElementExitTransition">@android:transition/move</item>
 <!--        <item name="android:colorControlHighlight">@color/highlight</item>-->
+    </style>
 
+    <!-- Console Activity theme. -->
+
+    <style name="ConsoleTheme" parent="ConsoleTheme.Base">
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+    </style>
+
+    <!-- Future Activity theme. -->
+
+    <style name="FutureActivityTheme" parent="FutureActivityTheme.Base">
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 </resources>

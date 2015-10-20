@@ -6,7 +6,6 @@
     android:background="@color/text_background"
     tools:context="com.googlecode.android_scripting.custom_component.NavigationDrawer">
 
-
     <!-- ScrimInsetsFrameLayout allows 'drawer under the status bar' effect. -->
     <com.googlecode.android_scripting.custom_component.ScrimInsetsFrameLayout
         android:id="@+id/scrimInsetsFrameLayout"

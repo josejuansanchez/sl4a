@@ -6,6 +6,7 @@
     </style>
 
     <!-- Base theme.  -->
+
     <style name="AppTheme.Base" parent="Theme.AppCompat.NoActionBar">
 
         <!-- Toolbar will be used instead of ActionBar. -->
@@ -13,6 +14,24 @@
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorAccent">@color/accent</item>
         <item name="windowActionModeOverlay">true</item>
-
     </style>
+
+    <!-- Console Activity theme. -->
+
+    <style name="ConsoleTheme.Base" parent="Theme.AppCompat.NoActionBar">
+        <item name="windowActionModeOverlay">true</item>
+    </style>
+
+    <style name="ConsoleTheme" parent="ConsoleTheme.Base">
+    </style>
+
+    <!-- Future Activity theme. -->
+
+    <style name="FutureActivityTheme.Base" parent="Theme.AppCompat.NoActionBar">
+        <item name="windowActionModeOverlay">true</item>
+    </style>
+
+    <style name="FutureActivityTheme" parent="FutureActivityTheme.Base">
+    </style>
+
 </resources>
