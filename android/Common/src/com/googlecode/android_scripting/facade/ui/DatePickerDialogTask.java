@@ -26,69 +26,70 @@ import org.json.JSONObject;
 
 /**
  * Wrapper class for date picker dialog running in separate thread.
- * 
+ *
  * @author MeanEYE.rcf (meaneye.rcf@gmail.com)
  */
 public class DatePickerDialogTask extends DialogTask {
-  public static int mYear;
-  public static int mMonth;
-  public static int mDay;
+    public static int mYear;
+    public static int mMonth;
+    public static int mDay;
 
-  public DatePickerDialogTask(int year, int month, int day) {
-    mYear = year;
-    mMonth = month - 1;
-    mDay = day;
-  }
+    public DatePickerDialogTask(int year, int month, int day) {
+        mYear = year;
+        mMonth = month - 1;
+        mDay = day;
+    }
 
-  @Override
-  public void onCreate() {
-    super.onCreate();
-    mDialog = new DatePickerDialog(getActivity(), new DatePickerDialog.OnDateSetListener() {
-      @Override
-      public void onDateSet(DatePicker view, int year, int month, int day) {
-        JSONObject result = new JSONObject();
-        try {
-          result.put("which", "positive");
-          result.put("year", year);
-          result.put("month", month + 1);
-          result.put("day", day);
-          setResult(result);
-        } catch (JSONException e) {
-          throw new AndroidRuntimeException(e);
-        }
-      }
-    }, mYear, mMonth, mDay);
-    mDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-      @Override
-      public void onCancel(DialogInterface view) {
-        JSONObject result = new JSONObject();
-        try {
-          result.put("which", "neutral");
-          result.put("year", mYear);
-          result.put("month", mMonth + 1);
-          result.put("day", mDay);
-          setResult(result);
-        } catch (JSONException e) {
-          throw new AndroidRuntimeException(e);
-        }
-      }
-    });
-    mDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-      @Override
-      public void onDismiss(DialogInterface dialog) {
-        JSONObject result = new JSONObject();
-        try {
-          result.put("which", "negative");
-          result.put("year", mYear);
-          result.put("month", mMonth + 1);
-          result.put("day", mDay);
-          setResult(result);
-        } catch (JSONException e) {
-          throw new AndroidRuntimeException(e);
-        }
-      }
-    });
-    mDialog.show();
-    mShowLatch.countDown();
-  }
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        mDialog = new DatePickerDialog(getActivity(), new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(DatePicker view, int year, int month, int day) {
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("which", "positive");
+                    result.put("year", year);
+                    result.put("month", month + 1);
+                    result.put("day", day);
+                    setResult(result);
+                } catch (JSONException e) {
+                    throw new AndroidRuntimeException(e);
+                }
+            }
+        }, mYear, mMonth, mDay);
+        mDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface view) {
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("which", "neutral");
+                    result.put("year", mYear);
+                    result.put("month", mMonth + 1);
+                    result.put("day", mDay);
+                    setResult(result);
+                } catch (JSONException e) {
+                    throw new AndroidRuntimeException(e);
+                }
+            }
+        });
+        mDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("which", "negative");
+                    result.put("year", mYear);
+                    result.put("month", mMonth + 1);
+                    result.put("day", mDay);
+                    setResult(result);
+                    dismissDialog();
+                } catch (JSONException e) {
+                    throw new AndroidRuntimeException(e);
+                }
+            }
+        });
+        mDialog.show();
+        mShowLatch.countDown();
+    }
 }
