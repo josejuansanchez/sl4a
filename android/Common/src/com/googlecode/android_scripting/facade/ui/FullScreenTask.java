@@ -65,8 +65,11 @@ public class FullScreenTask extends FutureActivityTask<Object> implements OnClic
             }
         } catch (Exception e) {
             mInflater.getErrors().add(e.toString());
-            mView = defaultView();
-            mInflater.setIdList(R.id.class);
+        } finally {
+            if (mView == null) {
+                mView = defaultView();
+                mInflater.setIdList(R.id.class);
+            }
         }
         getActivity().setContentView(mView);
         getActivity().setTitle(mTitle);
@@ -209,7 +212,6 @@ public class FullScreenTask extends FutureActivityTask<Object> implements OnClic
 
         @Override
         public void run() {
-            // TODO Auto-generated method stub
             mInflater.setProperty(mView, mProperty, mValue);
             mView.invalidate();
             mLatch.countDown();

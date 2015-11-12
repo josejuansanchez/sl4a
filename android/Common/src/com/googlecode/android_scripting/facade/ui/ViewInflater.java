@@ -8,6 +8,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.text.InputType;
 import android.text.method.DigitsKeyListener;
 import android.util.DisplayMetrics;
@@ -272,7 +273,7 @@ public class ViewInflater {
         return inflateView(context, xml, null);
     }
 
-    private void addln(Object msg) {
+    private void addLn(Object msg) {
         Log.d(msg.toString());
     }
 
@@ -310,13 +311,13 @@ public class ViewInflater {
             XmlPullParserException, IOException {
         View view = buildView(context, xml, root);
         if (view == null) {
-            return view;
+            return null;
         }
         int event;
         while ((event = xml.next()) != XmlPullParser.END_DOCUMENT) {
             switch (event) {
                 case XmlPullParser.START_TAG:
-                    if (view == null || view instanceof ViewGroup) {
+                    if (view instanceof ViewGroup) {
                         inflateView(context, xml, (ViewGroup) view);
                     } else {
                         skipTag(xml); // Not really a view, probably, skip it.
@@ -341,6 +342,7 @@ public class ViewInflater {
 
     private View buildView(Context context, XmlPullParser xml, ViewGroup root)
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+
         View view = viewClass(context, xml.getName());
         if (view != null) {
             getLayoutParams(view, root); // Make quite sure every view has a layout param.
@@ -355,7 +357,6 @@ public class ViewInflater {
                 root.addView(view);
             }
         }
-
         return view;
     }
 
@@ -406,7 +407,7 @@ public class ViewInflater {
             return inches / 72;
         }
         if (unit.equals("mm")) {
-            return (float) (inches / 2.54);
+            return (float) (inches / 25.4);
         }
         return 0;
     }
@@ -424,6 +425,7 @@ public class ViewInflater {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
+            mErrors.add("failed to set view id. Make sure new id is prefixed by \"@+id/\"");
             return 0;
         }
     }
@@ -450,9 +452,9 @@ public class ViewInflater {
         LayoutParams result = null;
         if (root != null) {
             try {
-                String lookfor = root.getClass().getName() + "$LayoutParams";
-                addln(lookfor);
-                Class<? extends LayoutParams> clazz = Class.forName(lookfor).asSubclass(LayoutParams.class);
+                String lookFor = root.getClass().getName() + "$LayoutParams";
+                addLn(lookFor);
+                Class<? extends LayoutParams> clazz = Class.forName(lookFor).asSubclass(LayoutParams.class);
                 if (clazz != null) {
                     Constructor<? extends LayoutParams> ct = clazz.getConstructor(int.class, int.class);
                     result = ct.newInstance(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -477,36 +479,41 @@ public class ViewInflater {
 
     private void setProperty(View view, ViewGroup root, String attr, String value)
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
-        addln(attr + ":" + value);
-        if (attr.startsWith("layout_")) {
-            setLayoutProperty(view, root, attr, value);
-        } else if (attr.equals("id")) {
-            view.setId(calcId(value));
-        } else if (attr.equals("gravity")) {
-            setInteger(view, attr, getInteger(Gravity.class, value));
-        } else if (attr.equals("width") || attr.equals("height")) {
-            setInteger(view, attr, (int) getFontSize(value));
-        } else if (attr.equals("inputType")) {
-            setInteger(view, attr, getInteger(InputType.class, value));
-        } else if (attr.equals("background")) {
+        addLn(attr + ":" + value);
+        if (attr.equals("background")) {
             setBackground(view, value);
         } else if (attr.equals("digits") && view instanceof TextView) {
             ((TextView) view).setKeyListener(DigitsKeyListener.getInstance(value));
+        } else if (attr.equals("gravity")) {
+            setInteger(view, attr, getInteger(Gravity.class, value));
+        } else if (attr.equals("height") || attr.equals("width")) {
+            setInteger(view, attr, (int) getFontSize(value));
+        } else if (attr.equals("id")) {
+            int id = calcId(value);
+            if (id != 0) {
+                view.setId(id);
+            }
+        } else if (attr.equals("inputType")) {
+            setInteger(view, attr, getInteger(InputType.class, value));
+        } else if (attr.startsWith("layout_")) {
+            setLayoutProperty(view, root, attr, value);
         } else if (attr.startsWith("nextFocus")) {
             setInteger(view, attr + "Id", calcId(value));
         } else if (attr.equals("padding")) {
             int size = (int) getFontSize(value);
             view.setPadding(size, size, size, size);
+        } else if (attr.equals("src")) {
+            setImage(view, value);
         } else if (attr.equals("stretchColumns")) {
             setStretchColumns(view, value);
-        } else if (attr.equals("textSize")) {
-            setFloat(view, attr, getFontSize(value));
         } else if (attr.equals("textColor")) {
             setInteger(view, attr, getColor(value));
-        } else if (attr.equals("textHighlightColor")) {
-            setInteger(view, "HighlightColor", getColor(value));
         } else if (attr.equals("textColorHint")) {
             setInteger(view, "LinkTextColor", getColor(value));
+        } else if (attr.equals("textHighlightColor")) {
+            setInteger(view, "HighlightColor", getColor(value));
+        } else if (attr.equals("textSize")) {
+            setFloat(view, attr, getFontSize(value));
         } else if (attr.equals("textStyle")) {
             TextView textview = (TextView) view;
             int style = getInteger(Typeface.class, value);
@@ -520,8 +527,6 @@ public class ViewInflater {
             Typeface typeface = textview.getTypeface();
             int style = typeface == null ? 0 : typeface.getStyle();
             textview.setTypeface(Typeface.create(value, style));
-        } else if (attr.equals("src")) {
-            setImage(view, value);
         } else {
             setDynamicProperty(view, attr, value);
         }
@@ -576,7 +581,11 @@ public class ViewInflater {
         } else if (value.startsWith("@")) {
             setInteger(view, "backgroundResource", getInteger(view, value));
         } else {
-            view.setBackgroundDrawable(getDrawable(value));
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                view.setBackgroundDrawable(getDrawable(value));
+            } else {
+                view.setBackground(getDrawable(value));
+            }
         }
     }
 
@@ -584,8 +593,7 @@ public class ViewInflater {
         try {
             Uri uri = Uri.parse(value);
             if ("file".equals(uri.getScheme())) {
-                BitmapDrawable bd = new BitmapDrawable(uri.getPath());
-                return bd;
+                return new BitmapDrawable(mContext.getResources(), uri.getPath());
             }
         } catch (Exception e) {
             mErrors.add("failed to load drawable " + value);
@@ -665,7 +673,7 @@ public class ViewInflater {
         int result = 0;
         Integer v = getInputTypes().get(value);
         if (v == null) {
-            mErrors.add("Unkown input type " + value);
+            mErrors.add("Unknown input type " + value);
         } else {
             result = v;
         }
@@ -682,7 +690,7 @@ public class ViewInflater {
                 m.invoke(view, value);
             }
         } catch (Exception e) {
-            addln(name + ":" + value + ":" + e.toString());
+            addLn(name + ":" + value + ":" + e.toString());
         }
 
     }
@@ -697,7 +705,7 @@ public class ViewInflater {
                 m.invoke(view, value);
             }
         } catch (Exception e) {
-            addln(name + ":" + value + ":" + e.toString());
+            addLn(name + ":" + value + ":" + e.toString());
         }
 
     }
@@ -723,7 +731,7 @@ public class ViewInflater {
                 mErrors.add(view.getClass().getSimpleName() + ":" + attr + " Property not found.");
             }
         } catch (Exception e) {
-            addln(name + ":" + value + ":" + e.toString());
+            addLn(name + ":" + value + ":" + e.toString());
             mErrors.add(name + ":" + value + ":" + e.toString());
         }
     }
@@ -759,7 +767,7 @@ public class ViewInflater {
     }
 
     private Integer getInteger(Class<?> clazz, String value) {
-        Integer result = null;
+        Integer result;
         if (value.contains("|")) {
             int work = 0;
             for (String s : value.split("\\|")) {
@@ -842,9 +850,9 @@ public class ViewInflater {
     private View viewClassTry(Context context, String name) {
         View result = null;
         try {
-            Class<? extends View> viewclass = Class.forName(name).asSubclass(View.class);
-            if (viewclass != null) {
-                Constructor<? extends View> ct = viewclass.getConstructor(Context.class);
+            Class<? extends View> viewClass = Class.forName(name).asSubclass(View.class);
+            if (viewClass != null) {
+                Constructor<? extends View> ct = viewClass.getConstructor(Context.class);
                 result = ct.newInstance(context);
             }
         } catch (Exception e) {
@@ -871,7 +879,8 @@ public class ViewInflater {
     }
 
     public int getId(String name) {
-        return mIdList.get(name);
+        Integer id = mIdList.get(name);
+        return (id != null) ? id : 0;
     }
 
     public Map<String, Map<String, String>> getViewAsMap(View v) {
