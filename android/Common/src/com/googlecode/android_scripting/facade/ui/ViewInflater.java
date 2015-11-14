@@ -373,10 +373,10 @@ public class ViewInflater {
         if (value.equals("fill_parent")) {
             return LayoutParams.MATCH_PARENT;
         }
-        return (int) getFontSize(value);
+        return (int) getScaledSize(value);
     }
 
-    private float getFontSize(String value) {
+    private float getScaledSize(String value) {
         int i;
         float size;
         String unit = "px";
@@ -386,46 +386,54 @@ public class ViewInflater {
                 break;
             }
         }
-        size = Float.parseFloat(value.substring(0, i));
-        if (i < value.length()) {
-            unit = value.substring(i).trim();
+        try {
+            size = Float.parseFloat(value.substring(0, i));
+            if (i < value.length()) {
+                unit = value.substring(i).trim();
+            }
+            if (unit.equals("px")) {
+                return size;
+            }
+            if (unit.equals("sp")) {
+                return mMetrics.scaledDensity * size;
+            }
+            if (unit.equals("dp") || unit.equals("dip")) {
+                return mMetrics.density * size;
+            }
+            float inches = mMetrics.ydpi * size;
+            if (unit.equals("in")) {
+                return inches;
+            }
+            if (unit.equals("pt")) {
+                return inches / 72;
+            }
+            if (unit.equals("mm")) {
+                return (float) (inches / 25.4);
+            }
+        } catch (NumberFormatException e) {
         }
-        if (unit.equals("px")) {
-            return size;
-        }
-        if (unit.equals("sp")) {
-            return mMetrics.scaledDensity * size;
-        }
-        if (unit.equals("dp") || unit.equals("dip")) {
-            return mMetrics.density * size;
-        }
-        float inches = mMetrics.ydpi * size;
-        if (unit.equals("in")) {
-            return inches;
-        }
-        if (unit.equals("pt")) {
-            return inches / 72;
-        }
-        if (unit.equals("mm")) {
-            return (float) (inches / 25.4);
-        }
+        mErrors.add("invalid dimension value");
         return 0;
     }
 
-    private int calcId(String value) {
+    private int calcId(String value, boolean isNewId) {
         if (value == null) {
             return 0;
         }
-        if (value.startsWith("@+id/")) {
+        if (value.startsWith("@+id/") && isNewId) {
             return tryGetId(value.substring(5));
         }
-        if (value.startsWith("@id/")) {
+        if (value.startsWith("@id/") && !isNewId) {
             return tryGetId(value.substring(4));
         }
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            mErrors.add("failed to set view id. Make sure new id is prefixed by \"@+id/\"");
+            if (isNewId) {
+                mErrors.add("failed to set view id. Make sure new id is prefixed by \"@+id/\"");
+            } else {
+                mErrors.add("failed to find id. Make sure id is prefixed by \"@id/\"");
+            }
             return 0;
         }
     }
@@ -487,9 +495,9 @@ public class ViewInflater {
         } else if (attr.equals("gravity")) {
             setInteger(view, attr, getInteger(Gravity.class, value));
         } else if (attr.equals("height") || attr.equals("width")) {
-            setInteger(view, attr, (int) getFontSize(value));
+            setInteger(view, attr, (int) getScaledSize(value));
         } else if (attr.equals("id")) {
-            int id = calcId(value);
+            int id = calcId(value, true);
             if (id != 0) {
                 view.setId(id);
             }
@@ -498,9 +506,9 @@ public class ViewInflater {
         } else if (attr.startsWith("layout_")) {
             setLayoutProperty(view, root, attr, value);
         } else if (attr.startsWith("nextFocus")) {
-            setInteger(view, attr + "Id", calcId(value));
+            setInteger(view, attr + "Id", calcId(value, false));
         } else if (attr.equals("padding")) {
-            int size = (int) getFontSize(value);
+            int size = (int) getScaledSize(value);
             view.setPadding(size, size, size, size);
         } else if (attr.equals("src")) {
             setImage(view, value);
@@ -513,7 +521,7 @@ public class ViewInflater {
         } else if (attr.equals("textHighlightColor")) {
             setInteger(view, "HighlightColor", getColor(value));
         } else if (attr.equals("textSize")) {
-            setFloat(view, attr, getFontSize(value));
+            setFloat(view, attr, getScaledSize(value));
         } else if (attr.equals("textStyle")) {
             TextView textview = (TextView) view;
             int style = getInteger(Typeface.class, value);
@@ -543,35 +551,51 @@ public class ViewInflater {
     private void setLayoutProperty(View view, ViewGroup root, String attr, String value) {
         LayoutParams layout = getLayoutParams(view, root);
         String layoutAttr = attr.substring(7);
-        if (layoutAttr.equals("width")) {
-            layout.width = getLayoutValue(value);
-        } else if (layoutAttr.equals("height")) {
-            layout.height = getLayoutValue(value);
-        } else if (layoutAttr.equals("gravity")) {
-            setIntegerField(layout, "gravity", getInteger(Gravity.class, value));
-        } else {
-            if (layoutAttr.startsWith("margin") && layout instanceof MarginLayoutParams) {
-                int size = (int) getFontSize(value);
-                MarginLayoutParams margins = (MarginLayoutParams) layout;
-                if (layoutAttr.equals("marginBottom")) {
-                    margins.bottomMargin = size;
-                } else if (layoutAttr.equals("marginTop")) {
-                    margins.topMargin = size;
-                } else if (layoutAttr.equals("marginLeft")) {
-                    margins.leftMargin = size;
-                } else if (layoutAttr.equals("marginRight")) {
-                    margins.rightMargin = size;
+        // TODO (miguelpalacio): verify if view.setLayoutParams(layout) apply for all conditions.
+        switch (layoutAttr) {
+            case "width":
+                layout.width = getLayoutValue(value);
+                view.setLayoutParams(layout);
+                break;
+            case "height":
+                layout.height = getLayoutValue(value);
+                view.setLayoutParams(layout);
+                break;
+            case "gravity":
+                setIntegerField(layout, "gravity", getInteger(Gravity.class, value));
+                view.setLayoutParams(layout);
+                break;
+            default:
+                if (layoutAttr.startsWith("margin") && layout instanceof MarginLayoutParams) {
+                    int size = (int) getScaledSize(value);
+                    MarginLayoutParams margins = (MarginLayoutParams) layout;
+                    switch (layoutAttr) {
+                        case "marginBottom":
+                            margins.bottomMargin = size;
+                            break;
+                        case "marginTop":
+                            margins.topMargin = size;
+                            break;
+                        case "marginLeft":
+                            margins.leftMargin = size;
+                            break;
+                        case "marginRight":
+                            margins.rightMargin = size;
+                            break;
+                    }
+                    view.setLayoutParams(layout);
+                } else if (layout instanceof RelativeLayout.LayoutParams) {
+                    // TODO (miguelpalacio): check these dynamically set properties.
+                    int anchor = calcId(value, false);
+                    if (anchor == 0) {
+                        anchor = getInteger(RelativeLayout.class, value);
+                    }
+                    int rule = mRelative.get(layoutAttr);
+                    ((RelativeLayout.LayoutParams) layout).addRule(rule, anchor);
+                } else {
+                    setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
                 }
-            } else if (layout instanceof RelativeLayout.LayoutParams) {
-                int anchor = calcId(value);
-                if (anchor == 0) {
-                    anchor = getInteger(RelativeLayout.class, value);
-                }
-                int rule = mRelative.get(layoutAttr);
-                ((RelativeLayout.LayoutParams) layout).addRule(rule, anchor);
-            } else {
-                setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
-            }
+
         }
     }
 
@@ -692,7 +716,6 @@ public class ViewInflater {
         } catch (Exception e) {
             addLn(name + ":" + value + ":" + e.toString());
         }
-
     }
 
     private void setFloat(View view, String attr, float value) {
