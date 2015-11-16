@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
@@ -20,12 +21,14 @@ import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 
 import com.googlecode.android_scripting.Log;
@@ -416,33 +419,55 @@ public class ViewInflater {
         return 0;
     }
 
-    private int calcId(String value, boolean isNewId) {
+    private int calcId(String value, boolean isNewId, boolean isLoadingLayout) {
         if (value == null) {
             return 0;
         }
-        if (value.startsWith("@+id/") && isNewId) {
-            return tryGetId(value.substring(5));
-        }
-        if (value.startsWith("@id/") && !isNewId) {
-            return tryGetId(value.substring(4));
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            if (isNewId) {
-                mErrors.add("failed to set view id. Make sure new id is prefixed by \"@+id/\"");
-            } else {
-                mErrors.add("failed to find id. Make sure id is prefixed by \"@id/\"");
+        int id = 0;
+        if (isLoadingLayout) {
+            if (value.startsWith("@+id/")) {
+                value = value.substring(5);
+                id = tryGetId(value, true);
+            } else if (value.startsWith("@id/")) {
+                isNewId = false;
+                value = value.substring(4);
+                id = tryGetId(value, false);    // id should be in R.id.
             }
-            return 0;
+        } else {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                // This "if - else if" block gives backwards compatibility for older scripts.
+                if (value.startsWith("@+id/")) {
+                    value = value.substring(5);
+                } else if (value.startsWith("@id/")) {
+                    value = value.substring(4);
+                }
+                id = tryGetId(value, isNewId);
+            }
         }
+        if (id == 0) {
+            if (isLoadingLayout) {
+                if (isNewId) {
+                    mErrors.add("failed to set view id. Make sure id is prefixed by either \"@id/\" or \"@+id/\"");
+                } else {
+                    mErrors.add("failed to set view id. Make sure it is defined in the R.id class");
+                }
+            } else if (!isNewId) {
+                mErrors.add("failed to find view matching id");
+            }
+        }
+        return id;
     }
 
-    private int tryGetId(String value) {
-        Integer id = mIdList.get(value);
-        if (id == null) {
-            id = new Integer(mNextSeq++);
+    private int tryGetId(String value, boolean isNewId) {
+        Integer id;
+        if (isNewId) {
+            id = mNextSeq++;
             mIdList.put(value, id);
+        } else {
+            id = mIdList.get(value);
+            if (id == null) id = 0;
         }
         return id;
     }
@@ -497,7 +522,7 @@ public class ViewInflater {
         } else if (attr.equals("height") || attr.equals("width")) {
             setInteger(view, attr, (int) getScaledSize(value));
         } else if (attr.equals("id")) {
-            int id = calcId(value, true);
+            int id = calcId(value, true, view.getId() == View.NO_ID);
             if (id != 0) {
                 view.setId(id);
             }
@@ -506,7 +531,7 @@ public class ViewInflater {
         } else if (attr.startsWith("layout_")) {
             setLayoutProperty(view, root, attr, value);
         } else if (attr.startsWith("nextFocus")) {
-            setInteger(view, attr + "Id", calcId(value, false));
+            setInteger(view, attr + "Id", calcId(value, false, false));
         } else if (attr.equals("padding")) {
             int size = (int) getScaledSize(value);
             view.setPadding(size, size, size, size);
@@ -515,6 +540,7 @@ public class ViewInflater {
         } else if (attr.equals("stretchColumns")) {
             setStretchColumns(view, value);
         } else if (attr.equals("textColor")) {
+            // TODO (miguelpalacio): enable color resources (e.g., @android:color/...)
             setInteger(view, attr, getColor(value));
         } else if (attr.equals("textColorHint")) {
             setInteger(view, "LinkTextColor", getColor(value));
@@ -542,9 +568,14 @@ public class ViewInflater {
 
     private void setStretchColumns(View view, String value) {
         TableLayout table = (TableLayout) view;
-        String[] values = value.split(",");
-        for (String column : values) {
-            table.setColumnStretchable(Integer.parseInt(column), true);
+        if (value.trim().equals("*")) {
+            table.setStretchAllColumns(true);
+            table.requestLayout();
+        } else {
+            String[] values = value.split(",");
+            for (String column : values) {
+                table.setColumnStretchable(Integer.parseInt(column.trim()), true);
+            }
         }
     }
 
@@ -586,7 +617,7 @@ public class ViewInflater {
                     view.setLayoutParams(layout);
                 } else if (layout instanceof RelativeLayout.LayoutParams) {
                     // TODO (miguelpalacio): check these dynamically set properties.
-                    int anchor = calcId(value, false);
+                    int anchor = calcId(value, false, false);
                     if (anchor == 0) {
                         anchor = getInteger(RelativeLayout.class, value);
                     }
@@ -595,7 +626,6 @@ public class ViewInflater {
                 } else {
                     setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
                 }
-
         }
     }
 
@@ -628,6 +658,15 @@ public class ViewInflater {
     private void setImage(View view, String value) {
         if (value.startsWith("@")) {
             setInteger(view, "imageResource", getInteger(view, value));
+        } else if (value.startsWith("#") && view instanceof ImageView) {
+            int color = getColor(value);
+            if (color != 0) {
+                ColorDrawable cd = new ColorDrawable(color);
+                ((ImageView) view).setImageBitmap(null);
+                ((ImageView) view).setImageDrawable(cd);
+            } else {
+                mErrors.add("color not in the form '#rgb', '#argb', '#rrggbb', '#aarrggbb");
+            }
         } else {
             try {
                 Uri uri = Uri.parse(value);
@@ -660,7 +699,7 @@ public class ViewInflater {
 
     private int getColor(String value) {
         int a = 0xff, r = 0, g = 0, b = 0;
-        if (value.startsWith("#")) {
+        if (value.startsWith("#") && value.length() <= 9) {
             try {
                 value = value.substring(1);
                 if (value.length() == 4) {
