@@ -540,27 +540,36 @@ public class ViewInflater {
         } else if (attr.equals("stretchColumns")) {
             setStretchColumns(view, value);
         } else if (attr.equals("textColor")) {
-            // TODO (miguelpalacio): enable color resources (e.g., @android:color/...)
             setInteger(view, attr, getColor(value));
         } else if (attr.equals("textColorHint")) {
-            setInteger(view, "LinkTextColor", getColor(value));
-        } else if (attr.equals("textHighlightColor")) {
+            //setInteger(view, "LinkTextColor", getColor(value));
+            setInteger(view, "HintTextColor", getColor(value));
+        } else if (attr.equals("textColorHighlight")) {
             setInteger(view, "HighlightColor", getColor(value));
         } else if (attr.equals("textSize")) {
-            setFloat(view, attr, getScaledSize(value));
+            float scaledPixels = getScaledSize(value) / mMetrics.scaledDensity; // convert into "sp"
+            setFloat(view, attr, scaledPixels);
         } else if (attr.equals("textStyle")) {
-            TextView textview = (TextView) view;
-            int style = getInteger(Typeface.class, value);
-            if (style == 0) {
-                textview.setTypeface(Typeface.DEFAULT);
+            if (view instanceof TextView) {
+                TextView textview = (TextView) view;
+                int style = getInteger(Typeface.class, value);
+                if (style == 0) {
+                    textview.setTypeface(Typeface.DEFAULT);
+                } else {
+                    textview.setTypeface(textview.getTypeface(), style);
+                }
             } else {
-                textview.setTypeface(textview.getTypeface(), style);
+                mErrors.add("view must be instance of either TextView or a subclass of it");
             }
         } else if (attr.equals("typeface")) {
-            TextView textview = (TextView) view;
-            Typeface typeface = textview.getTypeface();
-            int style = typeface == null ? 0 : typeface.getStyle();
-            textview.setTypeface(Typeface.create(value, style));
+            if (view instanceof TextView) {
+                TextView textview = (TextView) view;
+                Typeface typeface = textview.getTypeface();
+                int style = typeface == null ? 0 : typeface.getStyle();
+                textview.setTypeface(Typeface.create(value, style));
+            } else {
+                mErrors.add("view must be instance of either TextView or a subclass of it");
+            }
         } else {
             setDynamicProperty(view, attr, value);
         }
@@ -725,6 +734,11 @@ public class ViewInflater {
                 return (int) result;
             } catch (Exception e) {
             }
+        } else if (value.startsWith("?") || value.startsWith("@")) {
+            int colorRes = parseTheme(value);
+            if (colorRes != 0) {
+                return mContext.getResources().getColor(colorRes);
+            }
         } else if (mColorNames.containsKey(value.toLowerCase())) {
             return getColor(mColorNames.get(value.toLowerCase()));
         }
@@ -828,8 +842,8 @@ public class ViewInflater {
         }
     }
 
-    private Integer getInteger(Class<?> clazz, String value) {
-        Integer result;
+    private int getInteger(Class<?> clazz, String value) {
+        int result;
         if (value.contains("|")) {
             int work = 0;
             for (String s : value.split("\\|")) {
@@ -837,9 +851,7 @@ public class ViewInflater {
             }
             result = work;
         } else {
-            if (value.startsWith("?")) {
-                result = parseTheme(value);
-            } else if (value.startsWith("@")) {
+            if (value.startsWith("?") || value.startsWith("@")) {
                 result = parseTheme(value);
             } else if (value.startsWith("0x")) {
                 try {
@@ -867,11 +879,11 @@ public class ViewInflater {
         return result;
     }
 
-    private Integer getInteger(View view, String value) {
+    private int getInteger(View view, String value) {
         return getInteger(view.getClass(), value);
     }
 
-    private Integer parseTheme(String value) {
+    private int parseTheme(String value) {
         int result;
         try {
             String query = "";
