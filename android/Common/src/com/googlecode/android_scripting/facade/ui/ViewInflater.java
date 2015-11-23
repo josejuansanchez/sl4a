@@ -28,7 +28,6 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 
 import com.googlecode.android_scripting.Log;
@@ -226,8 +225,7 @@ public class ViewInflater {
         mRelative.put("alignParentTop", RelativeLayout.ALIGN_PARENT_TOP);
         mRelative.put("alignRight", RelativeLayout.ALIGN_PARENT_RIGHT);
         mRelative.put("alignTop", RelativeLayout.ALIGN_TOP);
-        // mRelative.put("alignWithParentIfMissing",RelativeLayout.); // No idea what this translates
-        // to.
+        // mRelative.put("alignWithParentIfMissing",RelativeLayout.); // No idea what this translates to.
         mRelative.put("below", RelativeLayout.BELOW);
         mRelative.put("centerHorizontal", RelativeLayout.CENTER_HORIZONTAL);
         mRelative.put("centerInParent", RelativeLayout.CENTER_IN_PARENT);
@@ -591,19 +589,15 @@ public class ViewInflater {
     private void setLayoutProperty(View view, ViewGroup root, String attr, String value) {
         LayoutParams layout = getLayoutParams(view, root);
         String layoutAttr = attr.substring(7);
-        // TODO (miguelpalacio): verify if view.setLayoutParams(layout) apply for all conditions.
         switch (layoutAttr) {
             case "width":
                 layout.width = getLayoutValue(value);
-                view.setLayoutParams(layout);
                 break;
             case "height":
                 layout.height = getLayoutValue(value);
-                view.setLayoutParams(layout);
                 break;
             case "gravity":
                 setIntegerField(layout, "gravity", getInteger(Gravity.class, value));
-                view.setLayoutParams(layout);
                 break;
             default:
                 if (layoutAttr.startsWith("margin") && layout instanceof MarginLayoutParams) {
@@ -623,9 +617,7 @@ public class ViewInflater {
                             margins.rightMargin = size;
                             break;
                     }
-                    view.setLayoutParams(layout);
                 } else if (layout instanceof RelativeLayout.LayoutParams) {
-                    // TODO (miguelpalacio): check these dynamically set properties.
                     int anchor = calcId(value, false, false);
                     if (anchor == 0) {
                         anchor = getInteger(RelativeLayout.class, value);
@@ -636,6 +628,7 @@ public class ViewInflater {
                     setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
                 }
         }
+        view.setLayoutParams(layout);
     }
 
     private void setBackground(View view, String value) {
@@ -758,7 +751,7 @@ public class ViewInflater {
     }
 
     private void setInteger(View view, String attr, int value) {
-        String name = "set" + PCase(attr);
+        String name = "set" + toPascalCase(attr);
         Method m;
         try {
             if ((m = tryMethod(view, name, Context.class, int.class)) != null) {
@@ -772,7 +765,7 @@ public class ViewInflater {
     }
 
     private void setFloat(View view, String attr, float value) {
-        String name = "set" + PCase(attr);
+        String name = "set" + toPascalCase(attr);
         Method m;
         try {
             if ((m = tryMethod(view, name, Context.class, float.class)) != null) {
@@ -788,15 +781,15 @@ public class ViewInflater {
 
     private void setDynamicProperty(View view, String attr, String value)
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
-        String name = "set" + PCase(attr);
+        String name = "set" + toPascalCase(attr);
         try {
             Method m = tryMethod(view, name, CharSequence.class);
             if (m != null) {
                 m.invoke(view, value);
             } else if ((m = tryMethod(view, name, Context.class, int.class)) != null) {
-                m.invoke(view, mContext, getInteger(view, value));
+                m.invoke(view, mContext, getInteger(view, attr, value));
             } else if ((m = tryMethod(view, name, int.class)) != null) {
-                m.invoke(view, getInteger(view, value));
+                m.invoke(view, getInteger(view, attr, value));
             } else if ((m = tryMethod(view, name, float.class)) != null) {
                 m.invoke(view, Float.parseFloat(value));
             } else if ((m = tryMethod(view, name, boolean.class)) != null) {
@@ -812,16 +805,6 @@ public class ViewInflater {
         }
     }
 
-    private String PCase(String s) {
-        if (s == null) {
-            return null;
-        }
-        if (s.length() > 0) {
-            return s.substring(0, 1).toUpperCase() + s.substring(1);
-        }
-        return "";
-    }
-
     private Method tryMethod(Object o, String name, Class<?>... parameters) {
         Method result;
         try {
@@ -832,7 +815,17 @@ public class ViewInflater {
         return result;
     }
 
-    public String camelCase(String s) {
+    private String toPascalCase(String s) {
+        if (s == null) {
+            return null;
+        }
+        if (s.length() > 0) {
+            return s.substring(0, 1).toUpperCase() + s.substring(1);
+        }
+        return "";
+    }
+
+    public String toCamelCase(String s) {
         if (s == null) {
             return "";
         } else if (s.length() < 2) {
@@ -842,12 +835,28 @@ public class ViewInflater {
         }
     }
 
-    private int getInteger(Class<?> clazz, String value) {
+    private String toUnderscore(String s) {
+        if (s == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        char c;
+        for (int i = 0; i < s.length(); i++) {
+            c = s.charAt(i);
+            if (Character.isUpperCase(c)) {
+                sb.append('_');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    private int getInteger(Class<?> clazz, String attr, String value) {
         int result;
         if (value.contains("|")) {
             int work = 0;
             for (String s : value.split("\\|")) {
-                work |= getInteger(clazz, s);
+                work |= getInteger(clazz, attr, s);
             }
             result = work;
         } else {
@@ -866,17 +875,36 @@ public class ViewInflater {
                     if (clazz == InputType.class) {
                         return getInputType(value);
                     }
+                    Field f;
                     try {
-                        Field f = clazz.getField(value.toUpperCase());
+                        f = clazz.getField(value.toUpperCase());
                         result = f.getInt(null);
-                    } catch (Exception ex) {
-                        mErrors.add("Unknown value: " + value);
-                        result = 0;
+                    } catch (Exception ex1) {
+                        try {
+                            f = clazz.getField(toUnderscore(value).toUpperCase());
+                            result = f.getInt(null);
+                        } catch (Exception ex2) {
+                            try {
+                                f = clazz.getField(toUnderscore(attr + '_' + value).toUpperCase());
+                                result = f.getInt(null);
+                            } catch (Exception ex3) {
+                                mErrors.add("Unknown value: " + value);
+                                result = 0;
+                            }
+                        }
                     }
                 }
             }
         }
         return result;
+    }
+
+    private int getInteger(View view, String attr, String value) {
+        return getInteger(view.getClass(), attr, value);
+    }
+
+    private int getInteger(Class<?> clazz, String value) {
+        return getInteger(clazz, "", value);
     }
 
     private int getInteger(View view, String value) {
@@ -991,7 +1019,7 @@ public class ViewInflater {
     }
 
     private String getProperty(View v, String attr) {
-        String name = PCase(attr);
+        String name = toPascalCase(attr);
         Method m = tryMethod(v, "get" + name);
         if (m == null) {
             m = tryMethod(v, "is" + name);
