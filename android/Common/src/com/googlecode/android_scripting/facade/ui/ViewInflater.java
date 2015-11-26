@@ -2,6 +2,7 @@ package com.googlecode.android_scripting.facade.ui;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
@@ -52,9 +53,15 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 public class ViewInflater {
 
-    private static XmlPullParserFactory mFactory;
     public static final String ANDROID = "http://schemas.android.com/apk/res/android";
     public static final int BASESEQ = 0x7f0f0000;
+    private static final String DIMENSION_VAL = "dim";
+    private static final String VIEW_ID = "id";
+    private static final String DRAWABLE_RES = "drw";
+    private static final String CLASS_CONSTANT = "ctn";
+    private static final String COLOR_RES = "clr";
+
+    private static XmlPullParserFactory mFactory;
     private int mNextSeq = BASESEQ;
     private final Map<String, Integer> mIdList = new HashMap<>();
     private final List<String> mErrors = new ArrayList<>();
@@ -63,176 +70,7 @@ public class ViewInflater {
     private static final Map<String, Integer> mInputTypes = new HashMap<>();
     public static final Map<String, String> mColorNames = new HashMap<>();
     public static final Map<String, Integer> mRelative = new HashMap<>();
-
-    static {
-
-        // Support for standard HTML color names.
-        mColorNames.put("aliceblue", "#f0f8ff");
-        mColorNames.put("antiquewhite", "#faebd7");
-        mColorNames.put("aqua", "#00ffff");
-        mColorNames.put("aquamarine", "#7fffd4");
-        mColorNames.put("azure", "#f0ffff");
-        mColorNames.put("beige", "#f5f5dc");
-        mColorNames.put("bisque", "#ffe4c4");
-        mColorNames.put("black", "#000000");
-        mColorNames.put("blanchedalmond", "#ffebcd");
-        mColorNames.put("blue", "#0000ff");
-        mColorNames.put("blueviolet", "#8a2be2");
-        mColorNames.put("brown", "#a52a2a");
-        mColorNames.put("burlywood", "#deb887");
-        mColorNames.put("cadetblue", "#5f9ea0");
-        mColorNames.put("chartreuse", "#7fff00");
-        mColorNames.put("chocolate", "#d2691e");
-        mColorNames.put("coral", "#ff7f50");
-        mColorNames.put("cornflowerblue", "#6495ed");
-        mColorNames.put("cornsilk", "#fff8dc");
-        mColorNames.put("crimson", "#dc143c");
-        mColorNames.put("cyan", "#00ffff");
-        mColorNames.put("darkblue", "#00008b");
-        mColorNames.put("darkcyan", "#008b8b");
-        mColorNames.put("darkgoldenrod", "#b8860b");
-        mColorNames.put("darkgray", "#a9a9a9");
-        mColorNames.put("darkgrey", "#a9a9a9");
-        mColorNames.put("darkgreen", "#006400");
-        mColorNames.put("darkkhaki", "#bdb76b");
-        mColorNames.put("darkmagenta", "#8b008b");
-        mColorNames.put("darkolivegreen", "#556b2f");
-        mColorNames.put("darkorange", "#ff8c00");
-        mColorNames.put("darkorchid", "#9932cc");
-        mColorNames.put("darkred", "#8b0000");
-        mColorNames.put("darksalmon", "#e9967a");
-        mColorNames.put("darkseagreen", "#8fbc8f");
-        mColorNames.put("darkslateblue", "#483d8b");
-        mColorNames.put("darkslategray", "#2f4f4f");
-        mColorNames.put("darkslategrey", "#2f4f4f");
-        mColorNames.put("darkturquoise", "#00ced1");
-        mColorNames.put("darkviolet", "#9400d3");
-        mColorNames.put("deeppink", "#ff1493");
-        mColorNames.put("deepskyblue", "#00bfff");
-        mColorNames.put("dimgray", "#696969");
-        mColorNames.put("dimgrey", "#696969");
-        mColorNames.put("dodgerblue", "#1e90ff");
-        mColorNames.put("firebrick", "#b22222");
-        mColorNames.put("floralwhite", "#fffaf0");
-        mColorNames.put("forestgreen", "#228b22");
-        mColorNames.put("fuchsia", "#ff00ff");
-        mColorNames.put("gainsboro", "#dcdcdc");
-        mColorNames.put("ghostwhite", "#f8f8ff");
-        mColorNames.put("gold", "#ffd700");
-        mColorNames.put("goldenrod", "#daa520");
-        mColorNames.put("gray", "#808080");
-        mColorNames.put("grey", "#808080");
-        mColorNames.put("green", "#008000");
-        mColorNames.put("greenyellow", "#adff2f");
-        mColorNames.put("honeydew", "#f0fff0");
-        mColorNames.put("hotpink", "#ff69b4");
-        mColorNames.put("indianred ", "#cd5c5c");
-        mColorNames.put("indigo ", "#4b0082");
-        mColorNames.put("ivory", "#fffff0");
-        mColorNames.put("khaki", "#f0e68c");
-        mColorNames.put("lavender", "#e6e6fa");
-        mColorNames.put("lavenderblush", "#fff0f5");
-        mColorNames.put("lawngreen", "#7cfc00");
-        mColorNames.put("lemonchiffon", "#fffacd");
-        mColorNames.put("lightblue", "#add8e6");
-        mColorNames.put("lightcoral", "#f08080");
-        mColorNames.put("lightcyan", "#e0ffff");
-        mColorNames.put("lightgoldenrodyellow", "#fafad2");
-        mColorNames.put("lightgray", "#d3d3d3");
-        mColorNames.put("lightgrey", "#d3d3d3");
-        mColorNames.put("lightgreen", "#90ee90");
-        mColorNames.put("lightpink", "#ffb6c1");
-        mColorNames.put("lightsalmon", "#ffa07a");
-        mColorNames.put("lightseagreen", "#20b2aa");
-        mColorNames.put("lightskyblue", "#87cefa");
-        mColorNames.put("lightslategray", "#778899");
-        mColorNames.put("lightslategrey", "#778899");
-        mColorNames.put("lightsteelblue", "#b0c4de");
-        mColorNames.put("lightyellow", "#ffffe0");
-        mColorNames.put("lime", "#00ff00");
-        mColorNames.put("limegreen", "#32cd32");
-        mColorNames.put("linen", "#faf0e6");
-        mColorNames.put("magenta", "#ff00ff");
-        mColorNames.put("maroon", "#800000");
-        mColorNames.put("mediumaquamarine", "#66cdaa");
-        mColorNames.put("mediumblue", "#0000cd");
-        mColorNames.put("mediumorchid", "#ba55d3");
-        mColorNames.put("mediumpurple", "#9370d8");
-        mColorNames.put("mediumseagreen", "#3cb371");
-        mColorNames.put("mediumslateblue", "#7b68ee");
-        mColorNames.put("mediumspringgreen", "#00fa9a");
-        mColorNames.put("mediumturquoise", "#48d1cc");
-        mColorNames.put("mediumvioletred", "#c71585");
-        mColorNames.put("midnightblue", "#191970");
-        mColorNames.put("mintcream", "#f5fffa");
-        mColorNames.put("mistyrose", "#ffe4e1");
-        mColorNames.put("moccasin", "#ffe4b5");
-        mColorNames.put("navajowhite", "#ffdead");
-        mColorNames.put("navy", "#000080");
-        mColorNames.put("oldlace", "#fdf5e6");
-        mColorNames.put("olive", "#808000");
-        mColorNames.put("olivedrab", "#6b8e23");
-        mColorNames.put("orange", "#ffa500");
-        mColorNames.put("orangered", "#ff4500");
-        mColorNames.put("orchid", "#da70d6");
-        mColorNames.put("palegoldenrod", "#eee8aa");
-        mColorNames.put("palegreen", "#98fb98");
-        mColorNames.put("paleturquoise", "#afeeee");
-        mColorNames.put("palevioletred", "#d87093");
-        mColorNames.put("papayawhip", "#ffefd5");
-        mColorNames.put("peachpuff", "#ffdab9");
-        mColorNames.put("peru", "#cd853f");
-        mColorNames.put("pink", "#ffc0cb");
-        mColorNames.put("plum", "#dda0dd");
-        mColorNames.put("powderblue", "#b0e0e6");
-        mColorNames.put("purple", "#800080");
-        mColorNames.put("red", "#ff0000");
-        mColorNames.put("rosybrown", "#bc8f8f");
-        mColorNames.put("royalblue", "#4169e1");
-        mColorNames.put("saddlebrown", "#8b4513");
-        mColorNames.put("salmon", "#fa8072");
-        mColorNames.put("sandybrown", "#f4a460");
-        mColorNames.put("seagreen", "#2e8b57");
-        mColorNames.put("seashell", "#fff5ee");
-        mColorNames.put("sienna", "#a0522d");
-        mColorNames.put("silver", "#c0c0c0");
-        mColorNames.put("skyblue", "#87ceeb");
-        mColorNames.put("slateblue", "#6a5acd");
-        mColorNames.put("slategray", "#708090");
-        mColorNames.put("slategrey", "#708090");
-        mColorNames.put("snow", "#fffafa");
-        mColorNames.put("springgreen", "#00ff7f");
-        mColorNames.put("steelblue", "#4682b4");
-        mColorNames.put("tan", "#d2b48c");
-        mColorNames.put("teal", "#008080");
-        mColorNames.put("thistle", "#d8bfd8");
-        mColorNames.put("tomato", "#ff6347");
-        mColorNames.put("turquoise", "#40e0d0");
-        mColorNames.put("violet", "#ee82ee");
-        mColorNames.put("wheat", "#f5deb3");
-        mColorNames.put("white", "#ffffff");
-        mColorNames.put("whitesmoke", "#f5f5f5");
-        mColorNames.put("yellow", "#ffff00");
-        mColorNames.put("yellowgreen", "#9acd32");
-
-        mRelative.put("above", RelativeLayout.ABOVE);
-        mRelative.put("alignBaseline", RelativeLayout.ALIGN_BASELINE);
-        mRelative.put("alignBottom", RelativeLayout.ALIGN_BOTTOM);
-        mRelative.put("alignLeft", RelativeLayout.ALIGN_LEFT);
-        mRelative.put("alignParentBottom", RelativeLayout.ALIGN_PARENT_BOTTOM);
-        mRelative.put("alignParentLeft", RelativeLayout.ALIGN_PARENT_LEFT);
-        mRelative.put("alignParentRight", RelativeLayout.ALIGN_PARENT_RIGHT);
-        mRelative.put("alignParentTop", RelativeLayout.ALIGN_PARENT_TOP);
-        mRelative.put("alignRight", RelativeLayout.ALIGN_PARENT_RIGHT);
-        mRelative.put("alignTop", RelativeLayout.ALIGN_TOP);
-        // mRelative.put("alignWithParentIfMissing",RelativeLayout.); // No idea what this translates to.
-        mRelative.put("below", RelativeLayout.BELOW);
-        mRelative.put("centerHorizontal", RelativeLayout.CENTER_HORIZONTAL);
-        mRelative.put("centerInParent", RelativeLayout.CENTER_IN_PARENT);
-        mRelative.put("centerVertical", RelativeLayout.CENTER_VERTICAL);
-        mRelative.put("toLeftOf", RelativeLayout.LEFT_OF);
-        mRelative.put("toRightOf", RelativeLayout.RIGHT_OF);
-    }
+    private static final Map<String, String> mAttrMethods = new HashMap<>();
 
     public static XmlPullParserFactory getFactory() throws XmlPullParserException {
         if (mFactory == null) {
@@ -280,7 +118,7 @@ public class ViewInflater {
 
     @SuppressWarnings("rawtypes")
     public void setClickListener(View v, android.view.View.OnClickListener listener,
-                                 OnItemClickListener itemListener, SeekBar.OnSeekBarChangeListener seekbarListener) {
+                                 OnItemClickListener itemListener, SeekBar.OnSeekBarChangeListener seekBarListener) {
         if (v.isClickable()) {
 
             if (v instanceof AdapterView) {
@@ -299,11 +137,11 @@ public class ViewInflater {
         if (v instanceof ViewGroup) {
             ViewGroup vg = (ViewGroup) v;
             for (int i = 0; i < vg.getChildCount(); i++) {
-                setClickListener(vg.getChildAt(i), listener, itemListener, seekbarListener);
+                setClickListener(vg.getChildAt(i), listener, itemListener, seekBarListener);
             }
         }
         if (v instanceof SeekBar) {
-            ((SeekBar) v).setOnSeekBarChangeListener(seekbarListener);
+            ((SeekBar) v).setOnSeekBarChangeListener(seekBarListener);
         }
     }
 
@@ -568,7 +406,13 @@ public class ViewInflater {
             } else {
                 mErrors.add("view must be instance of either TextView or a subclass of it");
             }
-        } else {
+        }
+        // TEMPORAL BLOCK FOR TESTING
+/*        else if (attr.equals("fadingEdgeLength")) {
+            view.setFadingEdgeLength((int) getScaledSize(value));
+        }*/
+
+        else {
             setDynamicProperty(view, attr, value);
         }
     }
@@ -782,6 +626,23 @@ public class ViewInflater {
     private void setDynamicProperty(View view, String attr, String value)
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
         String name = "set" + toPascalCase(attr);
+
+        if (mAttrMethods.containsKey(attr)) {
+            for (String v : mAttrMethods.get(attr).split(",")) {
+                switch (v) {
+                    case DIMENSION_VAL:
+                        value = "" + getScaledSize(value);
+                        break;
+                    case VIEW_ID:
+                        value = "" + calcId(value, false, false);
+                        break;
+                    default:
+                        name = v;
+                }
+            }
+        }
+        if (mErrors.size() > 0) return;
+
         try {
             Method m = tryMethod(view, name, CharSequence.class);
             if (m != null) {
@@ -870,7 +731,8 @@ public class ViewInflater {
                 }
             } else {
                 try {
-                    result = Integer.parseInt(value);
+                    //result = Integer.parseInt(value);
+                    result = (int) Float.parseFloat(value);
                 } catch (NumberFormatException e) {
                     if (clazz == InputType.class) {
                         return getInputType(value);
@@ -938,7 +800,7 @@ public class ViewInflater {
     }
 
     private View viewClass(Context context, String name) {
-        View result = null;
+        View result;
         result = viewClassTry(context, "android.view." + name);
         if (result == null) {
             result = viewClassTry(context, "android.widget." + name);
@@ -986,7 +848,7 @@ public class ViewInflater {
     }
 
     public Map<String, Map<String, String>> getViewAsMap(View v) {
-        Map<String, Map<String, String>> result = new HashMap<String, Map<String, String>>();
+        Map<String, Map<String, String>> result = new HashMap<>();
         for (Entry<String, Integer> entry : mIdList.entrySet()) {
             View tmp = v.findViewById(entry.getValue());
             if (tmp != null) {
@@ -997,7 +859,7 @@ public class ViewInflater {
     }
 
     public Map<String, String> getViewInfo(View v) {
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
         if (v.getId() != 0) {
             result.put("id", getIdName(v.getId()));
         }
@@ -1038,6 +900,53 @@ public class ViewInflater {
         return result;
     }
 
+    /** Query class (typically R.id) to extract id names */
+    public void setIdList(Class<?> idClass) {
+        mIdList.clear();
+        for (Field f : idClass.getDeclaredFields()) {
+            try {
+                String name = f.getName();
+                int value = f.getInt(null);
+                mIdList.put(name, value);
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+    }
+
+    public void setListAdapter(View view, JSONArray items) {
+        List<String> list = new ArrayList<>();
+        try {
+            for (int i = 0; i < items.length(); i++) {
+                list.add(items.get(i).toString());
+            }
+            ArrayAdapter<String> adapter;
+            if (view instanceof Spinner) {
+                adapter =
+                        new ArrayAdapter<>(mContext, android.R.layout.simple_spinner_item,
+                                android.R.id.text1, list);
+            } else {
+                adapter =
+                        new ArrayAdapter<>(mContext, android.R.layout.simple_list_item_1,
+                                android.R.id.text1, list);
+            }
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            Method m = tryMethod(view, "setAdapter", SpinnerAdapter.class);
+            if (m == null) {
+                m = view.getClass().getMethod("setAdapter", ListAdapter.class);
+            }
+            m.invoke(view, adapter);
+        } catch (Exception e) {
+            mErrors.add("failed to load list " + e.getMessage());
+        }
+    }
+
+    public void clearAll() {
+        getErrors().clear();
+        mIdList.clear();
+        mNextSeq = BASESEQ;
+    }
+
     public static Map<String, Integer> getInputTypes() {
         if (mInputTypes.size() == 0) {
             mInputTypes.put("none", 0x00000000);
@@ -1076,50 +985,226 @@ public class ViewInflater {
         return mInputTypes;
     }
 
-    /** Query class (typically R.id) to extract id names */
-    public void setIdList(Class<?> idClass) {
-        mIdList.clear();
-        for (Field f : idClass.getDeclaredFields()) {
-            try {
-                String name = f.getName();
-                int value = f.getInt(null);
-                mIdList.put(name, value);
-            } catch (Exception e) {
-                // Ignore
-            }
-        }
-    }
+    static {
 
-    public void setListAdapter(View view, JSONArray items) {
-        List<String> list = new ArrayList<String>();
-        try {
-            for (int i = 0; i < items.length(); i++) {
-                list.add(items.get(i).toString());
-            }
-            ArrayAdapter<String> adapter;
-            if (view instanceof Spinner) {
-                adapter =
-                        new ArrayAdapter<String>(mContext, android.R.layout.simple_spinner_item,
-                                android.R.id.text1, list);
-            } else {
-                adapter =
-                        new ArrayAdapter<String>(mContext, android.R.layout.simple_list_item_1,
-                                android.R.id.text1, list);
-            }
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            Method m = tryMethod(view, "setAdapter", SpinnerAdapter.class);
-            if (m == null) {
-                m = view.getClass().getMethod("setAdapter", ListAdapter.class);
-            }
-            m.invoke(view, adapter);
-        } catch (Exception e) {
-            mErrors.add("failed to load list " + e.getMessage());
-        }
-    }
+        // Support for standard HTML color names.
+        mColorNames.put("aliceblue", "#f0f8ff");
+        mColorNames.put("antiquewhite", "#faebd7");
+        mColorNames.put("aqua", "#00ffff");
+        mColorNames.put("aquamarine", "#7fffd4");
+        mColorNames.put("azure", "#f0ffff");
+        mColorNames.put("beige", "#f5f5dc");
+        mColorNames.put("bisque", "#ffe4c4");
+        mColorNames.put("black", "#000000");
+        mColorNames.put("blanchedalmond", "#ffebcd");
+        mColorNames.put("blue", "#0000ff");
+        mColorNames.put("blueviolet", "#8a2be2");
+        mColorNames.put("brown", "#a52a2a");
+        mColorNames.put("burlywood", "#deb887");
+        mColorNames.put("cadetblue", "#5f9ea0");
+        mColorNames.put("chartreuse", "#7fff00");
+        mColorNames.put("chocolate", "#d2691e");
+        mColorNames.put("coral", "#ff7f50");
+        mColorNames.put("cornflowerblue", "#6495ed");
+        mColorNames.put("cornsilk", "#fff8dc");
+        mColorNames.put("crimson", "#dc143c");
+        mColorNames.put("cyan", "#00ffff");
+        mColorNames.put("darkblue", "#00008b");
+        mColorNames.put("darkcyan", "#008b8b");
+        mColorNames.put("darkgoldenrod", "#b8860b");
+        mColorNames.put("darkgray", "#a9a9a9");
+        mColorNames.put("darkgrey", "#a9a9a9");
+        mColorNames.put("darkgreen", "#006400");
+        mColorNames.put("darkkhaki", "#bdb76b");
+        mColorNames.put("darkmagenta", "#8b008b");
+        mColorNames.put("darkolivegreen", "#556b2f");
+        mColorNames.put("darkorange", "#ff8c00");
+        mColorNames.put("darkorchid", "#9932cc");
+        mColorNames.put("darkred", "#8b0000");
+        mColorNames.put("darksalmon", "#e9967a");
+        mColorNames.put("darkseagreen", "#8fbc8f");
+        mColorNames.put("darkslateblue", "#483d8b");
+        mColorNames.put("darkslategray", "#2f4f4f");
+        mColorNames.put("darkslategrey", "#2f4f4f");
+        mColorNames.put("darkturquoise", "#00ced1");
+        mColorNames.put("darkviolet", "#9400d3");
+        mColorNames.put("deeppink", "#ff1493");
+        mColorNames.put("deepskyblue", "#00bfff");
+        mColorNames.put("dimgray", "#696969");
+        mColorNames.put("dimgrey", "#696969");
+        mColorNames.put("dodgerblue", "#1e90ff");
+        mColorNames.put("firebrick", "#b22222");
+        mColorNames.put("floralwhite", "#fffaf0");
+        mColorNames.put("forestgreen", "#228b22");
+        mColorNames.put("fuchsia", "#ff00ff");
+        mColorNames.put("gainsboro", "#dcdcdc");
+        mColorNames.put("ghostwhite", "#f8f8ff");
+        mColorNames.put("gold", "#ffd700");
+        mColorNames.put("goldenrod", "#daa520");
+        mColorNames.put("gray", "#808080");
+        mColorNames.put("grey", "#808080");
+        mColorNames.put("green", "#008000");
+        mColorNames.put("greenyellow", "#adff2f");
+        mColorNames.put("honeydew", "#f0fff0");
+        mColorNames.put("hotpink", "#ff69b4");
+        mColorNames.put("indianred ", "#cd5c5c");
+        mColorNames.put("indigo ", "#4b0082");
+        mColorNames.put("ivory", "#fffff0");
+        mColorNames.put("khaki", "#f0e68c");
+        mColorNames.put("lavender", "#e6e6fa");
+        mColorNames.put("lavenderblush", "#fff0f5");
+        mColorNames.put("lawngreen", "#7cfc00");
+        mColorNames.put("lemonchiffon", "#fffacd");
+        mColorNames.put("lightblue", "#add8e6");
+        mColorNames.put("lightcoral", "#f08080");
+        mColorNames.put("lightcyan", "#e0ffff");
+        mColorNames.put("lightgoldenrodyellow", "#fafad2");
+        mColorNames.put("lightgray", "#d3d3d3");
+        mColorNames.put("lightgrey", "#d3d3d3");
+        mColorNames.put("lightgreen", "#90ee90");
+        mColorNames.put("lightpink", "#ffb6c1");
+        mColorNames.put("lightsalmon", "#ffa07a");
+        mColorNames.put("lightseagreen", "#20b2aa");
+        mColorNames.put("lightskyblue", "#87cefa");
+        mColorNames.put("lightslategray", "#778899");
+        mColorNames.put("lightslategrey", "#778899");
+        mColorNames.put("lightsteelblue", "#b0c4de");
+        mColorNames.put("lightyellow", "#ffffe0");
+        mColorNames.put("lime", "#00ff00");
+        mColorNames.put("limegreen", "#32cd32");
+        mColorNames.put("linen", "#faf0e6");
+        mColorNames.put("magenta", "#ff00ff");
+        mColorNames.put("maroon", "#800000");
+        mColorNames.put("mediumaquamarine", "#66cdaa");
+        mColorNames.put("mediumblue", "#0000cd");
+        mColorNames.put("mediumorchid", "#ba55d3");
+        mColorNames.put("mediumpurple", "#9370d8");
+        mColorNames.put("mediumseagreen", "#3cb371");
+        mColorNames.put("mediumslateblue", "#7b68ee");
+        mColorNames.put("mediumspringgreen", "#00fa9a");
+        mColorNames.put("mediumturquoise", "#48d1cc");
+        mColorNames.put("mediumvioletred", "#c71585");
+        mColorNames.put("midnightblue", "#191970");
+        mColorNames.put("mintcream", "#f5fffa");
+        mColorNames.put("mistyrose", "#ffe4e1");
+        mColorNames.put("moccasin", "#ffe4b5");
+        mColorNames.put("navajowhite", "#ffdead");
+        mColorNames.put("navy", "#000080");
+        mColorNames.put("oldlace", "#fdf5e6");
+        mColorNames.put("olive", "#808000");
+        mColorNames.put("olivedrab", "#6b8e23");
+        mColorNames.put("orange", "#ffa500");
+        mColorNames.put("orangered", "#ff4500");
+        mColorNames.put("orchid", "#da70d6");
+        mColorNames.put("palegoldenrod", "#eee8aa");
+        mColorNames.put("palegreen", "#98fb98");
+        mColorNames.put("paleturquoise", "#afeeee");
+        mColorNames.put("palevioletred", "#d87093");
+        mColorNames.put("papayawhip", "#ffefd5");
+        mColorNames.put("peachpuff", "#ffdab9");
+        mColorNames.put("peru", "#cd853f");
+        mColorNames.put("pink", "#ffc0cb");
+        mColorNames.put("plum", "#dda0dd");
+        mColorNames.put("powderblue", "#b0e0e6");
+        mColorNames.put("purple", "#800080");
+        mColorNames.put("red", "#ff0000");
+        mColorNames.put("rosybrown", "#bc8f8f");
+        mColorNames.put("royalblue", "#4169e1");
+        mColorNames.put("saddlebrown", "#8b4513");
+        mColorNames.put("salmon", "#fa8072");
+        mColorNames.put("sandybrown", "#f4a460");
+        mColorNames.put("seagreen", "#2e8b57");
+        mColorNames.put("seashell", "#fff5ee");
+        mColorNames.put("sienna", "#a0522d");
+        mColorNames.put("silver", "#c0c0c0");
+        mColorNames.put("skyblue", "#87ceeb");
+        mColorNames.put("slateblue", "#6a5acd");
+        mColorNames.put("slategray", "#708090");
+        mColorNames.put("slategrey", "#708090");
+        mColorNames.put("snow", "#fffafa");
+        mColorNames.put("springgreen", "#00ff7f");
+        mColorNames.put("steelblue", "#4682b4");
+        mColorNames.put("tan", "#d2b48c");
+        mColorNames.put("teal", "#008080");
+        mColorNames.put("thistle", "#d8bfd8");
+        mColorNames.put("tomato", "#ff6347");
+        mColorNames.put("turquoise", "#40e0d0");
+        mColorNames.put("violet", "#ee82ee");
+        mColorNames.put("wheat", "#f5deb3");
+        mColorNames.put("white", "#ffffff");
+        mColorNames.put("whitesmoke", "#f5f5f5");
+        mColorNames.put("yellow", "#ffff00");
+        mColorNames.put("yellowgreen", "#9acd32");
 
-    public void clearAll() {
-        getErrors().clear();
-        mIdList.clear();
-        mNextSeq = BASESEQ;
+        mRelative.put("above", RelativeLayout.ABOVE);
+        mRelative.put("alignBaseline", RelativeLayout.ALIGN_BASELINE);
+        mRelative.put("alignBottom", RelativeLayout.ALIGN_BOTTOM);
+        mRelative.put("alignLeft", RelativeLayout.ALIGN_LEFT);
+        mRelative.put("alignParentBottom", RelativeLayout.ALIGN_PARENT_BOTTOM);
+        mRelative.put("alignParentLeft", RelativeLayout.ALIGN_PARENT_LEFT);
+        mRelative.put("alignParentRight", RelativeLayout.ALIGN_PARENT_RIGHT);
+        mRelative.put("alignParentTop", RelativeLayout.ALIGN_PARENT_TOP);
+        mRelative.put("alignRight", RelativeLayout.ALIGN_PARENT_RIGHT);
+        mRelative.put("alignTop", RelativeLayout.ALIGN_TOP);
+        // mRelative.put("alignWithParentIfMissing",RelativeLayout.); // No idea what this translates to.
+        mRelative.put("below", RelativeLayout.BELOW);
+        mRelative.put("centerHorizontal", RelativeLayout.CENTER_HORIZONTAL);
+        mRelative.put("centerInParent", RelativeLayout.CENTER_IN_PARENT);
+        mRelative.put("centerVertical", RelativeLayout.CENTER_VERTICAL);
+        mRelative.put("toLeftOf", RelativeLayout.LEFT_OF);
+        mRelative.put("toRightOf", RelativeLayout.RIGHT_OF);
+
+        // XML attributes helper HashMap.
+
+        // View class
+        mAttrMethods.put("accessibilityTraversalAfter", VIEW_ID);
+        mAttrMethods.put("accessibilityTraversalBefore", VIEW_ID);
+        //mAttrMethods.put("backgroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
+        //mAttrMethods.put("backgroundTintMode", "???"); // Depends on previous one.
+        mAttrMethods.put("elevation", DIMENSION_VAL);
+        //mAttrMethods.put("fadeScrollbars", "setScrollbarFadingEnabled"); // Crashes the app if view is not scrollable (e.g., ScrollView). I haven't been able to catch the exception.
+        mAttrMethods.put("fadingEdgeLength", DIMENSION_VAL);
+        //mAttrMethods.put("foreground", RESOURCE);
+        //mAttrMethods.put("foregroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
+        //mAttrMethods.put("foregroundTintMode", "???"); // Depends on previous one.
+        mAttrMethods.put("isScrollContainer", "setScrollContainer");
+        mAttrMethods.put("minHeight", "setMinimumHeight," + DIMENSION_VAL);
+        mAttrMethods.put("minWidth", "setMinimumWidth," + DIMENSION_VAL);
+        //mAttrMethods.put("requiresFadingEdge", ""); // Depends on two methods, needs special treatment.
+        mAttrMethods.put("scrollbarDefaultDelayBeforeFade", "setScrollBarDefaultDelayBeforeFade");
+        mAttrMethods.put("scrollbarFadeDuration", "setScrollBarFadeDuration");
+        mAttrMethods.put("scrollbarSize", "setScrollBarSize," + DIMENSION_VAL);
+        //mAttrMethods.put("scrollbarStyle", "setScrollBarStyle"+"???"); // Class constants that don't follow any pattern.
+        mAttrMethods.put("transformPivotX", "setPivotX," + DIMENSION_VAL);
+        mAttrMethods.put("transformPivotY", "setPivotY," + DIMENSION_VAL);
+        mAttrMethods.put("translationX", DIMENSION_VAL);
+        mAttrMethods.put("translationY", DIMENSION_VAL);
+        mAttrMethods.put("translationZ", DIMENSION_VAL);
+
+        // ImageView class
+        mAttrMethods.put("baseline", DIMENSION_VAL);
+        mAttrMethods.put("maxHeight", DIMENSION_VAL);
+        mAttrMethods.put("maxWidth", DIMENSION_VAL);
+/*        mAttrMethods.put("scaleType", "con");*/
+/*        mAttrMethods.put("tint", "setImageTintList"+"con");
+        mAttrMethods.put("tintMode", "setImageTintMode"+"con");*/
+
+        // TextView class
+/*        mAttrMethods.put("autoLink", "setAutoLinkMask"+"con");*/
+/*        mAttrMethods.put("autoText", "setKeyListener"+"?");*/
+/*        mAttrMethods.put("capitalize", "setKeyListener"+"?");*/
+        mAttrMethods.put("drawablePadding", DIMENSION_VAL);
+/*        mAttrMethods.put("drawableTint", "setCompoundDrawableTintList"+"con");
+        mAttrMethods.put("drawableTintMode", "setCompoundDrawableTintMode"+"con");*/
+/*        mAttrMethods.put("ellipsize", CLASS_CONSTANT);
+        mAttrMethods.put("fontFamily", "setTypeface"+"res");
+        mAttrMethods.put("imeOptions", "con");*/
+/*        mAttrMethods.put("inputMethod", "setKeyListener"+"?");*/
+/*        mAttrMethods.put("lineSpacingExtra", "setLineSpacing");*/
+/*        mAttrMethods.put("lineSpacingMultiplier", "setLineSpacing"); */
+/*        mAttrMethods.put("textAppearance", "res");*/
+
+        // RelativeLayout class
+        mAttrMethods.put("ignoreGravity", VIEW_ID);
     }
 }
