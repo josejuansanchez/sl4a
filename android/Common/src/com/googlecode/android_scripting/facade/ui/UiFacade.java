@@ -605,6 +605,7 @@ public class UiFacade extends RpcReceiver {
         return mFullScreenTask.setViewProperty(id, property, value);
     }
 
+    // TODO miguel
     @Rpc(description = "Attach a list to a fullscreen widget")
     public String fullSetList(
             @RpcParameter(name = "id", description = "id of layout widget") String id,

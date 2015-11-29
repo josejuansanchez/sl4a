@@ -2,7 +2,6 @@ package com.googlecode.android_scripting.facade.ui;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
@@ -41,6 +40,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,12 +65,17 @@ public class ViewInflater {
     private int mNextSeq = BASESEQ;
     private final Map<String, Integer> mIdList = new HashMap<>();
     private final List<String> mErrors = new ArrayList<>();
+    private final ViewAttributesHelper attrsHelper = new ViewAttributesHelper();
     private Context mContext;
     private DisplayMetrics mMetrics;
     private static final Map<String, Integer> mInputTypes = new HashMap<>();
     public static final Map<String, String> mColorNames = new HashMap<>();
     public static final Map<String, Integer> mRelative = new HashMap<>();
-    private static final Map<String, String> mAttrMethods = new HashMap<>();
+    private static final Map<String, Map<AttributeInfo, String>> mXmlAttrs = new HashMap<>();
+
+    private enum AttributeInfo {
+        HELPER_METHOD, ATTR_METHOD, FLAG
+    }
 
     public static XmlPullParserFactory getFactory() throws XmlPullParserException {
         if (mFactory == null) {
@@ -349,32 +354,38 @@ public class ViewInflater {
     private void setProperty(View view, ViewGroup root, String attr, String value)
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
         addLn(attr + ":" + value);
-        if (attr.equals("background")) {
-            setBackground(view, value);
-        } else if (attr.equals("digits") && view instanceof TextView) {
+
+        if (mXmlAttrs.containsKey(attr)) {
+            Map<AttributeInfo, String> attrInfo = mXmlAttrs.get(attr);
+
+            String s = attrInfo.get(AttributeInfo.HELPER_METHOD);
+            if (s != null) {
+                Method m = tryMethod(attrsHelper, s, View.class, String.class);
+                if (m != null) {
+                    try {
+                        m.invoke(attrsHelper, view, value);
+                        return;
+                    } catch (Exception e) {
+                        mErrors.add(e.toString());
+                    }
+                }
+            }
+        }
+
+        // -------
+        if (attr.equals("digits") && view instanceof TextView) {
             ((TextView) view).setKeyListener(DigitsKeyListener.getInstance(value));
         } else if (attr.equals("gravity")) {
             setInteger(view, attr, getInteger(Gravity.class, value));
         } else if (attr.equals("height") || attr.equals("width")) {
             setInteger(view, attr, (int) getScaledSize(value));
-        } else if (attr.equals("id")) {
-            int id = calcId(value, true, view.getId() == View.NO_ID);
-            if (id != 0) {
-                view.setId(id);
-            }
         } else if (attr.equals("inputType")) {
             setInteger(view, attr, getInteger(InputType.class, value));
         } else if (attr.startsWith("layout_")) {
             setLayoutProperty(view, root, attr, value);
-        } else if (attr.startsWith("nextFocus")) {
-            setInteger(view, attr + "Id", calcId(value, false, false));
         } else if (attr.equals("padding")) {
             int size = (int) getScaledSize(value);
             view.setPadding(size, size, size, size);
-        } else if (attr.equals("src")) {
-            setImage(view, value);
-        } else if (attr.equals("stretchColumns")) {
-            setStretchColumns(view, value);
         } else if (attr.equals("textColor")) {
             setInteger(view, attr, getColor(value));
         } else if (attr.equals("textColorHint")) {
@@ -407,26 +418,10 @@ public class ViewInflater {
                 mErrors.add("view must be instance of either TextView or a subclass of it");
             }
         }
-        // TEMPORAL BLOCK FOR TESTING
-/*        else if (attr.equals("fadingEdgeLength")) {
-            view.setFadingEdgeLength((int) getScaledSize(value));
-        }*/
+        // -------
 
         else {
             setDynamicProperty(view, attr, value);
-        }
-    }
-
-    private void setStretchColumns(View view, String value) {
-        TableLayout table = (TableLayout) view;
-        if (value.trim().equals("*")) {
-            table.setStretchAllColumns(true);
-            table.requestLayout();
-        } else {
-            String[] values = value.split(",");
-            for (String column : values) {
-                table.setColumnStretchable(Integer.parseInt(column.trim()), true);
-            }
         }
     }
 
@@ -475,20 +470,6 @@ public class ViewInflater {
         view.setLayoutParams(layout);
     }
 
-    private void setBackground(View view, String value) {
-        if (value.startsWith("#")) {
-            view.setBackgroundColor(getColor(value));
-        } else if (value.startsWith("@")) {
-            setInteger(view, "backgroundResource", getInteger(view, value));
-        } else {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                view.setBackgroundDrawable(getDrawable(value));
-            } else {
-                view.setBackground(getDrawable(value));
-            }
-        }
-    }
-
     private Drawable getDrawable(String value) {
         try {
             Uri uri = Uri.parse(value);
@@ -499,34 +480,6 @@ public class ViewInflater {
             mErrors.add("failed to load drawable " + value);
         }
         return null;
-    }
-
-    private void setImage(View view, String value) {
-        if (value.startsWith("@")) {
-            setInteger(view, "imageResource", getInteger(view, value));
-        } else if (value.startsWith("#") && view instanceof ImageView) {
-            int color = getColor(value);
-            if (color != 0) {
-                ColorDrawable cd = new ColorDrawable(color);
-                ((ImageView) view).setImageBitmap(null);
-                ((ImageView) view).setImageDrawable(cd);
-            } else {
-                mErrors.add("color not in the form '#rgb', '#argb', '#rrggbb', '#aarrggbb");
-            }
-        } else {
-            try {
-                Uri uri = Uri.parse(value);
-                if ("file".equals(uri.getScheme())) {
-                    Bitmap bm = BitmapFactory.decodeFile(uri.getPath());
-                    Method method = view.getClass().getMethod("setImageBitmap", Bitmap.class);
-                    method.invoke(view, bm);
-                } else {
-                    mErrors.add("Only 'file' currently supported for images");
-                }
-            } catch (Exception e) {
-                mErrors.add("failed to set image " + value);
-            }
-        }
     }
 
     private void setIntegerField(Object target, String fieldName, int value) {
@@ -623,22 +576,27 @@ public class ViewInflater {
 
     }
 
-    private void setDynamicProperty(View view, String attr, String value)
+    private void setDynamicProperty (View view, String attr, String value)
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
         String name = "set" + toPascalCase(attr);
 
-        if (mAttrMethods.containsKey(attr)) {
-            for (String v : mAttrMethods.get(attr).split(",")) {
-                switch (v) {
+        if (mXmlAttrs.containsKey(attr)) {
+            Map<AttributeInfo, String> attrInfo = mXmlAttrs.get(attr);
+
+            String info = attrInfo.get(AttributeInfo.FLAG);
+            if (info != null) {
+                switch (info) {
                     case DIMENSION_VAL:
                         value = "" + getScaledSize(value);
                         break;
                     case VIEW_ID:
                         value = "" + calcId(value, false, false);
                         break;
-                    default:
-                        name = v;
                 }
+            }
+            info = attrInfo.get(AttributeInfo.ATTR_METHOD);
+            if (info != null) {
+                name = info;
             }
         }
         if (mErrors.size() > 0) return;
@@ -729,30 +687,29 @@ public class ViewInflater {
                 } catch (NumberFormatException e) {
                     result = 0;
                 }
+            } else if (value.matches("\\d+")) {
+                result = Integer.parseInt(value);
+            } else if (value.matches("\\d+\\.\\d*|\\.\\d+")) {
+                // Strangely, some view attrs accept float numbers in XML but their related methods expect int.
+                result = (int) Float.parseFloat(value);
+            } else if (clazz == InputType.class) {
+                return getInputType(value);
             } else {
+                Field f;
                 try {
-                    //result = Integer.parseInt(value);
-                    result = (int) Float.parseFloat(value);
-                } catch (NumberFormatException e) {
-                    if (clazz == InputType.class) {
-                        return getInputType(value);
-                    }
-                    Field f;
+                    f = clazz.getField(value.toUpperCase());
+                    result = f.getInt(null);
+                } catch (Exception ex1) {
                     try {
-                        f = clazz.getField(value.toUpperCase());
+                        f = clazz.getField(toUnderscore(value).toUpperCase());
                         result = f.getInt(null);
-                    } catch (Exception ex1) {
+                    } catch (Exception ex2) {
                         try {
-                            f = clazz.getField(toUnderscore(value).toUpperCase());
+                            f = clazz.getField(toUnderscore(attr + '_' + value).toUpperCase());
                             result = f.getInt(null);
-                        } catch (Exception ex2) {
-                            try {
-                                f = clazz.getField(toUnderscore(attr + '_' + value).toUpperCase());
-                                result = f.getInt(null);
-                            } catch (Exception ex3) {
-                                mErrors.add("Unknown value: " + value);
-                                result = 0;
-                            }
+                        } catch (Exception ex3) {
+                            mErrors.add("Unknown value: " + value);
+                            result = 0;
                         }
                     }
                 }
@@ -1157,54 +1114,148 @@ public class ViewInflater {
         // XML attributes helper HashMap.
 
         // View class
-        mAttrMethods.put("accessibilityTraversalAfter", VIEW_ID);
-        mAttrMethods.put("accessibilityTraversalBefore", VIEW_ID);
-        //mAttrMethods.put("backgroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
-        //mAttrMethods.put("backgroundTintMode", "???"); // Depends on previous one.
-        mAttrMethods.put("elevation", DIMENSION_VAL);
-        //mAttrMethods.put("fadeScrollbars", "setScrollbarFadingEnabled"); // Crashes the app if view is not scrollable (e.g., ScrollView). I haven't been able to catch the exception.
-        mAttrMethods.put("fadingEdgeLength", DIMENSION_VAL);
-        //mAttrMethods.put("foreground", RESOURCE);
-        //mAttrMethods.put("foregroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
-        //mAttrMethods.put("foregroundTintMode", "???"); // Depends on previous one.
-        mAttrMethods.put("isScrollContainer", "setScrollContainer");
-        mAttrMethods.put("minHeight", "setMinimumHeight," + DIMENSION_VAL);
-        mAttrMethods.put("minWidth", "setMinimumWidth," + DIMENSION_VAL);
-        //mAttrMethods.put("requiresFadingEdge", ""); // Depends on two methods, needs special treatment.
-        mAttrMethods.put("scrollbarDefaultDelayBeforeFade", "setScrollBarDefaultDelayBeforeFade");
-        mAttrMethods.put("scrollbarFadeDuration", "setScrollBarFadeDuration");
-        mAttrMethods.put("scrollbarSize", "setScrollBarSize," + DIMENSION_VAL);
-        //mAttrMethods.put("scrollbarStyle", "setScrollBarStyle"+"???"); // Class constants that don't follow any pattern.
-        mAttrMethods.put("transformPivotX", "setPivotX," + DIMENSION_VAL);
-        mAttrMethods.put("transformPivotY", "setPivotY," + DIMENSION_VAL);
-        mAttrMethods.put("translationX", DIMENSION_VAL);
-        mAttrMethods.put("translationY", DIMENSION_VAL);
-        mAttrMethods.put("translationZ", DIMENSION_VAL);
+        mXmlAttrs.put("accessibilityTraversalAfter", mapAttrInfo(null, null, VIEW_ID));
+        mXmlAttrs.put("accessibilityTraversalBefore", mapAttrInfo(null, null, VIEW_ID));
+        mXmlAttrs.put("background", mapAttrInfo("setBackground", null, null));
+        //mXmlAttrs.put("backgroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
+        //mXmlAttrs.put("backgroundTintMode", "???"); // Depends on previous one.
+        mXmlAttrs.put("elevation", mapAttrInfo(null, null, DIMENSION_VAL));
+        //mXmlAttrs.put("fadeScrollbars", "setScrollbarFadingEnabled"); // Crashes the app if view is not scrollable (e.g., ScrollView). I haven't been able to catch the exception.
+        mXmlAttrs.put("fadingEdgeLength", mapAttrInfo(null, null, DIMENSION_VAL));
+        //mXmlAttrs.put("foreground", RESOURCE);
+        //mXmlAttrs.put("foregroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
+        //mXmlAttrs.put("foregroundTintMode", "???"); // Depends on previous one.
+        //mXmlAttrs.put("gravity", mapAttrInfo("setViewId", null, null)); // more complex... setInteger expects a already treated int.
+        mXmlAttrs.put("id", mapAttrInfo("setViewId", null, null));
+        mXmlAttrs.put("isScrollContainer", mapAttrInfo(null, "setScrollContainer", null));
+        mXmlAttrs.put("minHeight", mapAttrInfo(null, "setMinimumHeight", DIMENSION_VAL));
+        mXmlAttrs.put("minWidth", mapAttrInfo(null, "setMinimumWidth", DIMENSION_VAL));
+        mXmlAttrs.put("nextFocusDown", mapAttrInfo(null, "setNextFocusDownId", VIEW_ID));
+        mXmlAttrs.put("nextFocusForward", mapAttrInfo(null, "setNextFocusForwardId", VIEW_ID));
+        mXmlAttrs.put("nextFocusLeft", mapAttrInfo(null, "setNextFocusLeftId", VIEW_ID));
+        mXmlAttrs.put("nextFocusRight", mapAttrInfo(null, "setNextFocusRightId", VIEW_ID));
+        mXmlAttrs.put("nextFocusUp", mapAttrInfo(null, "setNextFocusUpId", VIEW_ID));
+        //mXmlAttrs.put("requiresFadingEdge", ""); // Depends on two methods, needs special treatment.
+        mXmlAttrs.put("scrollbarDefaultDelayBeforeFade", mapAttrInfo(null, "setScrollBarDefaultDelayBeforeFade", null));
+        mXmlAttrs.put("scrollbarFadeDuration", mapAttrInfo(null, "setScrollBarFadeDuration", null));
+        mXmlAttrs.put("scrollbarSize", mapAttrInfo(null, "setScrollBarSize", DIMENSION_VAL));
+        //mXmlAttrs.put("scrollbarStyle", "setScrollBarStyle"+"???"); // Class constants that don't follow any pattern.
+        mXmlAttrs.put("src", mapAttrInfo("setImage", null, null));
+        mXmlAttrs.put("transformPivotX", mapAttrInfo(null, "setPivotX", DIMENSION_VAL));
+        mXmlAttrs.put("transformPivotY", mapAttrInfo(null, "setPivotY", DIMENSION_VAL));
+        mXmlAttrs.put("translationX", mapAttrInfo(null, null, DIMENSION_VAL));
+        mXmlAttrs.put("translationY", mapAttrInfo(null, null, DIMENSION_VAL));
+        mXmlAttrs.put("translationZ", mapAttrInfo(null, null, DIMENSION_VAL));
 
         // ImageView class
-        mAttrMethods.put("baseline", DIMENSION_VAL);
-        mAttrMethods.put("maxHeight", DIMENSION_VAL);
-        mAttrMethods.put("maxWidth", DIMENSION_VAL);
-/*        mAttrMethods.put("scaleType", "con");*/
-/*        mAttrMethods.put("tint", "setImageTintList"+"con");
-        mAttrMethods.put("tintMode", "setImageTintMode"+"con");*/
+        mXmlAttrs.put("baseline", mapAttrInfo(null, null, DIMENSION_VAL));
+        mXmlAttrs.put("maxHeight", mapAttrInfo(null, null, DIMENSION_VAL));
+        mXmlAttrs.put("maxWidth", mapAttrInfo(null, null, DIMENSION_VAL));
+/*        mXmlAttrs.put("scaleType", "con");*/
+/*        mXmlAttrs.put("tint", "setImageTintList"+"con");
+        mXmlAttrs.put("tintMode", "setImageTintMode"+"con");*/
 
         // TextView class
-/*        mAttrMethods.put("autoLink", "setAutoLinkMask"+"con");*/
-/*        mAttrMethods.put("autoText", "setKeyListener"+"?");*/
-/*        mAttrMethods.put("capitalize", "setKeyListener"+"?");*/
-        mAttrMethods.put("drawablePadding", DIMENSION_VAL);
-/*        mAttrMethods.put("drawableTint", "setCompoundDrawableTintList"+"con");
-        mAttrMethods.put("drawableTintMode", "setCompoundDrawableTintMode"+"con");*/
-/*        mAttrMethods.put("ellipsize", CLASS_CONSTANT);
-        mAttrMethods.put("fontFamily", "setTypeface"+"res");
-        mAttrMethods.put("imeOptions", "con");*/
-/*        mAttrMethods.put("inputMethod", "setKeyListener"+"?");*/
-/*        mAttrMethods.put("lineSpacingExtra", "setLineSpacing");*/
-/*        mAttrMethods.put("lineSpacingMultiplier", "setLineSpacing"); */
-/*        mAttrMethods.put("textAppearance", "res");*/
+/*        mXmlAttrs.put("autoLink", "setAutoLinkMask"+"con");*/
+/*        mXmlAttrs.put("autoText", "setKeyListener"+"?");*/
+/*        mXmlAttrs.put("capitalize", "setKeyListener"+"?");*/
+        mXmlAttrs.put("drawablePadding", mapAttrInfo(null, null, DIMENSION_VAL));
+/*        mXmlAttrs.put("drawableTint", "setCompoundDrawableTintList"+"con");
+        mXmlAttrs.put("drawableTintMode", "setCompoundDrawableTintMode"+"con");*/
+/*        mXmlAttrs.put("ellipsize", CLASS_CONSTANT);
+        mXmlAttrs.put("fontFamily", "setTypeface"+"res");
+        mXmlAttrs.put("imeOptions", "con");*/
+/*        mXmlAttrs.put("inputMethod", "setKeyListener"+"?");*/
+/*        mXmlAttrs.put("lineSpacingExtra", "setLineSpacing");*/
+/*        mXmlAttrs.put("lineSpacingMultiplier", "setLineSpacing"); */
+/*        mXmlAttrs.put("textAppearance", "res");*/
 
         // RelativeLayout class
-        mAttrMethods.put("ignoreGravity", VIEW_ID);
+        mXmlAttrs.put("ignoreGravity", mapAttrInfo(null, null, VIEW_ID));
+
+        // TableLayout class
+        mXmlAttrs.put("stretchColumns", mapAttrInfo("setStretchColumns", null, null));
+
+    }
+
+    private static Map<AttributeInfo, String> mapAttrInfo(String helperMethod,
+                                                          String attrMethod, String flag) {
+        Map<AttributeInfo, String> infoMap = new EnumMap<>(AttributeInfo.class);
+        infoMap.put(AttributeInfo.HELPER_METHOD, helperMethod);
+        infoMap.put(AttributeInfo.ATTR_METHOD, attrMethod);
+        infoMap.put(AttributeInfo.FLAG, flag);
+        return infoMap;
+    }
+
+    private class ViewAttributesHelper {
+
+        public void setViewId(View view, String value) {
+            int id = calcId(value, true, view.getId() == View.NO_ID);
+            if (id != 0) {
+                view.setId(id);
+            }
+        }
+
+        public void setBackground(View view, String value) {
+            if (value.startsWith("#")) {
+                view.setBackgroundColor(getColor(value));
+            } else if (value.startsWith("@")) {
+                setInteger(view, "backgroundResource", getInteger(view, value));
+            } else {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                    view.setBackgroundDrawable(getDrawable(value));
+                } else {
+                    view.setBackground(getDrawable(value));
+                }
+            }
+        }
+
+        public void setDigits(View view, String value) {
+            if (view instanceof TextView) {
+                ((TextView) view).setKeyListener(DigitsKeyListener.getInstance(value));
+            }
+        }
+
+        public void setImage(View view, String value) {
+            if (value.startsWith("@")) {
+                setInteger(view, "imageResource", getInteger(view, value));
+            } else if (value.startsWith("#") && view instanceof ImageView) {
+                int color = getColor(value);
+                if (color != 0) {
+                    ColorDrawable cd = new ColorDrawable(color);
+                    ((ImageView) view).setImageBitmap(null);
+                    ((ImageView) view).setImageDrawable(cd);
+                } else {
+                    mErrors.add("color not in the form '#rgb', '#argb', '#rrggbb', '#aarrggbb");
+                }
+            } else {
+                try {
+                    Uri uri = Uri.parse(value);
+                    if ("file".equals(uri.getScheme())) {
+                        Bitmap bm = BitmapFactory.decodeFile(uri.getPath());
+                        Method method = view.getClass().getMethod("setImageBitmap", Bitmap.class);
+                        method.invoke(view, bm);
+                    } else {
+                        mErrors.add("Only 'file' currently supported for images");
+                    }
+                } catch (Exception e) {
+                    mErrors.add("failed to set image " + value);
+                }
+            }
+        }
+
+        public void setStretchColumns(View view, String value) {
+            TableLayout table = (TableLayout) view;
+            if (value.trim().equals("*")) {
+                table.setStretchAllColumns(true);
+                table.requestLayout();
+            } else {
+                String[] values = value.split(",");
+                for (String column : values) {
+                    table.setColumnStretchable(Integer.parseInt(column.trim()), true);
+                }
+            }
+        }
+
     }
 }
