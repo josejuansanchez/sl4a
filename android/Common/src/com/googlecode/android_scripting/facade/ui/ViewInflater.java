@@ -55,11 +55,11 @@ public class ViewInflater {
 
     public static final String ANDROID = "http://schemas.android.com/apk/res/android";
     public static final int BASESEQ = 0x7f0f0000;
-    private static final String DIMENSION_VAL = "dim";
+    private static final String DIMENSION = "dim";
     private static final String VIEW_ID = "id";
+    private static final String COLOR = "col";
     private static final String DRAWABLE_RES = "drw";
     private static final String CLASS_CONSTANT = "ctn";
-    private static final String COLOR_RES = "clr";
 
     private static XmlPullParserFactory mFactory;
     private int mNextSeq = BASESEQ;
@@ -74,7 +74,7 @@ public class ViewInflater {
     private static final Map<String, Map<AttributeInfo, String>> mXmlAttrs = new HashMap<>();
 
     private enum AttributeInfo {
-        HELPER_METHOD, ATTR_METHOD, FLAG
+        HELPER_METHOD, ATTR_METHOD, VAL_MODIFIER, ATTR_CLASS
     }
 
     public static XmlPullParserFactory getFactory() throws XmlPullParserException {
@@ -360,114 +360,102 @@ public class ViewInflater {
 
             String s = attrInfo.get(AttributeInfo.HELPER_METHOD);
             if (s != null) {
-                Method m = tryMethod(attrsHelper, s, View.class, String.class);
-                if (m != null) {
-                    try {
+                try {
+                    Method m;
+                    if ((m = tryMethod(attrsHelper, s, View.class, String.class)) != null) {
                         m.invoke(attrsHelper, view, value);
-                        return;
-                    } catch (Exception e) {
-                        mErrors.add(e.toString());
+                    } else if ((m = tryMethod(attrsHelper, s, View.class, ViewGroup.class,
+                            String.class, String.class)) != null) {
+                        m.invoke(attrsHelper, view, root, attr, value);
                     }
+                    return;
+                } catch (Exception e) {
+                    mErrors.add(s + ":" + value + ":" + e.toString());
                 }
             }
         }
 
-        // -------
-        if (attr.equals("digits") && view instanceof TextView) {
-            ((TextView) view).setKeyListener(DigitsKeyListener.getInstance(value));
-        } else if (attr.equals("gravity")) {
-            setInteger(view, attr, getInteger(Gravity.class, value));
-        } else if (attr.equals("height") || attr.equals("width")) {
-            setInteger(view, attr, (int) getScaledSize(value));
-        } else if (attr.equals("inputType")) {
-            setInteger(view, attr, getInteger(InputType.class, value));
-        } else if (attr.startsWith("layout_")) {
-            setLayoutProperty(view, root, attr, value);
-        } else if (attr.equals("padding")) {
-            int size = (int) getScaledSize(value);
-            view.setPadding(size, size, size, size);
-        } else if (attr.equals("textColor")) {
-            setInteger(view, attr, getColor(value));
-        } else if (attr.equals("textColorHint")) {
-            //setInteger(view, "LinkTextColor", getColor(value));
-            setInteger(view, "HintTextColor", getColor(value));
-        } else if (attr.equals("textColorHighlight")) {
-            setInteger(view, "HighlightColor", getColor(value));
-        } else if (attr.equals("textSize")) {
-            float scaledPixels = getScaledSize(value) / mMetrics.scaledDensity; // convert into "sp"
-            setFloat(view, attr, scaledPixels);
-        } else if (attr.equals("textStyle")) {
-            if (view instanceof TextView) {
-                TextView textview = (TextView) view;
-                int style = getInteger(Typeface.class, value);
-                if (style == 0) {
-                    textview.setTypeface(Typeface.DEFAULT);
+        setDynamicProperty(view, attr, value);
+    }
+
+    private void setDynamicProperty (View view, String attr, String value)
+            throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+        String name = "set" + toPascalCase(attr);
+        Class<?> clazz = null;
+
+        if (mXmlAttrs.containsKey(attr)) {
+            Map<AttributeInfo, String> attrInfo = mXmlAttrs.get(attr);
+
+            String info = attrInfo.get(AttributeInfo.VAL_MODIFIER);
+            if (info != null) {
+                switch (info) {
+                    case DIMENSION:
+                        value = "" + getScaledSize(value);
+                        break;
+                    case VIEW_ID:
+                        value = "" + calcId(value, false, false);
+                        break;
+                    case COLOR:
+                        value = "" + getColor(value);
+                        break;
+                }
+            }
+
+            info = attrInfo.get(AttributeInfo.ATTR_METHOD);
+            if (info != null) {
+                name = info;
+            }
+
+            info = attrInfo.get(AttributeInfo.ATTR_CLASS);
+            if (info != null) {
+                try {
+                    clazz = Class.forName(info);
+                } catch (ClassNotFoundException e) {
+                    mErrors.add(name + ":" + value + ":" + e.toString());
+                }
+            }
+        }
+        if (mErrors.size() > 0) return;
+
+        try {
+            Method m = tryMethod(view, name, CharSequence.class);
+            if (m != null) {
+                m.invoke(view, value);
+            } else if ((m = tryMethod(view, name, Context.class, int.class)) != null) {
+                if (clazz != null) {
+                    m.invoke(view, mContext, getInteger(clazz, attr, value));
                 } else {
-                    textview.setTypeface(textview.getTypeface(), style);
+                    m.invoke(view, mContext, getInteger(view, attr, value));
                 }
+            } else if ((m = tryMethod(view, name, int.class)) != null) {
+                if (clazz != null) {
+                    m.invoke(view, getInteger(clazz, attr, value));
+                } else {
+                    m.invoke(view, getInteger(view, attr, value));
+                }
+            } else if ((m = tryMethod(view, name, float.class)) != null) {
+                m.invoke(view, Float.parseFloat(value));
+            } else if ((m = tryMethod(view, name, boolean.class)) != null) {
+                m.invoke(view, Boolean.parseBoolean(value));
+            } else if ((m = tryMethod(view, name, Object.class)) != null) {
+                m.invoke(view, value);
             } else {
-                mErrors.add("view must be instance of either TextView or a subclass of it");
+                mErrors.add(view.getClass().getSimpleName() + ":" + attr + " Property not found.");
             }
-        } else if (attr.equals("typeface")) {
-            if (view instanceof TextView) {
-                TextView textview = (TextView) view;
-                Typeface typeface = textview.getTypeface();
-                int style = typeface == null ? 0 : typeface.getStyle();
-                textview.setTypeface(Typeface.create(value, style));
-            } else {
-                mErrors.add("view must be instance of either TextView or a subclass of it");
-            }
-        }
-        // -------
-
-        else {
-            setDynamicProperty(view, attr, value);
+        } catch (Exception e) {
+            addLn(name + ":" + value + ":" + e.toString());
+            mErrors.add(name + ":" + value + ":" + e.toString());
         }
     }
 
-    private void setLayoutProperty(View view, ViewGroup root, String attr, String value) {
-        LayoutParams layout = getLayoutParams(view, root);
-        String layoutAttr = attr.substring(7);
-        switch (layoutAttr) {
-            case "width":
-                layout.width = getLayoutValue(value);
-                break;
-            case "height":
-                layout.height = getLayoutValue(value);
-                break;
-            case "gravity":
-                setIntegerField(layout, "gravity", getInteger(Gravity.class, value));
-                break;
-            default:
-                if (layoutAttr.startsWith("margin") && layout instanceof MarginLayoutParams) {
-                    int size = (int) getScaledSize(value);
-                    MarginLayoutParams margins = (MarginLayoutParams) layout;
-                    switch (layoutAttr) {
-                        case "marginBottom":
-                            margins.bottomMargin = size;
-                            break;
-                        case "marginTop":
-                            margins.topMargin = size;
-                            break;
-                        case "marginLeft":
-                            margins.leftMargin = size;
-                            break;
-                        case "marginRight":
-                            margins.rightMargin = size;
-                            break;
-                    }
-                } else if (layout instanceof RelativeLayout.LayoutParams) {
-                    int anchor = calcId(value, false, false);
-                    if (anchor == 0) {
-                        anchor = getInteger(RelativeLayout.class, value);
-                    }
-                    int rule = mRelative.get(layoutAttr);
-                    ((RelativeLayout.LayoutParams) layout).addRule(rule, anchor);
-                } else {
-                    setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
-                }
+    private Method tryMethod(Object o, String name, Class<?>... parameters) {
+        Method result;
+        try {
+            result = o.getClass().getMethod(name, parameters);
+        } catch (Exception e) {
+            result = null;
         }
-        view.setLayoutParams(layout);
+        return result;
     }
 
     private Drawable getDrawable(String value) {
@@ -576,63 +564,6 @@ public class ViewInflater {
 
     }
 
-    private void setDynamicProperty (View view, String attr, String value)
-            throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
-        String name = "set" + toPascalCase(attr);
-
-        if (mXmlAttrs.containsKey(attr)) {
-            Map<AttributeInfo, String> attrInfo = mXmlAttrs.get(attr);
-
-            String info = attrInfo.get(AttributeInfo.FLAG);
-            if (info != null) {
-                switch (info) {
-                    case DIMENSION_VAL:
-                        value = "" + getScaledSize(value);
-                        break;
-                    case VIEW_ID:
-                        value = "" + calcId(value, false, false);
-                        break;
-                }
-            }
-            info = attrInfo.get(AttributeInfo.ATTR_METHOD);
-            if (info != null) {
-                name = info;
-            }
-        }
-        if (mErrors.size() > 0) return;
-
-        try {
-            Method m = tryMethod(view, name, CharSequence.class);
-            if (m != null) {
-                m.invoke(view, value);
-            } else if ((m = tryMethod(view, name, Context.class, int.class)) != null) {
-                m.invoke(view, mContext, getInteger(view, attr, value));
-            } else if ((m = tryMethod(view, name, int.class)) != null) {
-                m.invoke(view, getInteger(view, attr, value));
-            } else if ((m = tryMethod(view, name, float.class)) != null) {
-                m.invoke(view, Float.parseFloat(value));
-            } else if ((m = tryMethod(view, name, boolean.class)) != null) {
-                m.invoke(view, Boolean.parseBoolean(value));
-            } else if ((m = tryMethod(view, name, Object.class)) != null) {
-                m.invoke(view, value);
-            } else {
-                mErrors.add(view.getClass().getSimpleName() + ":" + attr + " Property not found.");
-            }
-        } catch (Exception e) {
-            addLn(name + ":" + value + ":" + e.toString());
-            mErrors.add(name + ":" + value + ":" + e.toString());
-        }
-    }
-
-    private Method tryMethod(Object o, String name, Class<?>... parameters) {
-        Method result;
-        try {
-            result = o.getClass().getMethod(name, parameters);
-        } catch (Exception e) {
-            result = null;
-        }
-        return result;
-    }
 
     private String toPascalCase(String s) {
         if (s == null) {
@@ -687,9 +618,9 @@ public class ViewInflater {
                 } catch (NumberFormatException e) {
                     result = 0;
                 }
-            } else if (value.matches("\\d+")) {
+            } else if (value.matches("\\-?\\d+")) {
                 result = Integer.parseInt(value);
-            } else if (value.matches("\\d+\\.\\d*|\\.\\d+")) {
+            } else if (value.matches("\\-?\\d+\\.\\d*|\\-?\\.\\d+")) {
                 // Strangely, some view attrs accept float numbers in XML but their related methods expect int.
                 result = (int) Float.parseFloat(value);
             } else if (clazz == InputType.class) {
@@ -1114,43 +1045,44 @@ public class ViewInflater {
         // XML attributes helper HashMap.
 
         // View class
-        mXmlAttrs.put("accessibilityTraversalAfter", mapAttrInfo(null, null, VIEW_ID));
-        mXmlAttrs.put("accessibilityTraversalBefore", mapAttrInfo(null, null, VIEW_ID));
-        mXmlAttrs.put("background", mapAttrInfo("setBackground", null, null));
+        mXmlAttrs.put("accessibilityTraversalAfter", mapAttrInfo(null, null, VIEW_ID, null));
+        mXmlAttrs.put("accessibilityTraversalBefore", mapAttrInfo(null, null, VIEW_ID, null));
+        mXmlAttrs.put("background", mapAttrInfo("setBackground", null, null, null));
         //mXmlAttrs.put("backgroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
         //mXmlAttrs.put("backgroundTintMode", "???"); // Depends on previous one.
-        mXmlAttrs.put("elevation", mapAttrInfo(null, null, DIMENSION_VAL));
+        mXmlAttrs.put("elevation", mapAttrInfo(null, null, DIMENSION, null));
         //mXmlAttrs.put("fadeScrollbars", "setScrollbarFadingEnabled"); // Crashes the app if view is not scrollable (e.g., ScrollView). I haven't been able to catch the exception.
-        mXmlAttrs.put("fadingEdgeLength", mapAttrInfo(null, null, DIMENSION_VAL));
+        mXmlAttrs.put("fadingEdgeLength", mapAttrInfo(null, null, DIMENSION, null));
         //mXmlAttrs.put("foreground", RESOURCE);
         //mXmlAttrs.put("foregroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
         //mXmlAttrs.put("foregroundTintMode", "???"); // Depends on previous one.
         //mXmlAttrs.put("gravity", mapAttrInfo("setViewId", null, null)); // more complex... setInteger expects a already treated int.
-        mXmlAttrs.put("id", mapAttrInfo("setViewId", null, null));
-        mXmlAttrs.put("isScrollContainer", mapAttrInfo(null, "setScrollContainer", null));
-        mXmlAttrs.put("minHeight", mapAttrInfo(null, "setMinimumHeight", DIMENSION_VAL));
-        mXmlAttrs.put("minWidth", mapAttrInfo(null, "setMinimumWidth", DIMENSION_VAL));
-        mXmlAttrs.put("nextFocusDown", mapAttrInfo(null, "setNextFocusDownId", VIEW_ID));
-        mXmlAttrs.put("nextFocusForward", mapAttrInfo(null, "setNextFocusForwardId", VIEW_ID));
-        mXmlAttrs.put("nextFocusLeft", mapAttrInfo(null, "setNextFocusLeftId", VIEW_ID));
-        mXmlAttrs.put("nextFocusRight", mapAttrInfo(null, "setNextFocusRightId", VIEW_ID));
-        mXmlAttrs.put("nextFocusUp", mapAttrInfo(null, "setNextFocusUpId", VIEW_ID));
+        mXmlAttrs.put("id", mapAttrInfo("setViewId", null, null, null));
+        mXmlAttrs.put("isScrollContainer", mapAttrInfo(null, "setScrollContainer", null, null));
+        mXmlAttrs.put("minHeight", mapAttrInfo(null, "setMinimumHeight", DIMENSION, null));
+        mXmlAttrs.put("minWidth", mapAttrInfo(null, "setMinimumWidth", DIMENSION, null));
+        mXmlAttrs.put("nextFocusDown", mapAttrInfo(null, "setNextFocusDownId", VIEW_ID, null));
+        mXmlAttrs.put("nextFocusForward", mapAttrInfo(null, "setNextFocusForwardId", VIEW_ID, null));
+        mXmlAttrs.put("nextFocusLeft", mapAttrInfo(null, "setNextFocusLeftId", VIEW_ID, null));
+        mXmlAttrs.put("nextFocusRight", mapAttrInfo(null, "setNextFocusRightId", VIEW_ID, null));
+        mXmlAttrs.put("nextFocusUp", mapAttrInfo(null, "setNextFocusUpId", VIEW_ID, null));
+        mXmlAttrs.put("padding", mapAttrInfo("setPadding", null, null, null));
         //mXmlAttrs.put("requiresFadingEdge", ""); // Depends on two methods, needs special treatment.
-        mXmlAttrs.put("scrollbarDefaultDelayBeforeFade", mapAttrInfo(null, "setScrollBarDefaultDelayBeforeFade", null));
-        mXmlAttrs.put("scrollbarFadeDuration", mapAttrInfo(null, "setScrollBarFadeDuration", null));
-        mXmlAttrs.put("scrollbarSize", mapAttrInfo(null, "setScrollBarSize", DIMENSION_VAL));
+        mXmlAttrs.put("scrollbarDefaultDelayBeforeFade", mapAttrInfo(null, "setScrollBarDefaultDelayBeforeFade", null, null));
+        mXmlAttrs.put("scrollbarFadeDuration", mapAttrInfo(null, "setScrollBarFadeDuration", null, null));
+        mXmlAttrs.put("scrollbarSize", mapAttrInfo(null, "setScrollBarSize", DIMENSION, null));
         //mXmlAttrs.put("scrollbarStyle", "setScrollBarStyle"+"???"); // Class constants that don't follow any pattern.
-        mXmlAttrs.put("src", mapAttrInfo("setImage", null, null));
-        mXmlAttrs.put("transformPivotX", mapAttrInfo(null, "setPivotX", DIMENSION_VAL));
-        mXmlAttrs.put("transformPivotY", mapAttrInfo(null, "setPivotY", DIMENSION_VAL));
-        mXmlAttrs.put("translationX", mapAttrInfo(null, null, DIMENSION_VAL));
-        mXmlAttrs.put("translationY", mapAttrInfo(null, null, DIMENSION_VAL));
-        mXmlAttrs.put("translationZ", mapAttrInfo(null, null, DIMENSION_VAL));
+        mXmlAttrs.put("src", mapAttrInfo("setImage", null, null, null));
+        mXmlAttrs.put("transformPivotX", mapAttrInfo(null, "setPivotX", DIMENSION, null));
+        mXmlAttrs.put("transformPivotY", mapAttrInfo(null, "setPivotY", DIMENSION, null));
+        mXmlAttrs.put("translationX", mapAttrInfo(null, null, DIMENSION, null));
+        mXmlAttrs.put("translationY", mapAttrInfo(null, null, DIMENSION, null));
+        mXmlAttrs.put("translationZ", mapAttrInfo(null, null, DIMENSION, null));
 
         // ImageView class
-        mXmlAttrs.put("baseline", mapAttrInfo(null, null, DIMENSION_VAL));
-        mXmlAttrs.put("maxHeight", mapAttrInfo(null, null, DIMENSION_VAL));
-        mXmlAttrs.put("maxWidth", mapAttrInfo(null, null, DIMENSION_VAL));
+        mXmlAttrs.put("baseline", mapAttrInfo(null, null, DIMENSION, null));
+        mXmlAttrs.put("maxHeight", mapAttrInfo(null, null, DIMENSION, null));
+        mXmlAttrs.put("maxWidth", mapAttrInfo(null, null, DIMENSION, null));
 /*        mXmlAttrs.put("scaleType", "con");*/
 /*        mXmlAttrs.put("tint", "setImageTintList"+"con");
         mXmlAttrs.put("tintMode", "setImageTintMode"+"con");*/
@@ -1159,42 +1091,61 @@ public class ViewInflater {
 /*        mXmlAttrs.put("autoLink", "setAutoLinkMask"+"con");*/
 /*        mXmlAttrs.put("autoText", "setKeyListener"+"?");*/
 /*        mXmlAttrs.put("capitalize", "setKeyListener"+"?");*/
-        mXmlAttrs.put("drawablePadding", mapAttrInfo(null, null, DIMENSION_VAL));
+        mXmlAttrs.put("digits", mapAttrInfo("setDigits", null, null, null));
+        mXmlAttrs.put("drawablePadding", mapAttrInfo(null, null, DIMENSION, null));
 /*        mXmlAttrs.put("drawableTint", "setCompoundDrawableTintList"+"con");
         mXmlAttrs.put("drawableTintMode", "setCompoundDrawableTintMode"+"con");*/
 /*        mXmlAttrs.put("ellipsize", CLASS_CONSTANT);
-        mXmlAttrs.put("fontFamily", "setTypeface"+"res");
-        mXmlAttrs.put("imeOptions", "con");*/
+        mXmlAttrs.put("fontFamily", "setTypeface"+"res");*/
+        mXmlAttrs.put("gravity", mapAttrInfo(null, null, null, "android.view.Gravity"));
+        mXmlAttrs.put("height", mapAttrInfo(null, null, DIMENSION, null));
+/*        mXmlAttrs.put("imeOptions", "con");*/
 /*        mXmlAttrs.put("inputMethod", "setKeyListener"+"?");*/
+        mXmlAttrs.put("inputType", mapAttrInfo(null, null, null, "android.text.InputType"));
 /*        mXmlAttrs.put("lineSpacingExtra", "setLineSpacing");*/
 /*        mXmlAttrs.put("lineSpacingMultiplier", "setLineSpacing"); */
 /*        mXmlAttrs.put("textAppearance", "res");*/
+        mXmlAttrs.put("textColor", mapAttrInfo(null, null, COLOR, null));
+        mXmlAttrs.put("textColorHighlight", mapAttrInfo(null, "setHighlightColor", COLOR, null));
+        mXmlAttrs.put("textColorHint", mapAttrInfo(null, "setHintTextColor", COLOR, null));
+        //mXmlAttrs.put("textColorLink", mapAttrInfo(null, "setLinkTextColor", COLOR, null));
+        mXmlAttrs.put("textSize", mapAttrInfo("setTextSize", null, null, null));
+        mXmlAttrs.put("textStyle", mapAttrInfo("setTextStyle", null, null, null));
+        mXmlAttrs.put("typeface", mapAttrInfo("setTypeface", null, null, null));
+        mXmlAttrs.put("width", mapAttrInfo(null, null, DIMENSION, null));
 
-        // RelativeLayout class
-        mXmlAttrs.put("ignoreGravity", mapAttrInfo(null, null, VIEW_ID));
+        // ViewGroup.LayoutParams
+        mXmlAttrs.put("layout_height", mapAttrInfo("setLayoutProperty", null, null, null));
+        mXmlAttrs.put("layout_width", mapAttrInfo("setLayoutProperty", null, null, null));
 
-        // TableLayout class
-        mXmlAttrs.put("stretchColumns", mapAttrInfo("setStretchColumns", null, null));
+        // ViewGroup.MarginLayoutParams
+        mXmlAttrs.put("layout_marginBottom", mapAttrInfo("setLayoutProperty", null, null, null));
+        mXmlAttrs.put("layout_marginLeft", mapAttrInfo("setLayoutProperty", null, null, null));
+        mXmlAttrs.put("layout_marginRight", mapAttrInfo("setLayoutProperty", null, null, null));
+        mXmlAttrs.put("layout_marginTop", mapAttrInfo("setLayoutProperty", null, null, null));
+
+        // LinearLayout.LayoutParams
+        mXmlAttrs.put("layout_gravity", mapAttrInfo("setLayoutProperty", null, null, null));
+
+        // RelativeLayout
+        mXmlAttrs.put("ignoreGravity", mapAttrInfo(null, null, VIEW_ID, null));
+
+        // TableLayout
+        mXmlAttrs.put("stretchColumns", mapAttrInfo("setStretchColumns", null, null, null));
 
     }
 
-    private static Map<AttributeInfo, String> mapAttrInfo(String helperMethod,
-                                                          String attrMethod, String flag) {
+    private static Map<AttributeInfo, String> mapAttrInfo(String helperMethod, String attrMethod,
+                                                          String valModifier, String attrClass) {
         Map<AttributeInfo, String> infoMap = new EnumMap<>(AttributeInfo.class);
         infoMap.put(AttributeInfo.HELPER_METHOD, helperMethod);
         infoMap.put(AttributeInfo.ATTR_METHOD, attrMethod);
-        infoMap.put(AttributeInfo.FLAG, flag);
+        infoMap.put(AttributeInfo.VAL_MODIFIER, valModifier);
+        infoMap.put(AttributeInfo.ATTR_CLASS, attrClass);
         return infoMap;
     }
 
     private class ViewAttributesHelper {
-
-        public void setViewId(View view, String value) {
-            int id = calcId(value, true, view.getId() == View.NO_ID);
-            if (id != 0) {
-                view.setId(id);
-            }
-        }
 
         public void setBackground(View view, String value) {
             if (value.startsWith("#")) {
@@ -1244,6 +1195,56 @@ public class ViewInflater {
             }
         }
 
+        public void setLayoutProperty(View view, ViewGroup root, String attr, String value) {
+            LayoutParams layout = getLayoutParams(view, root);
+            String layoutAttr = attr.substring(7);
+            switch (layoutAttr) {
+                case "width":
+                    layout.width = getLayoutValue(value);
+                    break;
+                case "height":
+                    layout.height = getLayoutValue(value);
+                    break;
+                case "gravity":
+                    setIntegerField(layout, "gravity", getInteger(Gravity.class, value));
+                    break;
+                default:
+                    if (layoutAttr.startsWith("margin") && layout instanceof MarginLayoutParams) {
+                        int size = (int) getScaledSize(value);
+                        MarginLayoutParams margins = (MarginLayoutParams) layout;
+                        switch (layoutAttr) {
+                            case "marginBottom":
+                                margins.bottomMargin = size;
+                                break;
+                            case "marginTop":
+                                margins.topMargin = size;
+                                break;
+                            case "marginLeft":
+                                margins.leftMargin = size;
+                                break;
+                            case "marginRight":
+                                margins.rightMargin = size;
+                                break;
+                        }
+                    } else if (layout instanceof RelativeLayout.LayoutParams) {
+                        int anchor = calcId(value, false, false);
+                        if (anchor == 0) {
+                            anchor = getInteger(RelativeLayout.class, value);
+                        }
+                        int rule = mRelative.get(layoutAttr);
+                        ((RelativeLayout.LayoutParams) layout).addRule(rule, anchor);
+                    } else {
+                        setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
+                    }
+            }
+            view.setLayoutParams(layout);
+        }
+
+        public void setPadding(View view, String value) {
+            int size = (int) getScaledSize(value);
+            view.setPadding(size, size, size, size);
+        }
+
         public void setStretchColumns(View view, String value) {
             TableLayout table = (TableLayout) view;
             if (value.trim().equals("*")) {
@@ -1257,5 +1258,44 @@ public class ViewInflater {
             }
         }
 
+        public void setTextSize(View view, String value) {
+            if (view instanceof TextView) {
+                float scaledPixels = getScaledSize(value) / mMetrics.scaledDensity; // convert into "sp"
+                ((TextView) view).setTextSize(scaledPixels);
+            }
+            //setFloat(view, attr, scaledPixels);
+        }
+
+        public void setTextStyle(View view, String value) {
+            if (view instanceof TextView) {
+                TextView textview = (TextView) view;
+                int style = getInteger(Typeface.class, value);
+                if (style == 0) {
+                    textview.setTypeface(Typeface.DEFAULT);
+                } else {
+                    textview.setTypeface(textview.getTypeface(), style);
+                }
+            } else {
+                mErrors.add("view must be instance of either TextView or a subclass of it");
+            }
+        }
+
+        public void setTypeface(View view, String value) {
+            if (view instanceof TextView) {
+                TextView textview = (TextView) view;
+                Typeface typeface = textview.getTypeface();
+                int style = typeface == null ? 0 : typeface.getStyle();
+                textview.setTypeface(Typeface.create(value, style));
+            } else {
+                mErrors.add("view must be instance of either TextView or a subclass of it");
+            }
+        }
+
+        public void setViewId(View view, String value) {
+            int id = calcId(value, true, view.getId() == View.NO_ID);
+            if (id != 0) {
+                view.setId(id);
+            }
+        }
     }
 }
