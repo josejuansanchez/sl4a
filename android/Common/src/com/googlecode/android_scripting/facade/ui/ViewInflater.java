@@ -59,7 +59,6 @@ public class ViewInflater {
     private static final String VIEW_ID = "id";
     private static final String COLOR = "col";
     private static final String DRAWABLE_RES = "drw";
-    private static final String CLASS_CONSTANT = "ctn";
 
     private static XmlPullParserFactory mFactory;
     private int mNextSeq = BASESEQ;
@@ -204,115 +203,6 @@ public class ViewInflater {
         return view;
     }
 
-    private int getLayoutValue(String value) {
-        if (value == null) {
-            return 0;
-        }
-        if (value.equals("match_parent")) {
-            return LayoutParams.MATCH_PARENT;
-        }
-        if (value.equals("wrap_content")) {
-            return LayoutParams.WRAP_CONTENT;
-        }
-        if (value.equals("fill_parent")) {
-            return LayoutParams.MATCH_PARENT;
-        }
-        return (int) getScaledSize(value);
-    }
-
-    private float getScaledSize(String value) {
-        int i;
-        float size;
-        String unit = "px";
-        for (i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (!(Character.isDigit(c) || c == '.')) {
-                break;
-            }
-        }
-        try {
-            size = Float.parseFloat(value.substring(0, i));
-            if (i < value.length()) {
-                unit = value.substring(i).trim();
-            }
-            if (unit.equals("px")) {
-                return size;
-            }
-            if (unit.equals("sp")) {
-                return mMetrics.scaledDensity * size;
-            }
-            if (unit.equals("dp") || unit.equals("dip")) {
-                return mMetrics.density * size;
-            }
-            float inches = mMetrics.ydpi * size;
-            if (unit.equals("in")) {
-                return inches;
-            }
-            if (unit.equals("pt")) {
-                return inches / 72;
-            }
-            if (unit.equals("mm")) {
-                return (float) (inches / 25.4);
-            }
-        } catch (NumberFormatException e) {
-        }
-        mErrors.add("invalid dimension value");
-        return 0;
-    }
-
-    private int calcId(String value, boolean isNewId, boolean isLoadingLayout) {
-        if (value == null) {
-            return 0;
-        }
-        int id = 0;
-        if (isLoadingLayout) {
-            if (value.startsWith("@+id/")) {
-                value = value.substring(5);
-                id = tryGetId(value, true);
-            } else if (value.startsWith("@id/")) {
-                isNewId = false;
-                value = value.substring(4);
-                id = tryGetId(value, false);    // id should be in R.id.
-            }
-        } else {
-            try {
-                return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                // This "if - else if" block gives backwards compatibility for older scripts.
-                if (value.startsWith("@+id/")) {
-                    value = value.substring(5);
-                } else if (value.startsWith("@id/")) {
-                    value = value.substring(4);
-                }
-                id = tryGetId(value, isNewId);
-            }
-        }
-        if (id == 0) {
-            if (isLoadingLayout) {
-                if (isNewId) {
-                    mErrors.add("failed to set view id. Make sure id is prefixed by either \"@id/\" or \"@+id/\"");
-                } else {
-                    mErrors.add("failed to set view id. Make sure it is defined in the R.id class");
-                }
-            } else if (!isNewId) {
-                mErrors.add("failed to find view matching id");
-            }
-        }
-        return id;
-    }
-
-    private int tryGetId(String value, boolean isNewId) {
-        Integer id;
-        if (isNewId) {
-            id = mNextSeq++;
-            mIdList.put(value, id);
-        } else {
-            id = mIdList.get(value);
-            if (id == null) id = 0;
-        }
-        return id;
-    }
-
     private LayoutParams getLayoutParams(View view, ViewGroup root) {
         LayoutParams result = view.getLayoutParams();
         if (result == null) {
@@ -356,21 +246,22 @@ public class ViewInflater {
         addLn(attr + ":" + value);
 
         if (mXmlAttrs.containsKey(attr)) {
-            Map<AttributeInfo, String> attrInfo = mXmlAttrs.get(attr);
+            Map<AttributeInfo, String> propertyInfo = mXmlAttrs.get(attr);
 
-            String s = attrInfo.get(AttributeInfo.HELPER_METHOD);
-            if (s != null) {
+            String info = propertyInfo.get(AttributeInfo.HELPER_METHOD);
+            if (info != null) {
                 try {
                     Method m;
-                    if ((m = tryMethod(attrsHelper, s, View.class, String.class)) != null) {
+                    if ((m = tryMethod(attrsHelper, info, View.class, String.class)) != null) {
                         m.invoke(attrsHelper, view, value);
-                    } else if ((m = tryMethod(attrsHelper, s, View.class, ViewGroup.class,
+                    } else if ((m = tryMethod(attrsHelper, info, View.class, ViewGroup.class,
                             String.class, String.class)) != null) {
                         m.invoke(attrsHelper, view, root, attr, value);
                     }
                     return;
                 } catch (Exception e) {
-                    mErrors.add(s + ":" + value + ":" + e.toString());
+                    addLn(info + ":" + value + ":" + e.toString());
+                    mErrors.add(info + ":" + value + ":" + e.toString());
                 }
             }
         }
@@ -384,33 +275,34 @@ public class ViewInflater {
         Class<?> clazz = null;
 
         if (mXmlAttrs.containsKey(attr)) {
-            Map<AttributeInfo, String> attrInfo = mXmlAttrs.get(attr);
+            Map<AttributeInfo, String> propertyInfo = mXmlAttrs.get(attr);
 
-            String info = attrInfo.get(AttributeInfo.VAL_MODIFIER);
+            String info = propertyInfo.get(AttributeInfo.VAL_MODIFIER);
             if (info != null) {
                 switch (info) {
                     case DIMENSION:
-                        value = "" + getScaledSize(value);
+                        value = "" + attrsHelper.getScaledSize(value);
                         break;
                     case VIEW_ID:
-                        value = "" + calcId(value, false, false);
+                        value = "" + attrsHelper.calcId(value, false, false);
                         break;
                     case COLOR:
-                        value = "" + getColor(value);
+                        value = "" + attrsHelper.getColor(value);
                         break;
                 }
             }
 
-            info = attrInfo.get(AttributeInfo.ATTR_METHOD);
+            info = propertyInfo.get(AttributeInfo.ATTR_METHOD);
             if (info != null) {
                 name = info;
             }
 
-            info = attrInfo.get(AttributeInfo.ATTR_CLASS);
+            info = propertyInfo.get(AttributeInfo.ATTR_CLASS);
             if (info != null) {
                 try {
                     clazz = Class.forName(info);
                 } catch (ClassNotFoundException e) {
+                    addLn(name + ":" + value + ":" + e.toString());
                     mErrors.add(name + ":" + value + ":" + e.toString());
                 }
             }
@@ -422,17 +314,11 @@ public class ViewInflater {
             if (m != null) {
                 m.invoke(view, value);
             } else if ((m = tryMethod(view, name, Context.class, int.class)) != null) {
-                if (clazz != null) {
-                    m.invoke(view, mContext, getInteger(clazz, attr, value));
-                } else {
-                    m.invoke(view, mContext, getInteger(view, attr, value));
-                }
+                if (clazz == null) clazz = view.getClass();
+                m.invoke(view, mContext, attrsHelper.getInteger(clazz, attr, value));
             } else if ((m = tryMethod(view, name, int.class)) != null) {
-                if (clazz != null) {
-                    m.invoke(view, getInteger(clazz, attr, value));
-                } else {
-                    m.invoke(view, getInteger(view, attr, value));
-                }
+                if (clazz == null) clazz = view.getClass();
+                m.invoke(view, attrsHelper.getInteger(clazz, attr, value));
             } else if ((m = tryMethod(view, name, float.class)) != null) {
                 m.invoke(view, Float.parseFloat(value));
             } else if ((m = tryMethod(view, name, boolean.class)) != null) {
@@ -458,113 +344,6 @@ public class ViewInflater {
         return result;
     }
 
-    private Drawable getDrawable(String value) {
-        try {
-            Uri uri = Uri.parse(value);
-            if ("file".equals(uri.getScheme())) {
-                return new BitmapDrawable(mContext.getResources(), uri.getPath());
-            }
-        } catch (Exception e) {
-            mErrors.add("failed to load drawable " + value);
-        }
-        return null;
-    }
-
-    private void setIntegerField(Object target, String fieldName, int value) {
-        try {
-            Field f = target.getClass().getField(fieldName);
-            f.setInt(target, value);
-        } catch (Exception e) {
-            mErrors.add("set field)" + fieldName + " failed. " + e.toString());
-        }
-    }
-
-    /** Expand single digit color to 2 digits. */
-    private int expandColor(String colorValue) {
-        return Integer.parseInt(colorValue + colorValue, 16);
-    }
-
-    private int getColor(String value) {
-        int a = 0xff, r = 0, g = 0, b = 0;
-        if (value.startsWith("#") && value.length() <= 9) {
-            try {
-                value = value.substring(1);
-                if (value.length() == 4) {
-                    a = expandColor(value.substring(0, 1));
-                    value = value.substring(1);
-                }
-                if (value.length() == 3) {
-                    r = expandColor(value.substring(0, 1));
-                    g = expandColor(value.substring(1, 2));
-                    b = expandColor(value.substring(2, 3));
-                } else {
-                    if (value.length() == 8) {
-                        a = Integer.parseInt(value.substring(0, 2), 16);
-                        value = value.substring(2);
-                    }
-                    if (value.length() == 6) {
-                        r = Integer.parseInt(value.substring(0, 2), 16);
-                        g = Integer.parseInt(value.substring(2, 4), 16);
-                        b = Integer.parseInt(value.substring(4, 6), 16);
-                    }
-                }
-                long result = (a << 24) | (r << 16) | (g << 8) | b;
-                return (int) result;
-            } catch (Exception e) {
-            }
-        } else if (value.startsWith("?") || value.startsWith("@")) {
-            int colorRes = parseTheme(value);
-            if (colorRes != 0) {
-                return mContext.getResources().getColor(colorRes);
-            }
-        } else if (mColorNames.containsKey(value.toLowerCase())) {
-            return getColor(mColorNames.get(value.toLowerCase()));
-        }
-        mErrors.add("Unknown color " + value);
-        return 0;
-    }
-
-    private int getInputType(String value) {
-        int result = 0;
-        Integer v = getInputTypes().get(value);
-        if (v == null) {
-            mErrors.add("Unknown input type " + value);
-        } else {
-            result = v;
-        }
-        return result;
-    }
-
-    private void setInteger(View view, String attr, int value) {
-        String name = "set" + toPascalCase(attr);
-        Method m;
-        try {
-            if ((m = tryMethod(view, name, Context.class, int.class)) != null) {
-                m.invoke(view, mContext, value);
-            } else if ((m = tryMethod(view, name, int.class)) != null) {
-                m.invoke(view, value);
-            }
-        } catch (Exception e) {
-            addLn(name + ":" + value + ":" + e.toString());
-        }
-    }
-
-    private void setFloat(View view, String attr, float value) {
-        String name = "set" + toPascalCase(attr);
-        Method m;
-        try {
-            if ((m = tryMethod(view, name, Context.class, float.class)) != null) {
-                m.invoke(view, mContext, value);
-            } else if ((m = tryMethod(view, name, float.class)) != null) {
-                m.invoke(view, value);
-            }
-        } catch (Exception e) {
-            addLn(name + ":" + value + ":" + e.toString());
-        }
-
-    }
-
-
     private String toPascalCase(String s) {
         if (s == null) {
             return null;
@@ -575,7 +354,7 @@ public class ViewInflater {
         return "";
     }
 
-    public String toCamelCase(String s) {
+    private String toCamelCase(String s) {
         if (s == null) {
             return "";
         } else if (s.length() < 2) {
@@ -599,92 +378,6 @@ public class ViewInflater {
             sb.append(c);
         }
         return sb.toString();
-    }
-
-    private int getInteger(Class<?> clazz, String attr, String value) {
-        int result;
-        if (value.contains("|")) {
-            int work = 0;
-            for (String s : value.split("\\|")) {
-                work |= getInteger(clazz, attr, s);
-            }
-            result = work;
-        } else {
-            if (value.startsWith("?") || value.startsWith("@")) {
-                result = parseTheme(value);
-            } else if (value.startsWith("0x")) {
-                try {
-                    result = (int) Long.parseLong(value.substring(2), 16);
-                } catch (NumberFormatException e) {
-                    result = 0;
-                }
-            } else if (value.matches("\\-?\\d+")) {
-                result = Integer.parseInt(value);
-            } else if (value.matches("\\-?\\d+\\.\\d*|\\-?\\.\\d+")) {
-                // Strangely, some view attrs accept float numbers in XML but their related methods expect int.
-                result = (int) Float.parseFloat(value);
-            } else if (clazz == InputType.class) {
-                return getInputType(value);
-            } else {
-                Field f;
-                try {
-                    f = clazz.getField(value.toUpperCase());
-                    result = f.getInt(null);
-                } catch (Exception ex1) {
-                    try {
-                        f = clazz.getField(toUnderscore(value).toUpperCase());
-                        result = f.getInt(null);
-                    } catch (Exception ex2) {
-                        try {
-                            f = clazz.getField(toUnderscore(attr + '_' + value).toUpperCase());
-                            result = f.getInt(null);
-                        } catch (Exception ex3) {
-                            mErrors.add("Unknown value: " + value);
-                            result = 0;
-                        }
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    private int getInteger(View view, String attr, String value) {
-        return getInteger(view.getClass(), attr, value);
-    }
-
-    private int getInteger(Class<?> clazz, String value) {
-        return getInteger(clazz, "", value);
-    }
-
-    private int getInteger(View view, String value) {
-        return getInteger(view.getClass(), value);
-    }
-
-    private int parseTheme(String value) {
-        int result;
-        try {
-            String query = "";
-            int i;
-            value = value.substring(1); // skip past "?"
-            i = value.indexOf(":");
-            if (i >= 0) {
-                query = value.substring(0, i) + ".";
-                value = value.substring(i + 1);
-            }
-            query += "R";
-            i = value.indexOf("/");
-            if (i >= 0) {
-                query += "$" + value.substring(0, i);
-                value = value.substring(i + 1);
-            }
-            Class<?> clazz = Class.forName(query);
-            Field f = clazz.getField(value);
-            result = f.getInt(null);
-        } catch (Exception e) {
-            result = 0;
-        }
-        return result;
     }
 
     private View viewClass(Context context, String name) {
@@ -1145,7 +838,18 @@ public class ViewInflater {
         return infoMap;
     }
 
+    /**
+     * Helper class to set views' attributes.
+     *
+     * In this class the most problematic attributes are handled by dedicated functions that are
+     * called using reflection in {@link ViewInflater#setProperty(View, ViewGroup, String, String)}.
+     * Hopefully, most attributes will be handled by generic functions.
+     *
+     * @author Miguel Palacio (palaciodelgado [at] gmail [dot] com)
+     */
     private class ViewAttributesHelper {
+
+        // Dedicated functions
 
         public void setBackground(View view, String value) {
             if (value.startsWith("#")) {
@@ -1263,7 +967,7 @@ public class ViewInflater {
                 float scaledPixels = getScaledSize(value) / mMetrics.scaledDensity; // convert into "sp"
                 ((TextView) view).setTextSize(scaledPixels);
             }
-            //setFloat(view, attr, scaledPixels);
+            /*setFloat(view, attr, scaledPixels);*/
         }
 
         public void setTextStyle(View view, String value) {
@@ -1297,5 +1001,308 @@ public class ViewInflater {
                 view.setId(id);
             }
         }
+
+        // Auxiliary functions
+
+        public int calcId(String value, boolean isNewId, boolean isLoadingLayout) {
+            if (value == null) {
+                return 0;
+            }
+            int id = 0;
+            if (isLoadingLayout) {
+                if (value.startsWith("@+id/")) {
+                    value = value.substring(5);
+                    id = tryGetId(value, true);
+                } else if (value.startsWith("@id/")) {
+                    isNewId = false;
+                    value = value.substring(4);
+                    id = tryGetId(value, false);    // id should be in R.id.
+                }
+            } else {
+                try {
+                    return Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    // This "if - else if" block gives backwards compatibility for older scripts.
+                    if (value.startsWith("@+id/")) {
+                        value = value.substring(5);
+                    } else if (value.startsWith("@id/")) {
+                        value = value.substring(4);
+                    }
+                    id = tryGetId(value, isNewId);
+                }
+            }
+            if (id == 0) {
+                if (isLoadingLayout) {
+                    if (isNewId) {
+                        mErrors.add("failed to set view id. Make sure id is prefixed by either \"@id/\" or \"@+id/\"");
+                    } else {
+                        mErrors.add("failed to set view id. Make sure it is defined in the R.id class");
+                    }
+                } else if (!isNewId) {
+                    mErrors.add("failed to find view matching id");
+                }
+            }
+            return id;
+        }
+
+        private int tryGetId(String value, boolean isNewId) {
+            Integer id;
+            if (isNewId) {
+                id = mNextSeq++;
+                mIdList.put(value, id);
+            } else {
+                id = mIdList.get(value);
+                if (id == null) id = 0;
+            }
+            return id;
+        }
+
+        public float getScaledSize(String value) {
+            int i;
+            float size;
+            String unit = "px";
+            for (i = 0; i < value.length(); i++) {
+                char c = value.charAt(i);
+                if (!(Character.isDigit(c) || c == '.')) {
+                    break;
+                }
+            }
+            try {
+                size = Float.parseFloat(value.substring(0, i));
+                if (i < value.length()) {
+                    unit = value.substring(i).trim();
+                }
+                if (unit.equals("px")) {
+                    return size;
+                }
+                if (unit.equals("sp")) {
+                    return mMetrics.scaledDensity * size;
+                }
+                if (unit.equals("dp") || unit.equals("dip")) {
+                    return mMetrics.density * size;
+                }
+                float inches = mMetrics.ydpi * size;
+                if (unit.equals("in")) {
+                    return inches;
+                }
+                if (unit.equals("pt")) {
+                    return inches / 72;
+                }
+                if (unit.equals("mm")) {
+                    return (float) (inches / 25.4);
+                }
+            } catch (NumberFormatException e) {
+            }
+            mErrors.add("invalid dimension value");
+            return 0;
+        }
+
+        public int getColor(String value) {
+            int a = 0xff, r = 0, g = 0, b = 0;
+            if (value.startsWith("#") && value.length() <= 9) {
+                try {
+                    value = value.substring(1);
+                    if (value.length() == 4) {
+                        a = expandColor(value.substring(0, 1));
+                        value = value.substring(1);
+                    }
+                    if (value.length() == 3) {
+                        r = expandColor(value.substring(0, 1));
+                        g = expandColor(value.substring(1, 2));
+                        b = expandColor(value.substring(2, 3));
+                    } else {
+                        if (value.length() == 8) {
+                            a = Integer.parseInt(value.substring(0, 2), 16);
+                            value = value.substring(2);
+                        }
+                        if (value.length() == 6) {
+                            r = Integer.parseInt(value.substring(0, 2), 16);
+                            g = Integer.parseInt(value.substring(2, 4), 16);
+                            b = Integer.parseInt(value.substring(4, 6), 16);
+                        }
+                    }
+                    long result = (a << 24) | (r << 16) | (g << 8) | b;
+                    return (int) result;
+                } catch (Exception e) {
+                }
+            } else if (value.startsWith("?") || value.startsWith("@")) {
+                int colorRes = parseTheme(value);
+                if (colorRes != 0) {
+                    return mContext.getResources().getColor(colorRes);
+                }
+            } else if (mColorNames.containsKey(value.toLowerCase())) {
+                return getColor(mColorNames.get(value.toLowerCase()));
+            }
+            mErrors.add("Unknown color " + value);
+            return 0;
+        }
+
+        /** Expand single digit color to 2 digits. */
+        private int expandColor(String colorValue) {
+            return Integer.parseInt(colorValue + colorValue, 16);
+        }
+
+        public int getInteger(Class<?> clazz, String attr, String value) {
+            int result;
+            if (value.contains("|")) {
+                int work = 0;
+                for (String s : value.split("\\|")) {
+                    work |= getInteger(clazz, attr, s);
+                }
+                result = work;
+            } else {
+                if (value.startsWith("?") || value.startsWith("@")) {
+                    result = parseTheme(value);
+                } else if (value.startsWith("0x")) {
+                    try {
+                        result = (int) Long.parseLong(value.substring(2), 16);
+                    } catch (NumberFormatException e) {
+                        result = 0;
+                    }
+                } else if (value.matches("\\-?\\d+")) {
+                    result = Integer.parseInt(value);
+                } else if (value.matches("\\-?\\d+\\.\\d*|\\-?\\.\\d+")) {
+                    // Strangely, some view attrs accept float numbers in XML but their related methods expect int.
+                    result = (int) Float.parseFloat(value);
+                } else if (clazz == InputType.class) {
+                    return getInputType(value);
+                } else {
+                    Field f;
+                    try {
+                        f = clazz.getField(value.toUpperCase());
+                        result = f.getInt(null);
+                    } catch (Exception ex1) {
+                        try {
+                            f = clazz.getField(toUnderscore(value).toUpperCase());
+                            result = f.getInt(null);
+                        } catch (Exception ex2) {
+                            try {
+                                f = clazz.getField(toUnderscore(attr + '_' + value).toUpperCase());
+                                result = f.getInt(null);
+                            } catch (Exception ex3) {
+                                mErrors.add("Unknown value: " + value);
+                                result = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+/*        public int getInteger(View view, String attr, String value) {
+            return getInteger(view.getClass(), attr, value);
+        }*/
+
+        public int getInteger(Class<?> clazz, String value) {
+            return getInteger(clazz, "", value);
+        }
+
+        public int getInteger(View view, String value) {
+            return getInteger(view.getClass(), value);
+        }
+
+        private int parseTheme(String value) {
+            int result;
+            try {
+                String query = "";
+                int i;
+                value = value.substring(1); // skip past "?"
+                i = value.indexOf(":");
+                if (i >= 0) {
+                    query = value.substring(0, i) + ".";
+                    value = value.substring(i + 1);
+                }
+                query += "R";
+                i = value.indexOf("/");
+                if (i >= 0) {
+                    query += "$" + value.substring(0, i);
+                    value = value.substring(i + 1);
+                }
+                Class<?> clazz = Class.forName(query);
+                Field f = clazz.getField(value);
+                result = f.getInt(null);
+            } catch (Exception e) {
+                result = 0;
+            }
+            return result;
+        }
+
+        private int getInputType(String value) {
+            int result = 0;
+            Integer v = getInputTypes().get(value);
+            if (v == null) {
+                mErrors.add("Unknown input type " + value);
+            } else {
+                result = v;
+            }
+            return result;
+        }
+
+        private void setIntegerField(Object target, String fieldName, int value) {
+            try {
+                Field f = target.getClass().getField(fieldName);
+                f.setInt(target, value);
+            } catch (Exception e) {
+                mErrors.add("set field)" + fieldName + " failed. " + e.toString());
+            }
+        }
+
+        private void setInteger(View view, String attr, int value) {
+            String name = "set" + toPascalCase(attr);
+            Method m;
+            try {
+                if ((m = tryMethod(view, name, Context.class, int.class)) != null) {
+                    m.invoke(view, mContext, value);
+                } else if ((m = tryMethod(view, name, int.class)) != null) {
+                    m.invoke(view, value);
+                }
+            } catch (Exception e) {
+                addLn(name + ":" + value + ":" + e.toString());
+            }
+        }
+
+        private void setFloat(View view, String attr, float value) {
+            String name = "set" + toPascalCase(attr);
+            Method m;
+            try {
+                if ((m = tryMethod(view, name, Context.class, float.class)) != null) {
+                    m.invoke(view, mContext, value);
+                } else if ((m = tryMethod(view, name, float.class)) != null) {
+                    m.invoke(view, value);
+                }
+            } catch (Exception e) {
+                addLn(name + ":" + value + ":" + e.toString());
+            }
+        }
+
+        private Drawable getDrawable(String value) {
+            try {
+                Uri uri = Uri.parse(value);
+                if ("file".equals(uri.getScheme())) {
+                    return new BitmapDrawable(mContext.getResources(), uri.getPath());
+                }
+            } catch (Exception e) {
+                mErrors.add("failed to load drawable " + value);
+            }
+            return null;
+        }
+
+        private int getLayoutValue(String value) {
+            if (value == null) {
+                return 0;
+            }
+            if (value.equals("match_parent")) {
+                return LayoutParams.MATCH_PARENT;
+            }
+            if (value.equals("wrap_content")) {
+                return LayoutParams.WRAP_CONTENT;
+            }
+            if (value.equals("fill_parent")) {
+                return LayoutParams.MATCH_PARENT;
+            }
+            return (int) getScaledSize(value);
+        }
+
     }
 }
