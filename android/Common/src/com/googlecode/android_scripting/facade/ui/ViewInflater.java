@@ -2,6 +2,7 @@ package com.googlecode.android_scripting.facade.ui;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
@@ -12,6 +13,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.text.InputType;
 import android.text.method.DigitsKeyListener;
+import android.text.method.TextKeyListener;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.View;
@@ -71,9 +73,10 @@ public class ViewInflater {
     public static final Map<String, String> mColorNames = new HashMap<>();
     public static final Map<String, Integer> mRelative = new HashMap<>();
     private static final Map<String, Map<AttributeInfo, String>> mXmlAttrs = new HashMap<>();
+    private Map<String, String> mConflictiveAttrs = new HashMap<>();
 
     private enum AttributeInfo {
-        HELPER_METHOD, ATTR_METHOD, VAL_MODIFIER, ATTR_CLASS
+        HELPER_METHOD, ATTR_METHOD, VAL_MODIFIER, CONSTANTS
     }
 
     public static XmlPullParserFactory getFactory() throws XmlPullParserException {
@@ -254,6 +257,9 @@ public class ViewInflater {
                     Method m;
                     if ((m = tryMethod(attrsHelper, info, View.class, String.class)) != null) {
                         m.invoke(attrsHelper, view, value);
+                    } else if ((m = tryMethod(attrsHelper, info, View.class, String.class,
+                            String.class)) != null) {
+                        m.invoke(attrsHelper, view, attr, value);
                     } else if ((m = tryMethod(attrsHelper, info, View.class, ViewGroup.class,
                             String.class, String.class)) != null) {
                         m.invoke(attrsHelper, view, root, attr, value);
@@ -276,9 +282,9 @@ public class ViewInflater {
 
         if (mXmlAttrs.containsKey(attr)) {
             Map<AttributeInfo, String> propertyInfo = mXmlAttrs.get(attr);
+            String info;
 
-            String info = propertyInfo.get(AttributeInfo.VAL_MODIFIER);
-            if (info != null) {
+            if ((info = propertyInfo.get(AttributeInfo.VAL_MODIFIER)) != null) {
                 switch (info) {
                     case DIMENSION:
                         value = "" + attrsHelper.getScaledSize(value);
@@ -292,18 +298,29 @@ public class ViewInflater {
                 }
             }
 
-            info = propertyInfo.get(AttributeInfo.ATTR_METHOD);
-            if (info != null) {
+            if ((info = propertyInfo.get(AttributeInfo.ATTR_METHOD)) != null) {
                 name = info;
             }
 
-            info = propertyInfo.get(AttributeInfo.ATTR_CLASS);
-            if (info != null) {
-                try {
-                    clazz = Class.forName(info);
-                } catch (ClassNotFoundException e) {
-                    addLn(name + ":" + value + ":" + e.toString());
-                    mErrors.add(name + ":" + value + ":" + e.toString());
+            if ((info = propertyInfo.get(AttributeInfo.CONSTANTS)) != null) {
+                if (info.startsWith("android.")) {
+                    // Init class to get the constants values from it.
+                    try {
+                        clazz = Class.forName(info);
+                    } catch (ClassNotFoundException e) {
+                        addLn(name + ":" + value + ":" + e.toString());
+                        mErrors.add(name + ":" + value + ":" + e.toString());
+                    }
+                } else {
+                    // Prefix value to help ViewAttributesHelper.getInteger find its eq constant.
+                    StringBuilder newValue = new StringBuilder();
+                    for (String s : value.split("\\|")) {
+                        newValue.append('|');
+                        newValue.append(info);
+                        newValue.append(s);
+                    }
+                    newValue.deleteCharAt(0);
+                    value = newValue.toString();
                 }
             }
         }
@@ -737,21 +754,21 @@ public class ViewInflater {
 
         // XML attributes helper HashMap.
 
-        // View class
+        // View
         mXmlAttrs.put("accessibilityTraversalAfter", mapAttrInfo(null, null, VIEW_ID, null));
         mXmlAttrs.put("accessibilityTraversalBefore", mapAttrInfo(null, null, VIEW_ID, null));
         mXmlAttrs.put("background", mapAttrInfo("setBackground", null, null, null));
-        //mXmlAttrs.put("backgroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
-        //mXmlAttrs.put("backgroundTintMode", "???"); // Depends on previous one.
+        mXmlAttrs.put("backgroundTint", mapAttrInfo("setTint", null, null, null));
+/*        mXmlAttrs.put("backgroundTintMode", mapAttrInfo("???", null, null, null); // maybe too complex to offer...*/
         mXmlAttrs.put("elevation", mapAttrInfo(null, null, DIMENSION, null));
-        //mXmlAttrs.put("fadeScrollbars", "setScrollbarFadingEnabled"); // Crashes the app if view is not scrollable (e.g., ScrollView). I haven't been able to catch the exception.
+/*        mXmlAttrs.put("fadeScrollbars", mapAttrInfo(null, "setScrollbarFadingEnabled", null, null); // Crashes the app if view is not scrollable (e.g., ScrollView). I haven't been able to catch the exception.*/
         mXmlAttrs.put("fadingEdgeLength", mapAttrInfo(null, null, DIMENSION, null));
-        //mXmlAttrs.put("foreground", RESOURCE);
-        //mXmlAttrs.put("foregroundTint", "setBackgroundTintList," + COLOR_RES); // Too complex to implement using reflection.
-        //mXmlAttrs.put("foregroundTintMode", "???"); // Depends on previous one.
-        //mXmlAttrs.put("gravity", mapAttrInfo("setViewId", null, null)); // more complex... setInteger expects a already treated int.
+        //mXmlAttrs.put("foreground", RESOURCE);    // waiting to compile project for API 23
+        //mXmlAttrs.put("foregroundTint", "setBackgroundTintList," + COLOR_RES); // depends on foreground
+        //mXmlAttrs.put("foregroundTintMode", "???"); // depends on foreground
         mXmlAttrs.put("id", mapAttrInfo("setViewId", null, null, null));
         mXmlAttrs.put("isScrollContainer", mapAttrInfo(null, "setScrollContainer", null, null));
+/*        mXmlAttrs.put("layerType", mapAttrInfo("???", null, null, null); // maybe too complex to offer...*/
         mXmlAttrs.put("minHeight", mapAttrInfo(null, "setMinimumHeight", DIMENSION, null));
         mXmlAttrs.put("minWidth", mapAttrInfo(null, "setMinimumWidth", DIMENSION, null));
         mXmlAttrs.put("nextFocusDown", mapAttrInfo(null, "setNextFocusDownId", VIEW_ID, null));
@@ -760,31 +777,38 @@ public class ViewInflater {
         mXmlAttrs.put("nextFocusRight", mapAttrInfo(null, "setNextFocusRightId", VIEW_ID, null));
         mXmlAttrs.put("nextFocusUp", mapAttrInfo(null, "setNextFocusUpId", VIEW_ID, null));
         mXmlAttrs.put("padding", mapAttrInfo("setPadding", null, null, null));
-        //mXmlAttrs.put("requiresFadingEdge", ""); // Depends on two methods, needs special treatment.
+        mXmlAttrs.put("paddingBottom", mapAttrInfo("setPadding", null, null, null));
+        mXmlAttrs.put("paddingEnd", mapAttrInfo("setPadding", null, null, null));
+        mXmlAttrs.put("paddingLeft", mapAttrInfo("setPadding", null, null, null));
+        mXmlAttrs.put("paddingRight", mapAttrInfo("setPadding", null, null, null));
+        mXmlAttrs.put("paddingStart", mapAttrInfo("setPadding", null, null, null));
+        mXmlAttrs.put("paddingTop", mapAttrInfo("setPadding", null, null, null));
+        mXmlAttrs.put("requiresFadingEdge", mapAttrInfo("setFadingEdge", null, null, null));
+        //mXmlAttrs.put("scrollbarIndicator", mapAttrInfo(null, "setScrollIndicators", null, "scroll_indicator_"));  // Test peding for API >= 23.
         mXmlAttrs.put("scrollbarDefaultDelayBeforeFade", mapAttrInfo(null, "setScrollBarDefaultDelayBeforeFade", null, null));
         mXmlAttrs.put("scrollbarFadeDuration", mapAttrInfo(null, "setScrollBarFadeDuration", null, null));
         mXmlAttrs.put("scrollbarSize", mapAttrInfo(null, "setScrollBarSize", DIMENSION, null));
-        //mXmlAttrs.put("scrollbarStyle", "setScrollBarStyle"+"???"); // Class constants that don't follow any pattern.
-        mXmlAttrs.put("src", mapAttrInfo("setImage", null, null, null));
+        mXmlAttrs.put("scrollbarStyle", mapAttrInfo(null, "setScrollBarStyle", null, "scrollbars_"));
         mXmlAttrs.put("transformPivotX", mapAttrInfo(null, "setPivotX", DIMENSION, null));
         mXmlAttrs.put("transformPivotY", mapAttrInfo(null, "setPivotY", DIMENSION, null));
         mXmlAttrs.put("translationX", mapAttrInfo(null, null, DIMENSION, null));
         mXmlAttrs.put("translationY", mapAttrInfo(null, null, DIMENSION, null));
         mXmlAttrs.put("translationZ", mapAttrInfo(null, null, DIMENSION, null));
 
-        // ImageView class
+        // ImageView
         mXmlAttrs.put("baseline", mapAttrInfo(null, null, DIMENSION, null));
         mXmlAttrs.put("maxHeight", mapAttrInfo(null, null, DIMENSION, null));
         mXmlAttrs.put("maxWidth", mapAttrInfo(null, null, DIMENSION, null));
+        mXmlAttrs.put("src", mapAttrInfo("setImage", null, null, null));
 /*        mXmlAttrs.put("scaleType", "con");*/
-/*        mXmlAttrs.put("tint", "setImageTintList"+"con");
-        mXmlAttrs.put("tintMode", "setImageTintMode"+"con");*/
+        mXmlAttrs.put("tint", mapAttrInfo("setTint", null, null, null));
+/*        mXmlAttrs.put("tintMode", "setImageTintMode"+"con");*/
 
-        // TextView class
-/*        mXmlAttrs.put("autoLink", "setAutoLinkMask"+"con");*/
-/*        mXmlAttrs.put("autoText", "setKeyListener"+"?");*/
-/*        mXmlAttrs.put("capitalize", "setKeyListener"+"?");*/
-        mXmlAttrs.put("digits", mapAttrInfo("setDigits", null, null, null));
+        // TextView
+/*        mXmlAttrs.put("autoLink", mapAttrInfo(null, "setAutoLinkMask", null, "android.text.util.Linkify"); // it won't work because of constants suffix*/
+        mXmlAttrs.put("autoText", mapAttrInfo("setKeyListener", null, null, null)); // conflicts with capitalize.
+        mXmlAttrs.put("capitalize", mapAttrInfo("setKeyListener", null, null, null)); // conflicts with autotext.
+        mXmlAttrs.put("digits", mapAttrInfo("setKeyListener", null, null, null));
         mXmlAttrs.put("drawablePadding", mapAttrInfo(null, null, DIMENSION, null));
 /*        mXmlAttrs.put("drawableTint", "setCompoundDrawableTintList"+"con");
         mXmlAttrs.put("drawableTintMode", "setCompoundDrawableTintMode"+"con");*/
@@ -801,7 +825,7 @@ public class ViewInflater {
         mXmlAttrs.put("textColor", mapAttrInfo(null, null, COLOR, null));
         mXmlAttrs.put("textColorHighlight", mapAttrInfo(null, "setHighlightColor", COLOR, null));
         mXmlAttrs.put("textColorHint", mapAttrInfo(null, "setHintTextColor", COLOR, null));
-        //mXmlAttrs.put("textColorLink", mapAttrInfo(null, "setLinkTextColor", COLOR, null));
+/*        mXmlAttrs.put("textColorLink", mapAttrInfo(null, "setLinkTextColor", COLOR, null));*/
         mXmlAttrs.put("textSize", mapAttrInfo("setTextSize", null, null, null));
         mXmlAttrs.put("textStyle", mapAttrInfo("setTextStyle", null, null, null));
         mXmlAttrs.put("typeface", mapAttrInfo("setTypeface", null, null, null));
@@ -829,12 +853,12 @@ public class ViewInflater {
     }
 
     private static Map<AttributeInfo, String> mapAttrInfo(String helperMethod, String attrMethod,
-                                                          String valModifier, String attrClass) {
+                                                          String valModifier, String constants) {
         Map<AttributeInfo, String> infoMap = new EnumMap<>(AttributeInfo.class);
         infoMap.put(AttributeInfo.HELPER_METHOD, helperMethod);
         infoMap.put(AttributeInfo.ATTR_METHOD, attrMethod);
         infoMap.put(AttributeInfo.VAL_MODIFIER, valModifier);
-        infoMap.put(AttributeInfo.ATTR_CLASS, attrClass);
+        infoMap.put(AttributeInfo.CONSTANTS, constants);
         return infoMap;
     }
 
@@ -865,10 +889,32 @@ public class ViewInflater {
             }
         }
 
-        public void setDigits(View view, String value) {
-            if (view instanceof TextView) {
-                ((TextView) view).setKeyListener(DigitsKeyListener.getInstance(value));
+        public void setFadingEdge(View view, String value) {
+            String[] values = value.split("\\|");
+            for (String v : values) {
+                switch (v.toLowerCase()) {
+                    case "none":
+                        view.setVerticalFadingEdgeEnabled(false);
+                        view.setHorizontalFadingEdgeEnabled(false);
+                        break;
+                    case "horizontal":
+                        view.setHorizontalFadingEdgeEnabled(true);
+                        break;
+                    case "vertical":
+                        view.setVerticalFadingEdgeEnabled(true);
+                        break;
+                    default:
+                        mErrors.add("Unknown value: " + v);
+                }
             }
+        }
+
+        public void setForeground(View view, String value) {
+            Drawable drawable;
+            if (value.startsWith("#")) {
+                drawable = new ColorDrawable(getColor(value));
+            }
+            //view.setForeground ... needs to be compiled against API 23
         }
 
         public void setImage(View view, String value) {
@@ -896,6 +942,37 @@ public class ViewInflater {
                 } catch (Exception e) {
                     mErrors.add("failed to set image " + value);
                 }
+            }
+        }
+
+        public void setKeyListener(View view, String attr, String value) {
+            if (view instanceof TextView) {
+                TextView textView = (TextView) view;
+                switch (attr) {
+                    case "autoText":
+                        TextKeyListener.Capitalize cap = TextKeyListener.Capitalize.NONE;
+                        if (mConflictiveAttrs.containsKey("capitalize")) {
+                            cap = TextKeyListener.Capitalize.valueOf(mConflictiveAttrs.get("capitalize"));
+                        }
+                        textView.setKeyListener(TextKeyListener.getInstance(
+                                Boolean.parseBoolean(value), cap));
+                        mConflictiveAttrs.put(attr, value);
+                        break;
+                    case "capitalize":
+                        boolean auto = false;
+                        if (mConflictiveAttrs.containsKey("autoText")) {
+                            auto = Boolean.parseBoolean(mConflictiveAttrs.get("autoText"));
+                        }
+                        textView.setKeyListener(TextKeyListener.getInstance(
+                                auto, TextKeyListener.Capitalize.valueOf(value.toUpperCase())));
+                        mConflictiveAttrs.put(attr, value);
+                        break;
+                    case "digits":
+                        textView.setKeyListener(DigitsKeyListener.getInstance(value));
+                        break;
+                }
+            } else {
+                mErrors.add("view must be instance of either TextView or a subclass of it");
             }
         }
 
@@ -944,9 +1021,59 @@ public class ViewInflater {
             view.setLayoutParams(layout);
         }
 
-        public void setPadding(View view, String value) {
-            int size = (int) getScaledSize(value);
-            view.setPadding(size, size, size, size);
+        public void setPadding(View view, String attr, String value) {
+            int newPadding = (int) getScaledSize(value);
+            if (attr.equals("padding")) {
+                view.setPadding(newPadding, newPadding, newPadding, newPadding);
+            } else {
+                int bottom, end, left, right, start, top;
+                bottom = view.getPaddingBottom();
+                top = view.getPaddingTop();
+                left = view.getPaddingLeft();
+                right = view.getPaddingRight();
+
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    switch (attr) {
+                        case "paddingBottom":
+                            view.setPadding(left, top, right, newPadding);
+                            break;
+                        case "paddingLeft":
+                            view.setPadding(newPadding, top, right, bottom);
+                            break;
+                        case "paddingRight":
+                            view.setPadding(left, top, newPadding, bottom);
+                            break;
+                        case "paddingTop":
+                            view.setPadding(left, newPadding, right, bottom);
+                            break;
+                        default:
+                            mErrors.add("attribute not supported by devices with API < 17");
+                    }
+                } else {
+                    start = view.getPaddingStart();
+                    end = view.getPaddingEnd();
+                    switch (attr) {
+                        case "paddingBottom":
+                            view.setPaddingRelative(start, top, end, newPadding);
+                            break;
+                        case "paddingEnd":
+                            view.setPaddingRelative(start, top, newPadding, bottom);
+                            break;
+                        case "paddingLeft":
+                            view.setPadding(newPadding, top, right, bottom);
+                            break;
+                        case "paddingRight":
+                            view.setPadding(left, top, newPadding, bottom);
+                            break;
+                        case "paddingStart":
+                            view.setPaddingRelative(newPadding, top, end, bottom);
+                            break;
+                        case "paddingTop":
+                            view.setPaddingRelative(start, newPadding, end, bottom);
+                            break;
+                    }
+                }
+            }
         }
 
         public void setStretchColumns(View view, String value) {
@@ -966,6 +1093,8 @@ public class ViewInflater {
             if (view instanceof TextView) {
                 float scaledPixels = getScaledSize(value) / mMetrics.scaledDensity; // convert into "sp"
                 ((TextView) view).setTextSize(scaledPixels);
+            } else {
+                mErrors.add("view must be instance of either TextView or a subclass of it");
             }
             /*setFloat(view, attr, scaledPixels);*/
         }
@@ -981,6 +1110,32 @@ public class ViewInflater {
                 }
             } else {
                 mErrors.add("view must be instance of either TextView or a subclass of it");
+            }
+        }
+
+        public void setTint(View view, String attr, String value) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                ColorStateList tint = null;
+                if (!value.equals("null")) tint = ColorStateList.valueOf(getColor(value));
+                switch (attr) {
+                    case "backgroundTint":
+                        view.setBackgroundTintList(tint);
+                        break;
+                    case "foregroundTint":
+                        //view.setForegroundTintList(tint);
+                        break;
+                    case "tint":
+                        if (view instanceof ImageView) {
+                            ((ImageView) view).setImageTintList(tint);
+                        } else {
+                            mErrors.add("view must be instance of either ImageView or a subclass of it");
+                        }
+                        break;
+                    default:
+                        mErrors.add("attribute not found");
+                }
+            } else {
+                mErrors.add("attribute not supported by devices with API < 21");
             }
         }
 
