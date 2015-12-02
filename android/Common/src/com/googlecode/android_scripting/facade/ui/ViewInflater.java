@@ -12,7 +12,9 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.text.InputType;
+import android.text.TextUtils;
 import android.text.method.DigitsKeyListener;
+import android.text.method.KeyListener;
 import android.text.method.TextKeyListener;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -60,7 +62,6 @@ public class ViewInflater {
     private static final String DIMENSION = "dim";
     private static final String VIEW_ID = "id";
     private static final String COLOR = "col";
-    private static final String DRAWABLE_RES = "drw";
 
     private static XmlPullParserFactory mFactory;
     private int mNextSeq = BASESEQ;
@@ -73,7 +74,7 @@ public class ViewInflater {
     public static final Map<String, String> mColorNames = new HashMap<>();
     public static final Map<String, Integer> mRelative = new HashMap<>();
     private static final Map<String, Map<AttributeInfo, String>> mXmlAttrs = new HashMap<>();
-    private Map<String, String> mConflictiveAttrs = new HashMap<>();
+    private Map<Integer, Map<String, String>> mConflictiveAttrs = new HashMap<>();
 
     private enum AttributeInfo {
         HELPER_METHOD, ATTR_METHOD, VAL_MODIFIER, CONSTANTS
@@ -807,18 +808,27 @@ public class ViewInflater {
         // TextView
 /*        mXmlAttrs.put("autoLink", mapAttrInfo(null, "setAutoLinkMask", null, "android.text.util.Linkify"); // it won't work because of constants suffix*/
         mXmlAttrs.put("autoText", mapAttrInfo("setKeyListener", null, null, null)); // conflicts with capitalize.
+        mXmlAttrs.put("bufferType", mapAttrInfo("setBufferType", null, null, null)); // conflicts with capitalize.
         mXmlAttrs.put("capitalize", mapAttrInfo("setKeyListener", null, null, null)); // conflicts with autotext.
         mXmlAttrs.put("digits", mapAttrInfo("setKeyListener", null, null, null));
-        mXmlAttrs.put("drawablePadding", mapAttrInfo(null, null, DIMENSION, null));
-/*        mXmlAttrs.put("drawableTint", "setCompoundDrawableTintList"+"con");
-        mXmlAttrs.put("drawableTintMode", "setCompoundDrawableTintMode"+"con");*/
-/*        mXmlAttrs.put("ellipsize", CLASS_CONSTANT);
-        mXmlAttrs.put("fontFamily", "setTypeface"+"res");*/
+        mXmlAttrs.put("drawableBottom", mapAttrInfo("setCompoundDrawable", null, null, null));
+        mXmlAttrs.put("drawableEnd", mapAttrInfo("setCompoundDrawable", null, null, null));
+        mXmlAttrs.put("drawableLeft", mapAttrInfo("setCompoundDrawable", null, null, null));
+        mXmlAttrs.put("drawablePadding", mapAttrInfo(null, "setCompoundDrawablePadding", DIMENSION, null));
+        mXmlAttrs.put("drawableStart", mapAttrInfo("setCompoundDrawable", null, null, null));
+        mXmlAttrs.put("drawableRight", mapAttrInfo("setCompoundDrawable", null, null, null));
+        //mXmlAttrs.put("drawableTint", mapAttrInfo("setTint", null, null, null));  // API 23
+/*        mXmlAttrs.put("drawableTintMode", mapAttrInfo("???", null, null, null); // maybe too complex to offer...*/
+        mXmlAttrs.put("drawableTop", mapAttrInfo("setCompoundDrawable", null, null, null));
+        mXmlAttrs.put("ellipsize", mapAttrInfo("setEllipsize", null, null, null));
+        mXmlAttrs.put("fontFamily", mapAttrInfo("setTypeface", null, null, null));
         mXmlAttrs.put("gravity", mapAttrInfo(null, null, null, "android.view.Gravity"));
         mXmlAttrs.put("height", mapAttrInfo(null, null, DIMENSION, null));
-/*        mXmlAttrs.put("imeOptions", "con");*/
-/*        mXmlAttrs.put("inputMethod", "setKeyListener"+"?");*/
-        mXmlAttrs.put("inputType", mapAttrInfo(null, null, null, "android.text.InputType"));
+        mXmlAttrs.put("imeActionId", mapAttrInfo("setImeAction", null, null, null));
+        mXmlAttrs.put("imeActionLabel", mapAttrInfo("setImeAction", null, null, null));
+/*        mXmlAttrs.put("imeOptions", mapAttrInfo(null, null, null, "android.text.inputmethod.EditorInfo"));  // It's in a different class and prefixed... need to think about it.*/
+/*        mXmlAttrs.put("inputMethod", mapAttrInfo("setKeyListener", null, null, null));  // haven't figured out how this attr works...*/
+        mXmlAttrs.put("inputType", mapAttrInfo(null, null, null, "android.text.InputType"));    // needs revision.
 /*        mXmlAttrs.put("lineSpacingExtra", "setLineSpacing");*/
 /*        mXmlAttrs.put("lineSpacingMultiplier", "setLineSpacing"); */
 /*        mXmlAttrs.put("textAppearance", "res");*/
@@ -873,6 +883,8 @@ public class ViewInflater {
      */
     private class ViewAttributesHelper {
 
+        private final int TEXT_VIEW = 0;
+
         // Dedicated functions
 
         public void setBackground(View view, String value) {
@@ -886,6 +898,87 @@ public class ViewInflater {
                 } else {
                     view.setBackground(getDrawable(value));
                 }
+            }
+        }
+
+        public void setBufferType(View view, String value) {
+            if (!isInstanceOf(view, TEXT_VIEW)) return;
+
+            TextView textView = (TextView) view;
+            CharSequence text = textView.getText();
+            TextView.BufferType bufferType;
+            try {
+                bufferType = TextView.BufferType.valueOf(value.toUpperCase());
+                textView.setText(text, bufferType);
+            } catch (IllegalArgumentException e) {
+                mErrors.add("setText:" + value + ":" + e.toString());
+            }
+        }
+
+        public void setCompoundDrawable(View view, String attr, String value) {
+            if (!isInstanceOf(view, TEXT_VIEW)) return;
+
+            TextView textView = (TextView) view;
+            Drawable[] dws;
+            dws = textView.getCompoundDrawables();
+            // So far supports only ColorDrawable and BitmapDrawable.
+            Drawable newDrawable;
+            if (value.startsWith("#")) {
+                newDrawable = new ColorDrawable(getColor(value));
+            } else {
+                newDrawable = getDrawable(value);
+            }
+            if (mErrors.size() > 0) return;
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                switch (attr) {
+                    case "drawableBottom":
+                        textView.setCompoundDrawables(dws[0], dws[1], dws[2], newDrawable);
+                        break;
+                    case "drawableLeft":
+                        textView.setCompoundDrawables(newDrawable, dws[1], dws[2], dws[3]);
+                        break;
+                    case "drawableRight":
+                        textView.setCompoundDrawables(dws[0], dws[1], newDrawable, dws[3]);
+                        break;
+                    case "drawableTop":
+                        textView.setCompoundDrawables(dws[0], newDrawable, dws[2], dws[3]);
+                        break;
+                    default:
+                        mErrors.add("attribute not supported by devices with API < 17");
+                }
+            } else {
+                Drawable[] dwsRel;
+                dwsRel = textView.getCompoundDrawablesRelative();
+                switch (attr) {
+                    case "drawableBottom":
+                        textView.setCompoundDrawablesRelative(dwsRel[0], dwsRel[1], dwsRel[2], newDrawable);
+                        break;
+                    case "drawableEnd":
+                        textView.setCompoundDrawablesRelative(dwsRel[0], dwsRel[1], newDrawable, dwsRel[3]);
+                        break;
+                    case "drawableLeft":
+                        textView.setCompoundDrawables(newDrawable, dws[1], dws[2], dws[3]);
+                        break;
+                    case "drawableRight":
+                        textView.setCompoundDrawables(dws[0], dws[1], newDrawable, dws[3]);
+                        break;
+                    case "drawableStart":
+                        textView.setCompoundDrawablesRelative(newDrawable, dwsRel[1], dwsRel[2], dwsRel[3]);
+                        break;
+                    case "drawableTop":
+                        textView.setCompoundDrawablesRelative(dwsRel[0], newDrawable, dwsRel[2], dwsRel[3]);
+                        break;
+                }
+            }
+        }
+
+        public void setEllipsize(View view, String value) {
+            if (!isInstanceOf(view, TEXT_VIEW)) return;
+            try {
+                ((TextView) view).setEllipsize(TextUtils.TruncateAt.valueOf(value.toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                mErrors.add("setEllipsize:" + value + ":" + e.toString());
             }
         }
 
@@ -945,34 +1038,55 @@ public class ViewInflater {
             }
         }
 
-        public void setKeyListener(View view, String attr, String value) {
-            if (view instanceof TextView) {
-                TextView textView = (TextView) view;
-                switch (attr) {
-                    case "autoText":
-                        TextKeyListener.Capitalize cap = TextKeyListener.Capitalize.NONE;
-                        if (mConflictiveAttrs.containsKey("capitalize")) {
-                            cap = TextKeyListener.Capitalize.valueOf(mConflictiveAttrs.get("capitalize"));
-                        }
-                        textView.setKeyListener(TextKeyListener.getInstance(
-                                Boolean.parseBoolean(value), cap));
-                        mConflictiveAttrs.put(attr, value);
-                        break;
-                    case "capitalize":
-                        boolean auto = false;
-                        if (mConflictiveAttrs.containsKey("autoText")) {
-                            auto = Boolean.parseBoolean(mConflictiveAttrs.get("autoText"));
-                        }
-                        textView.setKeyListener(TextKeyListener.getInstance(
-                                auto, TextKeyListener.Capitalize.valueOf(value.toUpperCase())));
-                        mConflictiveAttrs.put(attr, value);
-                        break;
-                    case "digits":
-                        textView.setKeyListener(DigitsKeyListener.getInstance(value));
-                        break;
-                }
+        public void setImeAction(View view, String attr, String value) {
+            if (!isInstanceOf(view, TEXT_VIEW)) return;
+
+            TextView textView = (TextView) view;
+            if (attr.equals("imeActionId")) {
+                CharSequence label = textView.getImeActionLabel();
+                textView.setImeActionLabel(label, Integer.parseInt(value));
             } else {
-                mErrors.add("view must be instance of either TextView or a subclass of it");
+                int id = textView.getImeActionId();
+                textView.setImeActionLabel(value, id);
+            }
+        }
+
+        public void setKeyListener(View view, String attr, String value) {
+            if (!isInstanceOf(view, TEXT_VIEW)) return;
+
+            TextView textView = (TextView) view;
+            Map<String, String> conflicts;
+            int viewId = view.getId();
+            switch (attr) {
+                case "autoText":
+                    if ((conflicts = mConflictiveAttrs.get(viewId)) == null) {
+                        conflicts = new HashMap<>();
+                    }
+                    TextKeyListener.Capitalize cap = TextKeyListener.Capitalize.NONE;
+                    if (conflicts.containsKey("capitalize")) {
+                        cap = TextKeyListener.Capitalize.valueOf(conflicts.get("capitalize"));
+                    }
+                    textView.setKeyListener(TextKeyListener.getInstance(
+                            Boolean.parseBoolean(value), cap));
+                    conflicts.put(attr, value);
+                    mConflictiveAttrs.put(viewId, conflicts);
+                    break;
+                case "capitalize":
+                    if ((conflicts = mConflictiveAttrs.get(viewId)) == null) {
+                        conflicts = new HashMap<>();
+                    }
+                    boolean auto = false;
+                    if (conflicts.containsKey("autoText")) {
+                        auto = Boolean.parseBoolean(conflicts.get("autoText"));
+                    }
+                    textView.setKeyListener(TextKeyListener.getInstance(
+                            auto, TextKeyListener.Capitalize.valueOf(value.toUpperCase())));
+                    conflicts.put(attr, value);
+                    mConflictiveAttrs.put(viewId, conflicts);
+                    break;
+                case "digits":
+                    textView.setKeyListener(DigitsKeyListener.getInstance(value));
+                    break;
             }
         }
 
@@ -1090,26 +1204,21 @@ public class ViewInflater {
         }
 
         public void setTextSize(View view, String value) {
-            if (view instanceof TextView) {
-                float scaledPixels = getScaledSize(value) / mMetrics.scaledDensity; // convert into "sp"
-                ((TextView) view).setTextSize(scaledPixels);
-            } else {
-                mErrors.add("view must be instance of either TextView or a subclass of it");
-            }
-            /*setFloat(view, attr, scaledPixels);*/
+            if (!isInstanceOf(view, TEXT_VIEW)) return;
+
+            float scaledPixels = getScaledSize(value) / mMetrics.scaledDensity; // convert into "sp"
+            ((TextView) view).setTextSize(scaledPixels);
         }
 
         public void setTextStyle(View view, String value) {
-            if (view instanceof TextView) {
-                TextView textview = (TextView) view;
-                int style = getInteger(Typeface.class, value);
-                if (style == 0) {
-                    textview.setTypeface(Typeface.DEFAULT);
-                } else {
-                    textview.setTypeface(textview.getTypeface(), style);
-                }
+            if (!isInstanceOf(view, TEXT_VIEW)) return;
+
+            TextView textview = (TextView) view;
+            int style = getInteger(Typeface.class, value);
+            if (style == 0) {
+                textview.setTypeface(Typeface.DEFAULT);
             } else {
-                mErrors.add("view must be instance of either TextView or a subclass of it");
+                textview.setTypeface(textview.getTypeface(), style);
             }
         }
 
@@ -1121,15 +1230,16 @@ public class ViewInflater {
                     case "backgroundTint":
                         view.setBackgroundTintList(tint);
                         break;
+                    case "drawableTint":
+                        if (!isInstanceOf(view, TEXT_VIEW)) break;
+                        //((TextView)view).setCompoundDrawableTintList(tint); API 23
+                        break;
                     case "foregroundTint":
                         //view.setForegroundTintList(tint);
                         break;
                     case "tint":
-                        if (view instanceof ImageView) {
-                            ((ImageView) view).setImageTintList(tint);
-                        } else {
-                            mErrors.add("view must be instance of either ImageView or a subclass of it");
-                        }
+                        if (!isInstanceOf(view, TEXT_VIEW)) break;
+                        ((ImageView) view).setImageTintList(tint);
                         break;
                     default:
                         mErrors.add("attribute not found");
@@ -1140,14 +1250,12 @@ public class ViewInflater {
         }
 
         public void setTypeface(View view, String value) {
-            if (view instanceof TextView) {
-                TextView textview = (TextView) view;
-                Typeface typeface = textview.getTypeface();
-                int style = typeface == null ? 0 : typeface.getStyle();
-                textview.setTypeface(Typeface.create(value, style));
-            } else {
-                mErrors.add("view must be instance of either TextView or a subclass of it");
-            }
+            if (!isInstanceOf(view, TEXT_VIEW)) return;
+
+            TextView textview = (TextView) view;
+            Typeface typeface = textview.getTypeface();
+            int style = typeface == null ? 0 : typeface.getStyle();
+            textview.setTypeface(Typeface.create(value, style));
         }
 
         public void setViewId(View view, String value) {
@@ -1459,5 +1567,22 @@ public class ViewInflater {
             return (int) getScaledSize(value);
         }
 
+        private boolean isInstanceOf(View view, int clazz) {
+            boolean result;
+            String c;
+            switch (clazz) {
+                case TEXT_VIEW:
+                    result = view instanceof TextView;
+                    c = "TextView";
+                    break;
+                default:
+                    result = false;
+                    c = "Class undefined";
+            }
+            if (!result) {
+                mErrors.add("view must be instance of either " + c + " or a subclass of it");
+            }
+            return result;
+        }
     }
 }
