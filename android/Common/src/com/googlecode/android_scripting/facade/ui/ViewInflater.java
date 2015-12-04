@@ -11,6 +11,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.text.method.DigitsKeyListener;
@@ -26,6 +27,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
@@ -303,6 +305,7 @@ public class ViewInflater {
                 name = info;
             }
 
+            // TODO (miguelpalacio): think about a way to allow prefixes and suffixes for constants.
             if ((info = propertyInfo.get(AttributeInfo.CONSTANTS)) != null) {
                 if (info.startsWith("android.")) {
                     // Init class to get the constants values from it.
@@ -822,20 +825,25 @@ public class ViewInflater {
         mXmlAttrs.put("drawableTop", mapAttrInfo("setCompoundDrawable", null, null, null));
         mXmlAttrs.put("ellipsize", mapAttrInfo("setEllipsize", null, null, null));
         mXmlAttrs.put("fontFamily", mapAttrInfo("setTypeface", null, null, null));
-        mXmlAttrs.put("gravity", mapAttrInfo(null, null, null, "android.view.Gravity"));
         mXmlAttrs.put("height", mapAttrInfo(null, null, DIMENSION, null));
         mXmlAttrs.put("imeActionId", mapAttrInfo("setImeAction", null, null, null));
         mXmlAttrs.put("imeActionLabel", mapAttrInfo("setImeAction", null, null, null));
 /*        mXmlAttrs.put("imeOptions", mapAttrInfo(null, null, null, "android.text.inputmethod.EditorInfo"));  // It's in a different class and prefixed... need to think about it.*/
 /*        mXmlAttrs.put("inputMethod", mapAttrInfo("setKeyListener", null, null, null));  // haven't figured out how this attr works...*/
         mXmlAttrs.put("inputType", mapAttrInfo(null, null, null, "android.text.InputType"));    // needs revision.
-/*        mXmlAttrs.put("lineSpacingExtra", "setLineSpacing");*/
-/*        mXmlAttrs.put("lineSpacingMultiplier", "setLineSpacing"); */
-/*        mXmlAttrs.put("textAppearance", "res");*/
+        mXmlAttrs.put("lineSpacingExtra", mapAttrInfo("setLineSpacing", null, null, null));
+        mXmlAttrs.put("lineSpacingMultiplier", mapAttrInfo("setLineSpacing", null, null, null));
+        mXmlAttrs.put("maxLength", mapAttrInfo("setMaxLength", null, null, null));
+        mXmlAttrs.put("scrollHorizontally", mapAttrInfo(null, "setHorizontallyScrolling", null, null));
+        mXmlAttrs.put("shadowColor", mapAttrInfo("setShadowLayer", null, null, null));
+        mXmlAttrs.put("shadowDx", mapAttrInfo("setShadowLayer", null, null, null));
+        mXmlAttrs.put("shadowDy", mapAttrInfo("setShadowLayer", null, null, null));
+        mXmlAttrs.put("shadowRadius", mapAttrInfo("setShadowLayer", null, null, null));
+        mXmlAttrs.put("textAllCaps", mapAttrInfo(null, "setAllCaps", null, null));
         mXmlAttrs.put("textColor", mapAttrInfo(null, null, COLOR, null));
         mXmlAttrs.put("textColorHighlight", mapAttrInfo(null, "setHighlightColor", COLOR, null));
         mXmlAttrs.put("textColorHint", mapAttrInfo(null, "setHintTextColor", COLOR, null));
-/*        mXmlAttrs.put("textColorLink", mapAttrInfo(null, "setLinkTextColor", COLOR, null));*/
+        mXmlAttrs.put("textColorLink", mapAttrInfo(null, "setLinkTextColor", COLOR, null));
         mXmlAttrs.put("textSize", mapAttrInfo("setTextSize", null, null, null));
         mXmlAttrs.put("textStyle", mapAttrInfo("setTextStyle", null, null, null));
         mXmlAttrs.put("typeface", mapAttrInfo("setTypeface", null, null, null));
@@ -851,15 +859,21 @@ public class ViewInflater {
         mXmlAttrs.put("layout_marginRight", mapAttrInfo("setLayoutProperty", null, null, null));
         mXmlAttrs.put("layout_marginTop", mapAttrInfo("setLayoutProperty", null, null, null));
 
-        // LinearLayout.LayoutParams
-        mXmlAttrs.put("layout_gravity", mapAttrInfo("setLayoutProperty", null, null, null));
+        // LinearLayout
+        mXmlAttrs.put("divider", mapAttrInfo("setDividerDrawable", null, null, null));
+        mXmlAttrs.put("measureWithLargestChild", mapAttrInfo(null, "setMeasureWithLargestChildEnabled", null, null));
 
         // RelativeLayout
         mXmlAttrs.put("ignoreGravity", mapAttrInfo(null, null, VIEW_ID, null));
 
         // TableLayout
-        mXmlAttrs.put("stretchColumns", mapAttrInfo("setStretchColumns", null, null, null));
+        mXmlAttrs.put("collapseColumns", mapAttrInfo("setTableColumns", null, null, null)); // works but a way to 'uncollapse' should be offered...
+        mXmlAttrs.put("shrinkColumns", mapAttrInfo("setTableColumns", null, null, null));
+        mXmlAttrs.put("stretchColumns", mapAttrInfo("setTableColumns", null, null, null));
 
+        // Various Classes
+        mXmlAttrs.put("gravity", mapAttrInfo(null, null, null, "android.view.Gravity"));
+        mXmlAttrs.put("layout_gravity", mapAttrInfo("setLayoutProperty", null, null, null));
     }
 
     private static Map<AttributeInfo, String> mapAttrInfo(String helperMethod, String attrMethod,
@@ -884,6 +898,8 @@ public class ViewInflater {
     private class ViewAttributesHelper {
 
         private final int TEXT_VIEW = 0;
+        private final int LINEAR_LAYOUT = 1;
+        private final int TABLE_LAYOUT = 2;
 
         // Dedicated functions
 
@@ -902,8 +918,8 @@ public class ViewInflater {
         }
 
         public void setBufferType(View view, String value) {
-            if (!isInstanceOf(view, TEXT_VIEW)) return;
-
+            if (!isInstanceOf(view, TEXT_VIEW))
+                return;
             TextView textView = (TextView) view;
             CharSequence text = textView.getText();
             TextView.BufferType bufferType;
@@ -916,7 +932,8 @@ public class ViewInflater {
         }
 
         public void setCompoundDrawable(View view, String attr, String value) {
-            if (!isInstanceOf(view, TEXT_VIEW)) return;
+            if (!isInstanceOf(view, TEXT_VIEW))
+                return;
 
             TextView textView = (TextView) view;
             Drawable[] dws;
@@ -973,8 +990,22 @@ public class ViewInflater {
             }
         }
 
+        public void setDividerDrawable(View view, String value) {
+            if (!isInstanceOf(view, LINEAR_LAYOUT))
+                return;
+
+            Drawable drawable;
+            if (value.startsWith("#")) {
+                drawable = new ColorDrawable(getColor(value));
+            } else {
+                drawable = getDrawable(value);
+            }
+            ((LinearLayout) view).setDividerDrawable(drawable);
+        }
+
         public void setEllipsize(View view, String value) {
-            if (!isInstanceOf(view, TEXT_VIEW)) return;
+            if (!isInstanceOf(view, TEXT_VIEW))
+                return;
             try {
                 ((TextView) view).setEllipsize(TextUtils.TruncateAt.valueOf(value.toUpperCase()));
             } catch (IllegalArgumentException e) {
@@ -1039,7 +1070,8 @@ public class ViewInflater {
         }
 
         public void setImeAction(View view, String attr, String value) {
-            if (!isInstanceOf(view, TEXT_VIEW)) return;
+            if (!isInstanceOf(view, TEXT_VIEW))
+                return;
 
             TextView textView = (TextView) view;
             if (attr.equals("imeActionId")) {
@@ -1052,7 +1084,8 @@ public class ViewInflater {
         }
 
         public void setKeyListener(View view, String attr, String value) {
-            if (!isInstanceOf(view, TEXT_VIEW)) return;
+            if (!isInstanceOf(view, TEXT_VIEW))
+                return;
 
             TextView textView = (TextView) view;
             Map<String, String> conflicts;
@@ -1135,6 +1168,50 @@ public class ViewInflater {
             view.setLayoutParams(layout);
         }
 
+        public void setLineSpacing(View view, String attr, String value) {
+            if (!isInstanceOf(view, TEXT_VIEW))
+                return;
+
+            TextView textView = (TextView) view;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                if (attr.equals("lineSpacingExtra")) {
+                    float mul = textView.getLineSpacingMultiplier();
+                    textView.setLineSpacing(getScaledSize(value), mul);
+                } else {
+                    float add = textView.getLineSpacingExtra();
+                    textView.setLineSpacing(add, Float.parseFloat(value));
+                }
+            } else {
+                int viewId = view.getId();
+                Map<String, String> conflicts = mConflictiveAttrs.get(viewId);
+                if (conflicts == null)
+                    conflicts = new HashMap<>();
+                if (attr.equals("lineSpacingExtra")) {
+                    String mul = conflicts.get("lineSpacingMultiplier");
+                    if (mul == null)
+                        mul = "1";
+                    float add = getScaledSize(value);
+                    textView.setLineSpacing(add, Float.parseFloat(mul));
+                    conflicts.put("lineSpacingExtra", "" + add);
+                } else {
+                    String add = conflicts.get("lineSpacingExtra");
+                    if (add == null)
+                        add = "0";
+                    textView.setLineSpacing(Float.parseFloat(add), Float.parseFloat(value));
+                    conflicts.put("lineSpacingMultiplier", value);
+                }
+                mConflictiveAttrs.put(viewId, conflicts);
+            }
+        }
+
+        public void setMaxLength(View view, String value) {
+            if (!isInstanceOf(view, TEXT_VIEW))
+                return;
+            int max = Integer.parseInt(value);
+            InputFilter.LengthFilter length = new InputFilter.LengthFilter(max);
+            ((TextView) view).setFilters(new InputFilter[]{length});
+        }
+
         public void setPadding(View view, String attr, String value) {
             int newPadding = (int) getScaledSize(value);
             if (attr.equals("padding")) {
@@ -1190,15 +1267,118 @@ public class ViewInflater {
             }
         }
 
-        public void setStretchColumns(View view, String value) {
+        public void setShadowLayer(View view, String attr, String value) {
+            if (!isInstanceOf(view, TEXT_VIEW))
+                return;
+
+            TextView textView = (TextView) view;
+            int color;
+            float dx, dy, radius;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                color = textView.getShadowColor();
+                dx = textView.getShadowDx();
+                dy = textView.getShadowDy();
+                radius = textView.getShadowRadius();
+                switch (attr) {
+                    case "shadowColor":
+                        color = getColor(value);
+                        break;
+                    case "shadowDx":
+                        dx = Float.parseFloat(value);
+                        break;
+                    case "shadowDy":
+                        dy = Float.parseFloat(value);
+                        break;
+                    case "shadowRadius":
+                        radius = Float.parseFloat(value);
+                        break;
+                }
+            } else {
+                int viewId = view.getId();
+                Map<String, String> conflicts = mConflictiveAttrs.get(viewId);
+                if (conflicts == null)
+                    conflicts = new HashMap<>();
+                if (conflicts.containsKey("shadowColor")) {
+                    color = Integer.parseInt(conflicts.get("shadowColor"));
+                } else {
+                    color = -7829368;   // Gray.
+                    conflicts.put("shadowColor", "" + color);
+                }
+                if (conflicts.containsKey("shadowDx")) {
+                    dx = Float.parseFloat(conflicts.get("shadowDx"));
+                } else {
+                    dx = 1;
+                    conflicts.put("shadowDx", "" + dx);
+                }
+                if (conflicts.containsKey("shadowDy")) {
+                    dy = Float.parseFloat(conflicts.get("shadowDy"));
+                } else {
+                    dy = 1;
+                    conflicts.put("shadowDy", "" + dy);
+                }
+                if (conflicts.containsKey("shadowRadius")) {
+                    radius = Float.parseFloat(conflicts.get("shadowRadius"));
+                } else {
+                    radius = 1;
+                    conflicts.put("shadowRadius", "" + radius);
+                }
+                switch (attr) {
+                    case "shadowColor":
+                        color = getColor(value);
+                        conflicts.put("shadowColor", "" + color);
+                        break;
+                    case "shadowDx":
+                        dx = Float.parseFloat(value);
+                        conflicts.put("shadowDy", "" + dx);
+                        break;
+                    case "shadowDy":
+                        dy = Float.parseFloat(value);
+                        conflicts.put("shadowDy", "" + dy);
+                        break;
+                    case "shadowRadius":
+                        radius = Float.parseFloat(value);
+                        conflicts.put("shadowRadius", "" + radius);
+                        break;
+                }
+                mConflictiveAttrs.put(viewId, conflicts);
+            }
+            textView.setShadowLayer(radius, dx, dy, color);
+        }
+
+        // TODO finish this method and commit!
+        public void setTableColumns(View view, String attr, String value) {
+            if (!isInstanceOf(view, TABLE_LAYOUT))
+                return;
+
             TableLayout table = (TableLayout) view;
             if (value.trim().equals("*")) {
-                table.setStretchAllColumns(true);
-                table.requestLayout();
+                switch (attr) {
+                    case "collapseColumns":
+                        mErrors.add("Value not allowed.");
+                        break;
+                    case "shrinkColumns":
+                        table.setShrinkAllColumns(true);
+                        table.requestLayout();
+                        break;
+                    case "stretchColumns":
+                        table.setStretchAllColumns(true);
+                        table.requestLayout();
+                        break;
+                }
             } else {
                 String[] values = value.split(",");
                 for (String column : values) {
-                    table.setColumnStretchable(Integer.parseInt(column.trim()), true);
+                    switch (attr) {
+                        case "collapseColumns":
+                            table.setColumnCollapsed(Integer.parseInt(column.trim()), true);
+                            break;
+                        case "shrinkColumns":
+                            table.setColumnShrinkable(Integer.parseInt(column.trim()), true);
+                            break;
+                        case "stretchColumns":
+                            table.setColumnStretchable(Integer.parseInt(column.trim()), true);
+                            break;
+                    }
                 }
             }
         }
@@ -1465,6 +1645,8 @@ public class ViewInflater {
             return getInteger(view.getClass(), value);
         }
 
+        // TODO (miguelpalacio): Review this function. Some resources are not being retrieved.
+        // textAppereance test
         private int parseTheme(String value) {
             int result;
             try {
@@ -1574,6 +1756,14 @@ public class ViewInflater {
                 case TEXT_VIEW:
                     result = view instanceof TextView;
                     c = "TextView";
+                    break;
+                case LINEAR_LAYOUT:
+                    result = view instanceof LinearLayout;
+                    c = "LinearLayout";
+                    break;
+                case TABLE_LAYOUT:
+                    result = view instanceof TableLayout;
+                    c = "TableLayout";
                     break;
                 default:
                     result = false;
