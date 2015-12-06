@@ -31,131 +31,131 @@ import org.json.JSONObject;
 
 /**
  * Wrapper class for dialog box with seek bar.
- * 
+ *
  * @author MeanEYE.rcf (meaneye.rcf@gmail.com)
  */
 public class SeekBarDialogTask extends DialogTask {
 
-  private SeekBar mSeekBar;
-  private final int mProgress;
-  private final int mMax;
-  private final String mTitle;
-  private final String mMessage;
-  private String mPositiveButtonText;
-  private String mNegativeButtonText;
+    private SeekBar mSeekBar;
+    private final int mProgress;
+    private final int mMax;
+    private final String mTitle;
+    private final String mMessage;
+    private String mPositiveButtonText;
+    private String mNegativeButtonText;
 
-  public SeekBarDialogTask(int progress, int max, String title, String message) {
-    mProgress = progress;
-    mMax = max;
-    mTitle = title;
-    mMessage = message;
-  }
+    public SeekBarDialogTask(int progress, int max, String title, String message) {
+        mProgress = progress;
+        mMax = max;
+        mTitle = title;
+        mMessage = message;
+    }
 
-  public void setPositiveButtonText(String text) {
-    mPositiveButtonText = text;
-  }
+    public void setPositiveButtonText(String text) {
+        mPositiveButtonText = text;
+    }
 
-  public void setNegativeButtonText(String text) {
-    mNegativeButtonText = text;
-  }
+    public void setNegativeButtonText(String text) {
+        mNegativeButtonText = text;
+    }
 
-  @Override
-  public void onCreate() {
-    super.onCreate();
-    mSeekBar = new SeekBar(getActivity());
-    mSeekBar.setMax(mMax);
-    mSeekBar.setProgress(mProgress);
-    mSeekBar.setPadding(10, 0, 10, 3);
-    mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        mSeekBar = new SeekBar(getActivity());
+        mSeekBar.setMax(mMax);
+        mSeekBar.setProgress(mProgress);
+        mSeekBar.setPadding(10, 0, 10, 3);
+        mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
-      @Override
-      public void onStopTrackingTouch(SeekBar arg0) {
-      }
+            @Override
+            public void onStopTrackingTouch(SeekBar arg0) {
+            }
 
-      @Override
-      public void onStartTrackingTouch(SeekBar arg0) {
-      }
+            @Override
+            public void onStartTrackingTouch(SeekBar arg0) {
+            }
 
-      @Override
-      public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        EventFacade eventFacade = getEventFacade();
-        if (eventFacade != null) {
-          JSONObject result = new JSONObject();
-          try {
-            result.put("which", "seekbar");
-            result.put("progress", mSeekBar.getProgress());
-            result.put("fromuser", fromUser);
-            eventFacade.postEvent("dialog", result);
-          } catch (JSONException e) {
-            Log.e(e);
-          }
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                EventFacade eventFacade = getEventFacade();
+                if (eventFacade != null) {
+                    JSONObject result = new JSONObject();
+                    try {
+                        result.put("which", "seekbar");
+                        result.put("progress", mSeekBar.getProgress());
+                        result.put("fromuser", fromUser);
+                        eventFacade.postEvent("dialog", result);
+                    } catch (JSONException e) {
+                        Log.e(e);
+                    }
+                }
+            }
+        });
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        if (mTitle != null) {
+            builder.setTitle(mTitle);
         }
-      }
-    });
-
-    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-    if (mTitle != null) {
-      builder.setTitle(mTitle);
-    }
-    if (mMessage != null) {
-      builder.setMessage(mMessage);
-    }
-    builder.setView(mSeekBar);
-    configureButtons(builder, getActivity());
-    addOnCancelListener(builder, getActivity());
-    mDialog = builder.show();
-    mShowLatch.countDown();
-  }
-
-  private Builder addOnCancelListener(final AlertDialog.Builder builder, final Activity activity) {
-    return builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
-      @Override
-      public void onCancel(DialogInterface dialog) {
-        JSONObject result = new JSONObject();
-        try {
-          result.put("canceled", true);
-          result.put("progress", mSeekBar.getProgress());
-        } catch (JSONException e) {
-          Log.e(e);
+        if (mMessage != null) {
+            builder.setMessage(mMessage);
         }
-        dismissDialog();
-        setResult(result);
-      }
-    });
-  }
+        builder.setView(mSeekBar);
+        configureButtons(builder, getActivity());
+        addOnCancelListener(builder, getActivity());
+        mDialog = builder.show();
+        mShowLatch.countDown();
+    }
 
-  private void configureButtons(final AlertDialog.Builder builder, final Activity activity) {
-    DialogInterface.OnClickListener buttonListener = new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface dialog, int which) {
-        JSONObject result = new JSONObject();
-        switch (which) {
-        case DialogInterface.BUTTON_POSITIVE:
-          try {
-            result.put("which", "positive");
-            result.put("progress", mSeekBar.getProgress());
-          } catch (JSONException e) {
-            throw new AndroidRuntimeException(e);
-          }
-          break;
-        case DialogInterface.BUTTON_NEGATIVE:
-          try {
-            result.put("which", "negative");
-            result.put("progress", mSeekBar.getProgress());
-          } catch (JSONException e) {
-            throw new AndroidRuntimeException(e);
-          }
-          break;
+    private Builder addOnCancelListener(final AlertDialog.Builder builder, final Activity activity) {
+        return builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("canceled", true);
+                    result.put("progress", mSeekBar.getProgress());
+                } catch (JSONException e) {
+                    Log.e(e);
+                }
+                dismissDialog();
+                setResult(result);
+            }
+        });
+    }
+
+    private void configureButtons(final AlertDialog.Builder builder, final Activity activity) {
+        DialogInterface.OnClickListener buttonListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                JSONObject result = new JSONObject();
+                switch (which) {
+                    case DialogInterface.BUTTON_POSITIVE:
+                        try {
+                            result.put("which", "positive");
+                            result.put("progress", mSeekBar.getProgress());
+                        } catch (JSONException e) {
+                            throw new AndroidRuntimeException(e);
+                        }
+                        break;
+                    case DialogInterface.BUTTON_NEGATIVE:
+                        try {
+                            result.put("which", "negative");
+                            result.put("progress", mSeekBar.getProgress());
+                        } catch (JSONException e) {
+                            throw new AndroidRuntimeException(e);
+                        }
+                        break;
+                }
+                dismissDialog();
+                setResult(result);
+            }
+        };
+        if (mNegativeButtonText != null) {
+            builder.setNegativeButton(mNegativeButtonText, buttonListener);
         }
-        dismissDialog();
-        setResult(result);
-      }
-    };
-    if (mNegativeButtonText != null) {
-      builder.setNegativeButton(mNegativeButtonText, buttonListener);
+        if (mPositiveButtonText != null) {
+            builder.setPositiveButton(mPositiveButtonText, buttonListener);
+        }
     }
-    if (mPositiveButtonText != null) {
-      builder.setPositiveButton(mPositiveButtonText, buttonListener);
-    }
-  }
 }

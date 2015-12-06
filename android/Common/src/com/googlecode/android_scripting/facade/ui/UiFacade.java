@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -270,6 +271,7 @@ public class UiFacade extends RpcReceiver {
         mDialogTask = new AlertDialogTask(title, message);
     }
 
+    // TODO (miguelpalacio)
     /**
      * Will produce "dialog" events on change, containing:
      * <ul>
@@ -432,12 +434,30 @@ public class UiFacade extends RpcReceiver {
         }
     }
 
-    @Rpc(description = "This method provides list of items user selected.", returns = "Selected items")
+    /**
+     * Returns the items selected in single choice and multiple choice selection dialogs,
+     * only when the positive button is selected (otherwise it will return an empty list).
+     *
+     * @return an array with the indexes of the selected items.
+     */
+    @Rpc(description = "This method provides list of items the user selected.", returns = "Selected items")
     public Set<Integer> dialogGetSelectedItems() {
         if (mDialogTask != null && mDialogTask instanceof AlertDialogTask) {
-            return ((AlertDialogTask) mDialogTask).getSelectedItems();
+            try {
+                Set<Integer> selected;
+                Map<String, Object> result = (Map<String, Object>) mDialogTask.getResult();
+                String which = (String) result.get("which");
+                if (which != null && which.equals("positive")) {
+                    selected = (Set<Integer>) result.get("selected");
+                } else {
+                    selected = new TreeSet<>();
+                }
+                return selected;
+            } catch (Exception e) {
+                throw new AndroidRuntimeException(e);
+            }
         } else {
-            throw new AndroidRuntimeException("No dialog to add list to.");
+            throw new AndroidRuntimeException("No dialog to get selected items from.");
         }
     }
 

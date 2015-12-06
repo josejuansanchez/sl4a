@@ -267,7 +267,6 @@ class AlertDialogTask extends DialogTask {
                         break;
                     case DialogInterface.BUTTON_NEUTRAL:
                         mResultMap.put("which", "neutral");
-
                         break;
                 }
                 setResult();
@@ -288,6 +287,8 @@ class AlertDialogTask extends DialogTask {
         dismissDialog();
         if (mInputType == InputType.PLAIN_TEXT || mInputType == InputType.PASSWORD) {
             mResultMap.put("value", mEditText.getText().toString());
+        } else if (mInputType == InputType.SINGLE_CHOICE || mInputType == InputType.MULTI_CHOICE) {
+            mResultMap.put("selected", mSelectedItems);
         }
         setResult(mResultMap);
     }

@@ -26,66 +26,67 @@ import org.json.JSONObject;
 
 /**
  * Wrapper class for time picker dialog running in separate thread.
- * 
+ *
  * @author MeanEYE.rcf (meaneye.rcf@gmail.com)
  */
 public class TimePickerDialogTask extends DialogTask {
-  private final int mHour;
-  private final int mMinute;
-  private final boolean mIs24Hour;
+    private final int mHour;
+    private final int mMinute;
+    private final boolean mIs24Hour;
 
-  public TimePickerDialogTask(int hour, int minute, boolean is24hour) {
-    mHour = hour;
-    mMinute = minute;
-    mIs24Hour = is24hour;
-  }
+    public TimePickerDialogTask(int hour, int minute, boolean is24hour) {
+        mHour = hour;
+        mMinute = minute;
+        mIs24Hour = is24hour;
+    }
 
-  @Override
-  public void onCreate() {
-    super.onCreate();
-    mDialog = new TimePickerDialog(getActivity(), new TimePickerDialog.OnTimeSetListener() {
-      @Override
-      public void onTimeSet(TimePicker view, int hour, int minute) {
-        JSONObject result = new JSONObject();
-        try {
-          result.put("which", "positive");
-          result.put("hour", hour);
-          result.put("minute", minute);
-          setResult(result);
-        } catch (JSONException e) {
-          throw new AndroidRuntimeException(e);
-        }
-      }
-    }, mHour, mMinute, mIs24Hour);
-    mDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-      @Override
-      public void onCancel(DialogInterface view) {
-        JSONObject result = new JSONObject();
-        try {
-          result.put("which", "neutral");
-          result.put("hour", mHour);
-          result.put("minute", mMinute);
-          setResult(result);
-        } catch (JSONException e) {
-          throw new AndroidRuntimeException(e);
-        }
-      }
-    });
-    mDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-      @Override
-      public void onDismiss(DialogInterface dialog) {
-        JSONObject result = new JSONObject();
-        try {
-          result.put("which", "negative");
-          result.put("hour", mHour);
-          result.put("minute", mMinute);
-          setResult(result);
-        } catch (JSONException e) {
-          throw new AndroidRuntimeException(e);
-        }
-      }
-    });
-    mDialog.show();
-    mShowLatch.countDown();
-  }
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        mDialog = new TimePickerDialog(getActivity(), new TimePickerDialog.OnTimeSetListener() {
+            @Override
+            public void onTimeSet(TimePicker view, int hour, int minute) {
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("which", "positive");
+                    result.put("hour", hour);
+                    result.put("minute", minute);
+                    setResult(result);
+                } catch (JSONException e) {
+                    throw new AndroidRuntimeException(e);
+                }
+            }
+        }, mHour, mMinute, mIs24Hour);
+        mDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface view) {
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("which", "neutral");
+                    result.put("hour", mHour);
+                    result.put("minute", mMinute);
+                    setResult(result);
+                } catch (JSONException e) {
+                    throw new AndroidRuntimeException(e);
+                }
+            }
+        });
+        mDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("which", "negative");
+                    result.put("hour", mHour);
+                    result.put("minute", mMinute);
+                    setResult(result);
+                    dismissDialog();
+                } catch (JSONException e) {
+                    throw new AndroidRuntimeException(e);
+                }
+            }
+        });
+        mDialog.show();
+        mShowLatch.countDown();
+    }
 }
