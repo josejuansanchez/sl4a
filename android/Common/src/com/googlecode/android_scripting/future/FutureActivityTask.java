@@ -81,7 +81,8 @@ public abstract class FutureActivityTask<T> {
     }
 
     public void finish() {
-        mActivity.finish();
+        if (mActivity != null)
+            mActivity.finish();
     }
 
     public void startActivity(Intent intent) {
