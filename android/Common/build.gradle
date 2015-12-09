@@ -14,9 +14,10 @@ dependencies {
     compile project(':Utils')
     compile files('libs/guava-r06.jar')
     compile files('libs/libGoogleAnalytics.jar')
-    compile('com.android.support:support-v4:21.0.3'){
+    compile('com.android.support:support-v4:22.2.0'){
         force = true
     }
+    compile 'com.android.support:appcompat-v7:22.2.1'
 }
 
 android {

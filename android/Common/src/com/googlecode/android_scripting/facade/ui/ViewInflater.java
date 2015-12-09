@@ -449,6 +449,11 @@ public class ViewInflater {
         return (id != null) ? id : 0;
     }
 
+    // TODO (miguelpalacio): this was added for Toolbar functions but doesn't seem right.
+    public int parseColor(String value) {
+        return attrsHelper.getColor(value);
+    }
+
     public Map<String, Map<String, String>> getViewAsMap(View v) {
         Map<String, Map<String, String>> result = new HashMap<>();
         for (Entry<String, Integer> entry : mIdList.entrySet()) {
@@ -1562,6 +1567,9 @@ public class ViewInflater {
                             r = Integer.parseInt(value.substring(0, 2), 16);
                             g = Integer.parseInt(value.substring(2, 4), 16);
                             b = Integer.parseInt(value.substring(4, 6), 16);
+                        }
+                        else {
+                            mErrors.add("Wrong color format: #" + value);
                         }
                     }
                     long result = (a << 24) | (r << 16) | (g << 8) | b;

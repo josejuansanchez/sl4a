@@ -14,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+import android.support.v7.widget.Toolbar;
 
 import com.googlecode.android_scripting.facade.EventFacade;
 import com.googlecode.android_scripting.future.FutureActivityTask;
@@ -267,6 +268,38 @@ public class FullScreenTask extends FutureActivityTask<Object> implements OnClic
         }
     }
 
+    private class ToolbarCustomization implements Runnable {
+        Toolbar mToolbar;
+        String mProperty;
+        String mValue;
+        CountDownLatch mLatch = new CountDownLatch(1);
+
+        ToolbarCustomization(Toolbar toolbar, String property, String title) {
+            mProperty = property;
+            mToolbar = toolbar;
+            mValue = title;
+        }
+
+        @Override
+        public void run() {
+            switch (mProperty) {
+                case "title":
+                    mToolbar.setTitle(mValue);
+                    break;
+                case "subtitle":
+                    mToolbar.setSubtitle(mValue);
+                    break;
+                case "titleColor":
+                    mToolbar.setTitleTextColor(mInflater.parseColor(mValue));
+                    break;
+                case "subtitleColor":
+                    mToolbar.setSubtitleTextColor(mInflater.parseColor(mValue));
+                    break;
+            }
+            mLatch.countDown();
+        }
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         Map<String, String> data = new HashMap<String, String>();
@@ -314,6 +347,29 @@ public class FullScreenTask extends FutureActivityTask<Object> implements OnClic
         } catch (InterruptedException e) {
             mInflater.getErrors().add(e.toString());
         }
+    }
+
+    public String customizeToolbar(String property, String idToolbar, String value) {
+        View v = getViewByName(idToolbar);
+        mInflater.getErrors().clear();
+        if (v != null && v instanceof Toolbar) {
+            Toolbar toolbar = (Toolbar) v;
+            ToolbarCustomization p = new ToolbarCustomization(toolbar, property, value);
+            mHandler.post(p);
+            try {
+                p.mLatch.await();
+            } catch (InterruptedException e) {
+                mInflater.getErrors().add(e.toString());
+            }
+        } else if (v != null) {
+            return "View " + idToolbar + " not instance of Toolbar";
+        } else {
+            return "View " + idToolbar + " not found.";
+        }
+        if (mInflater.getErrors().size() == 0) {
+            return "OK";
+        }
+        return mInflater.getErrors().get(0);
     }
 
     @Override

@@ -271,7 +271,6 @@ public class UiFacade extends RpcReceiver {
         mDialogTask = new AlertDialogTask(title, message);
     }
 
-    // TODO (miguelpalacio)
     /**
      * Will produce "dialog" events on change, containing:
      * <ul>
@@ -625,7 +624,6 @@ public class UiFacade extends RpcReceiver {
         return mFullScreenTask.setViewProperty(id, property, value);
     }
 
-    // TODO miguel
     @Rpc(description = "Attach a list to a fullscreen widget")
     public String fullSetList(
             @RpcParameter(name = "id", description = "id of layout widget") String id,
@@ -643,6 +641,46 @@ public class UiFacade extends RpcReceiver {
             throw new RuntimeException("No screen displayed.");
         }
         mFullScreenTask.setTitle(title);
+    }
+
+    @Rpc(description = "Set the Full Screen Toolbar Title")
+    public String fullSetToolbarTitle(
+            @RpcParameter(name = "id", description = "id of the toolbar widget") String id,
+            @RpcParameter(name = "title", description = "Toolbar title") String title) {
+        if (mFullScreenTask == null) {
+            throw new RuntimeException("No screen displayed.");
+        }
+        return mFullScreenTask.customizeToolbar("title", id, title);
+    }
+
+    @Rpc(description = "Set the Full Screen Toolbar Title")
+    public String fullSetToolbarSubtitle(
+            @RpcParameter(name = "id", description = "id of the toolbar widget") String id,
+            @RpcParameter(name = "subtitle", description = "Toolbar subtitle") String subtitle) {
+        if (mFullScreenTask == null) {
+            throw new RuntimeException("No screen displayed.");
+        }
+        return mFullScreenTask.customizeToolbar("subtitle", id, subtitle);
+    }
+
+    @Rpc(description = "Set the Full Screen Toolbar Title")
+    public String fullSetToolbarTitleColor(
+            @RpcParameter(name = "id", description = "id of the toolbar widget") String id,
+            @RpcParameter(name = "titleColor", description = "Toolbar title color") String titleColor) {
+        if (mFullScreenTask == null) {
+            throw new RuntimeException("No screen displayed.");
+        }
+        return mFullScreenTask.customizeToolbar("titleColor", id, titleColor);
+    }
+
+    @Rpc(description = "Set the Full Screen Toolbar Title")
+    public String fullSetToolbarSubtitleColor(
+            @RpcParameter(name = "id", description = "id of the toolbar widget") String id,
+            @RpcParameter(name = "subtitleColor", description = "Toolbar subtitle color") String subtitleColor) {
+        if (mFullScreenTask == null) {
+            throw new RuntimeException("No screen displayed.");
+        }
+        return mFullScreenTask.customizeToolbar("subtitleColor", id, subtitleColor);
     }
 
     /**
