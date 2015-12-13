@@ -26,6 +26,7 @@ import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
@@ -51,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 
 import org.json.JSONArray;
 import org.xmlpull.v1.XmlPullParser;
@@ -251,8 +253,13 @@ public class ViewInflater {
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
         addLn(attr + ":" + value);
 
-        if (mXmlAttrs.containsKey(attr)) {
-            Map<AttributeInfo, String> propertyInfo = mXmlAttrs.get(attr);
+        String key = attr;
+        if (attr.startsWith("layout_")) {
+            key = "layout_";
+        }
+
+        if (mXmlAttrs.containsKey(key)) {
+            Map<AttributeInfo, String> propertyInfo = mXmlAttrs.get(key);
 
             String info = propertyInfo.get(AttributeInfo.HELPER_METHOD);
             if (info != null) {
@@ -278,7 +285,7 @@ public class ViewInflater {
         setDynamicProperty(view, attr, value);
     }
 
-    private void setDynamicProperty (View view, String attr, String value)
+    private void setDynamicProperty(View view, String attr, String value)
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
         String name = "set" + toPascalCase(attr);
         Class<?> clazz = null;
@@ -854,15 +861,8 @@ public class ViewInflater {
         mXmlAttrs.put("typeface", mapAttrInfo("setTypeface", null, null, null));
         mXmlAttrs.put("width", mapAttrInfo(null, null, DIMENSION, null));
 
-        // ViewGroup.LayoutParams
-        mXmlAttrs.put("layout_height", mapAttrInfo("setLayoutProperty", null, null, null));
-        mXmlAttrs.put("layout_width", mapAttrInfo("setLayoutProperty", null, null, null));
-
-        // ViewGroup.MarginLayoutParams
-        mXmlAttrs.put("layout_marginBottom", mapAttrInfo("setLayoutProperty", null, null, null));
-        mXmlAttrs.put("layout_marginLeft", mapAttrInfo("setLayoutProperty", null, null, null));
-        mXmlAttrs.put("layout_marginRight", mapAttrInfo("setLayoutProperty", null, null, null));
-        mXmlAttrs.put("layout_marginTop", mapAttrInfo("setLayoutProperty", null, null, null));
+        // ViewGroup (Layout Params)
+        mXmlAttrs.put("layout_", mapAttrInfo("setLayoutProperty", null, null, null));
 
         // LinearLayout
         mXmlAttrs.put("divider", mapAttrInfo("setDividerDrawable", null, null, null));
@@ -878,7 +878,6 @@ public class ViewInflater {
 
         // Various Classes
         mXmlAttrs.put("gravity", mapAttrInfo(null, null, null, "android.view.Gravity"));
-        mXmlAttrs.put("layout_gravity", mapAttrInfo("setLayoutProperty", null, null, null));
     }
 
     private static Map<AttributeInfo, String> mapAttrInfo(String helperMethod, String attrMethod,
@@ -1167,7 +1166,11 @@ public class ViewInflater {
                         int rule = mRelative.get(layoutAttr);
                         ((RelativeLayout.LayoutParams) layout).addRule(rule, anchor);
                     } else {
-                        setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
+                        try {
+                            setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
+                        } catch (NoSuchElementException e) {
+                            setIntegerField(layout, "layout_" + layoutAttr, getInteger(layout.getClass(), value));
+                        }
                     }
             }
             view.setLayoutParams(layout);
@@ -1350,7 +1353,6 @@ public class ViewInflater {
             textView.setShadowLayer(radius, dx, dy, color);
         }
 
-        // TODO finish this method and commit!
         public void setTableColumns(View view, String attr, String value) {
             if (!isInstanceOf(view, TABLE_LAYOUT))
                 return;
@@ -1654,28 +1656,31 @@ public class ViewInflater {
         }
 
         // TODO (miguelpalacio): Review this function. Some resources are not being retrieved.
-        // textAppereance test
         private int parseTheme(String value) {
             int result;
             try {
-                String query = "";
+                StringBuilder query = new StringBuilder();
                 int i;
-                value = value.substring(1); // skip past "?"
+                value = value.substring(1); // skip past "?" | "@"
                 i = value.indexOf(":");
                 if (i >= 0) {
-                    query = value.substring(0, i) + ".";
+                    query.append(value.substring(0, i));
+                    query.append('.');
                     value = value.substring(i + 1);
                 }
-                query += "R";
+                query.append('R');
                 i = value.indexOf("/");
                 if (i >= 0) {
-                    query += "$" + value.substring(0, i);
+                    query.append('$');
+                    query.append(value.substring(0, i));
                     value = value.substring(i + 1);
+                    value = value.replace('.', '_');
                 }
-                Class<?> clazz = Class.forName(query);
+                Class<?> clazz = Class.forName(query.toString());
                 Field f = clazz.getField(value);
                 result = f.getInt(null);
             } catch (Exception e) {
+                mErrors.add("Theme not found.");
                 result = 0;
             }
             return result;
