@@ -15,7 +15,6 @@ import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.text.method.DigitsKeyListener;
-import android.text.method.KeyListener;
 import android.text.method.TextKeyListener;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -26,7 +25,6 @@ import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
-import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
@@ -52,7 +50,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 
 import org.json.JSONArray;
 import org.xmlpull.v1.XmlPullParser;
@@ -81,7 +78,7 @@ public class ViewInflater {
     private Map<Integer, Map<String, String>> mConflictiveAttrs = new HashMap<>();
 
     private enum AttributeInfo {
-        HELPER_METHOD, ATTR_METHOD, VAL_MODIFIER, CONSTANTS
+        HELPER_METHOD, ATTR_METHOD, VAL_MODIFIER, CONSTANT_CLASS, CONSTANT_PREFIX, CONSTANT_SUFFIX
     }
 
     public static XmlPullParserFactory getFactory() throws XmlPullParserException {
@@ -312,27 +309,35 @@ public class ViewInflater {
                 name = info;
             }
 
-            // TODO (miguelpalacio): think about a way to allow prefixes and suffixes for constants.
-            if ((info = propertyInfo.get(AttributeInfo.CONSTANTS)) != null) {
-                if (info.startsWith("android.")) {
-                    // Init class to get the constants values from it.
+            if ((info = propertyInfo.get(AttributeInfo.CONSTANT_CLASS)) != null) {
                     try {
                         clazz = Class.forName(info);
                     } catch (ClassNotFoundException e) {
                         addLn(name + ":" + value + ":" + e.toString());
                         mErrors.add(name + ":" + value + ":" + e.toString());
                     }
-                } else {
-                    // Prefix value to help ViewAttributesHelper.getInteger find its eq constant.
-                    StringBuilder newValue = new StringBuilder();
-                    for (String s : value.split("\\|")) {
-                        newValue.append('|');
-                        newValue.append(info);
-                        newValue.append(s);
-                    }
-                    newValue.deleteCharAt(0);
-                    value = newValue.toString();
+            }
+
+            if ((info = propertyInfo.get(AttributeInfo.CONSTANT_PREFIX)) != null) {
+                StringBuilder newValue = new StringBuilder();
+                for (String s : value.split("\\|")) {
+                    newValue.append('|');
+                    newValue.append(info);
+                    newValue.append(s);
                 }
+                newValue.deleteCharAt(0);
+                value = newValue.toString();
+            }
+
+            if ((info = propertyInfo.get(AttributeInfo.CONSTANT_SUFFIX)) != null) {
+                StringBuilder newValue = new StringBuilder();
+                for (String s : value.split("\\|")) {
+                    newValue.append('|');
+                    newValue.append(s);
+                    newValue.append(info);
+                }
+                newValue.deleteCharAt(0);
+                value = newValue.toString();
             }
         }
         if (mErrors.size() > 0) return;
@@ -342,10 +347,12 @@ public class ViewInflater {
             if (m != null) {
                 m.invoke(view, value);
             } else if ((m = tryMethod(view, name, Context.class, int.class)) != null) {
-                if (clazz == null) clazz = view.getClass();
+                if (clazz == null)
+                    clazz = view.getClass();
                 m.invoke(view, mContext, attrsHelper.getInteger(clazz, attr, value));
             } else if ((m = tryMethod(view, name, int.class)) != null) {
-                if (clazz == null) clazz = view.getClass();
+                if (clazz == null)
+                    clazz = view.getClass();
                 m.invoke(view, attrsHelper.getInteger(clazz, attr, value));
             } else if ((m = tryMethod(view, name, float.class)) != null) {
                 m.invoke(view, Float.parseFloat(value));
@@ -770,123 +777,128 @@ public class ViewInflater {
 
         // XML attributes helper HashMap.
 
+        AttributeInfo helper = AttributeInfo.HELPER_METHOD;
+        AttributeInfo method = AttributeInfo.ATTR_METHOD;
+        AttributeInfo mod = AttributeInfo.VAL_MODIFIER;
+        AttributeInfo clazz = AttributeInfo.CONSTANT_CLASS;
+        AttributeInfo prefix = AttributeInfo.CONSTANT_PREFIX;
+        AttributeInfo suffix = AttributeInfo.CONSTANT_SUFFIX;
+
         // View
-        mXmlAttrs.put("accessibilityTraversalAfter", mapAttrInfo(null, null, VIEW_ID, null));
-        mXmlAttrs.put("accessibilityTraversalBefore", mapAttrInfo(null, null, VIEW_ID, null));
-        mXmlAttrs.put("background", mapAttrInfo("setBackground", null, null, null));
-        mXmlAttrs.put("backgroundTint", mapAttrInfo("setTint", null, null, null));
+        mXmlAttrs.put("accessibilityTraversalAfter", mapAttrInfo(mod, VIEW_ID));
+        mXmlAttrs.put("accessibilityTraversalBefore", mapAttrInfo(mod, VIEW_ID));
+        mXmlAttrs.put("background", mapAttrInfo(helper, "setBackground"));
+        mXmlAttrs.put("backgroundTint", mapAttrInfo(helper, "setTint"));
 /*        mXmlAttrs.put("backgroundTintMode", mapAttrInfo("???", null, null, null); // maybe too complex to offer...*/
-        mXmlAttrs.put("elevation", mapAttrInfo(null, null, DIMENSION, null));
+        mXmlAttrs.put("elevation", mapAttrInfo(mod, DIMENSION));
 /*        mXmlAttrs.put("fadeScrollbars", mapAttrInfo(null, "setScrollbarFadingEnabled", null, null); // Crashes the app if view is not scrollable (e.g., ScrollView). I haven't been able to catch the exception.*/
-        mXmlAttrs.put("fadingEdgeLength", mapAttrInfo(null, null, DIMENSION, null));
+        mXmlAttrs.put("fadingEdgeLength", mapAttrInfo(mod, DIMENSION));
         //mXmlAttrs.put("foreground", RESOURCE);    // waiting to compile project for API 23
         //mXmlAttrs.put("foregroundTint", "setBackgroundTintList," + COLOR_RES); // depends on foreground
         //mXmlAttrs.put("foregroundTintMode", "???"); // depends on foreground
-        mXmlAttrs.put("id", mapAttrInfo("setViewId", null, null, null));
-        mXmlAttrs.put("isScrollContainer", mapAttrInfo(null, "setScrollContainer", null, null));
+        mXmlAttrs.put("id", mapAttrInfo(helper, "setViewId"));
+        mXmlAttrs.put("isScrollContainer", mapAttrInfo(method, "setScrollContainer"));
 /*        mXmlAttrs.put("layerType", mapAttrInfo("???", null, null, null); // maybe too complex to offer...*/
-        mXmlAttrs.put("minHeight", mapAttrInfo(null, "setMinimumHeight", DIMENSION, null));
-        mXmlAttrs.put("minWidth", mapAttrInfo(null, "setMinimumWidth", DIMENSION, null));
-        mXmlAttrs.put("nextFocusDown", mapAttrInfo(null, "setNextFocusDownId", VIEW_ID, null));
-        mXmlAttrs.put("nextFocusForward", mapAttrInfo(null, "setNextFocusForwardId", VIEW_ID, null));
-        mXmlAttrs.put("nextFocusLeft", mapAttrInfo(null, "setNextFocusLeftId", VIEW_ID, null));
-        mXmlAttrs.put("nextFocusRight", mapAttrInfo(null, "setNextFocusRightId", VIEW_ID, null));
-        mXmlAttrs.put("nextFocusUp", mapAttrInfo(null, "setNextFocusUpId", VIEW_ID, null));
-        mXmlAttrs.put("padding", mapAttrInfo("setPadding", null, null, null));
-        mXmlAttrs.put("paddingBottom", mapAttrInfo("setPadding", null, null, null));
-        mXmlAttrs.put("paddingEnd", mapAttrInfo("setPadding", null, null, null));
-        mXmlAttrs.put("paddingLeft", mapAttrInfo("setPadding", null, null, null));
-        mXmlAttrs.put("paddingRight", mapAttrInfo("setPadding", null, null, null));
-        mXmlAttrs.put("paddingStart", mapAttrInfo("setPadding", null, null, null));
-        mXmlAttrs.put("paddingTop", mapAttrInfo("setPadding", null, null, null));
-        mXmlAttrs.put("requiresFadingEdge", mapAttrInfo("setFadingEdge", null, null, null));
-        //mXmlAttrs.put("scrollbarIndicator", mapAttrInfo(null, "setScrollIndicators", null, "scroll_indicator_"));  // Test peding for API >= 23.
-        mXmlAttrs.put("scrollbarDefaultDelayBeforeFade", mapAttrInfo(null, "setScrollBarDefaultDelayBeforeFade", null, null));
-        mXmlAttrs.put("scrollbarFadeDuration", mapAttrInfo(null, "setScrollBarFadeDuration", null, null));
-        mXmlAttrs.put("scrollbarSize", mapAttrInfo(null, "setScrollBarSize", DIMENSION, null));
-        mXmlAttrs.put("scrollbarStyle", mapAttrInfo(null, "setScrollBarStyle", null, "scrollbars_"));
-        mXmlAttrs.put("transformPivotX", mapAttrInfo(null, "setPivotX", DIMENSION, null));
-        mXmlAttrs.put("transformPivotY", mapAttrInfo(null, "setPivotY", DIMENSION, null));
-        mXmlAttrs.put("translationX", mapAttrInfo(null, null, DIMENSION, null));
-        mXmlAttrs.put("translationY", mapAttrInfo(null, null, DIMENSION, null));
-        mXmlAttrs.put("translationZ", mapAttrInfo(null, null, DIMENSION, null));
+        mXmlAttrs.put("minHeight", mapAttrInfo(method, "setMinimumHeight", mod, DIMENSION));
+        mXmlAttrs.put("minWidth", mapAttrInfo(method, "setMinimumWidth", mod, DIMENSION));
+        mXmlAttrs.put("nextFocusDown", mapAttrInfo(method, "setNextFocusDownId", mod, VIEW_ID));
+        mXmlAttrs.put("nextFocusForward", mapAttrInfo(method, "setNextFocusForwardId", mod, VIEW_ID));
+        mXmlAttrs.put("nextFocusLeft", mapAttrInfo(method, "setNextFocusLeftId", mod, VIEW_ID));
+        mXmlAttrs.put("nextFocusRight", mapAttrInfo(method, "setNextFocusRightId", mod, VIEW_ID));
+        mXmlAttrs.put("nextFocusUp", mapAttrInfo(method, "setNextFocusUpId", mod, VIEW_ID));
+        mXmlAttrs.put("padding", mapAttrInfo(helper, "setPadding"));
+        mXmlAttrs.put("paddingBottom", mapAttrInfo(helper, "setPadding"));
+        mXmlAttrs.put("paddingEnd", mapAttrInfo(helper, "setPadding"));
+        mXmlAttrs.put("paddingLeft", mapAttrInfo(helper, "setPadding"));
+        mXmlAttrs.put("paddingRight", mapAttrInfo(helper, "setPadding"));
+        mXmlAttrs.put("paddingStart", mapAttrInfo(helper, "setPadding"));
+        mXmlAttrs.put("paddingTop", mapAttrInfo(helper, "setPadding"));
+        mXmlAttrs.put("requiresFadingEdge", mapAttrInfo(helper, "setFadingEdge"));
+        //mXmlAttrs.put("scrollbarIndicator", mapAttrInfo(null, "setScrollIndicators", null, "scroll_indicator_"));  // Test pending for API >= 23.
+        mXmlAttrs.put("scrollbarDefaultDelayBeforeFade", mapAttrInfo(method, "setScrollBarDefaultDelayBeforeFade"));
+        mXmlAttrs.put("scrollbarFadeDuration", mapAttrInfo(method, "setScrollBarFadeDuration"));
+        mXmlAttrs.put("scrollbarSize", mapAttrInfo(method, "setScrollBarSize", mod, DIMENSION));
+        mXmlAttrs.put("scrollbarStyle", mapAttrInfo(method, "setScrollBarStyle", prefix, "scrollbars_"));
+        mXmlAttrs.put("transformPivotX", mapAttrInfo(method, "setPivotX", mod, DIMENSION));
+        mXmlAttrs.put("transformPivotY", mapAttrInfo(method, "setPivotY", mod, DIMENSION));
+        mXmlAttrs.put("translationX", mapAttrInfo(mod, DIMENSION));
+        mXmlAttrs.put("translationY", mapAttrInfo(mod, DIMENSION));
+        mXmlAttrs.put("translationZ", mapAttrInfo(mod, DIMENSION));
 
         // ImageView
-        mXmlAttrs.put("baseline", mapAttrInfo(null, null, DIMENSION, null));
-        mXmlAttrs.put("maxHeight", mapAttrInfo(null, null, DIMENSION, null));
-        mXmlAttrs.put("maxWidth", mapAttrInfo(null, null, DIMENSION, null));
-        mXmlAttrs.put("src", mapAttrInfo("setImage", null, null, null));
+        mXmlAttrs.put("baseline", mapAttrInfo(mod, DIMENSION));
+        mXmlAttrs.put("maxHeight", mapAttrInfo(mod, DIMENSION));
+        mXmlAttrs.put("maxWidth", mapAttrInfo(mod, DIMENSION));
+        mXmlAttrs.put("src", mapAttrInfo(helper, "setImage"));
 /*        mXmlAttrs.put("scaleType", "con");*/
-        mXmlAttrs.put("tint", mapAttrInfo("setTint", null, null, null));
+        mXmlAttrs.put("tint", mapAttrInfo(helper, "setTint"));
 /*        mXmlAttrs.put("tintMode", "setImageTintMode"+"con");*/
 
         // TextView
-/*        mXmlAttrs.put("autoLink", mapAttrInfo(null, "setAutoLinkMask", null, "android.text.util.Linkify"); // it won't work because of constants suffix*/
-        mXmlAttrs.put("autoText", mapAttrInfo("setKeyListener", null, null, null)); // conflicts with capitalize.
-        mXmlAttrs.put("bufferType", mapAttrInfo("setBufferType", null, null, null)); // conflicts with capitalize.
-        mXmlAttrs.put("capitalize", mapAttrInfo("setKeyListener", null, null, null)); // conflicts with autotext.
-        mXmlAttrs.put("digits", mapAttrInfo("setKeyListener", null, null, null));
-        mXmlAttrs.put("drawableBottom", mapAttrInfo("setCompoundDrawable", null, null, null));
-        mXmlAttrs.put("drawableEnd", mapAttrInfo("setCompoundDrawable", null, null, null));
-        mXmlAttrs.put("drawableLeft", mapAttrInfo("setCompoundDrawable", null, null, null));
-        mXmlAttrs.put("drawablePadding", mapAttrInfo(null, "setCompoundDrawablePadding", DIMENSION, null));
-        mXmlAttrs.put("drawableStart", mapAttrInfo("setCompoundDrawable", null, null, null));
-        mXmlAttrs.put("drawableRight", mapAttrInfo("setCompoundDrawable", null, null, null));
+/*        mXmlAttrs.put("autoLink", mapAttrInfo(null, "setAutoLinkMask", null, "android.text.util.Linkify"); // it won't work because of different constants suffixes*/
+        mXmlAttrs.put("autoText", mapAttrInfo(helper, "setKeyListener")); // conflicts with capitalize.
+        mXmlAttrs.put("bufferType", mapAttrInfo(helper, "setBufferType"));
+        mXmlAttrs.put("capitalize", mapAttrInfo(helper, "setKeyListener")); // conflicts with autoText.
+        mXmlAttrs.put("digits", mapAttrInfo(helper, "setKeyListener"));
+        mXmlAttrs.put("drawableBottom", mapAttrInfo(helper, "setCompoundDrawable"));
+        mXmlAttrs.put("drawableEnd", mapAttrInfo(helper, "setCompoundDrawable"));
+        mXmlAttrs.put("drawableLeft", mapAttrInfo(helper, "setCompoundDrawable"));
+        mXmlAttrs.put("drawablePadding", mapAttrInfo(method, "setCompoundDrawablePadding", mod, DIMENSION));
+        mXmlAttrs.put("drawableStart", mapAttrInfo(helper, "setCompoundDrawable"));
+        mXmlAttrs.put("drawableRight", mapAttrInfo(helper, "setCompoundDrawable"));
         //mXmlAttrs.put("drawableTint", mapAttrInfo("setTint", null, null, null));  // API 23
 /*        mXmlAttrs.put("drawableTintMode", mapAttrInfo("???", null, null, null); // maybe too complex to offer...*/
-        mXmlAttrs.put("drawableTop", mapAttrInfo("setCompoundDrawable", null, null, null));
-        mXmlAttrs.put("ellipsize", mapAttrInfo("setEllipsize", null, null, null));
-        mXmlAttrs.put("fontFamily", mapAttrInfo("setTypeface", null, null, null));
-        mXmlAttrs.put("height", mapAttrInfo(null, null, DIMENSION, null));
-        mXmlAttrs.put("imeActionId", mapAttrInfo("setImeAction", null, null, null));
-        mXmlAttrs.put("imeActionLabel", mapAttrInfo("setImeAction", null, null, null));
-/*        mXmlAttrs.put("imeOptions", mapAttrInfo(null, null, null, "android.text.inputmethod.EditorInfo"));  // It's in a different class and prefixed... need to think about it.*/
+        mXmlAttrs.put("drawableTop", mapAttrInfo(helper, "setCompoundDrawable"));
+        mXmlAttrs.put("ellipsize", mapAttrInfo(helper, "setEllipsize"));
+        mXmlAttrs.put("fontFamily", mapAttrInfo(helper, "setTypeface"));
+        mXmlAttrs.put("height", mapAttrInfo(mod, DIMENSION));
+        mXmlAttrs.put("imeActionId", mapAttrInfo(helper, "setImeAction"));
+        mXmlAttrs.put("imeActionLabel", mapAttrInfo(helper, "setImeAction"));
+        mXmlAttrs.put("imeOptions", mapAttrInfo(clazz, "android.view.inputmethod.EditorInfo", prefix, "ime_"));
 /*        mXmlAttrs.put("inputMethod", mapAttrInfo("setKeyListener", null, null, null));  // haven't figured out how this attr works...*/
-        mXmlAttrs.put("inputType", mapAttrInfo(null, null, null, "android.text.InputType"));    // needs revision.
-        mXmlAttrs.put("lineSpacingExtra", mapAttrInfo("setLineSpacing", null, null, null));
-        mXmlAttrs.put("lineSpacingMultiplier", mapAttrInfo("setLineSpacing", null, null, null));
-        mXmlAttrs.put("maxLength", mapAttrInfo("setMaxLength", null, null, null));
-        mXmlAttrs.put("scrollHorizontally", mapAttrInfo(null, "setHorizontallyScrolling", null, null));
-        mXmlAttrs.put("shadowColor", mapAttrInfo("setShadowLayer", null, null, null));
-        mXmlAttrs.put("shadowDx", mapAttrInfo("setShadowLayer", null, null, null));
-        mXmlAttrs.put("shadowDy", mapAttrInfo("setShadowLayer", null, null, null));
-        mXmlAttrs.put("shadowRadius", mapAttrInfo("setShadowLayer", null, null, null));
-        mXmlAttrs.put("textAllCaps", mapAttrInfo(null, "setAllCaps", null, null));
-        mXmlAttrs.put("textColor", mapAttrInfo(null, null, COLOR, null));
-        mXmlAttrs.put("textColorHighlight", mapAttrInfo(null, "setHighlightColor", COLOR, null));
-        mXmlAttrs.put("textColorHint", mapAttrInfo(null, "setHintTextColor", COLOR, null));
-        mXmlAttrs.put("textColorLink", mapAttrInfo(null, "setLinkTextColor", COLOR, null));
-        mXmlAttrs.put("textSize", mapAttrInfo("setTextSize", null, null, null));
-        mXmlAttrs.put("textStyle", mapAttrInfo("setTextStyle", null, null, null));
-        mXmlAttrs.put("typeface", mapAttrInfo("setTypeface", null, null, null));
-        mXmlAttrs.put("width", mapAttrInfo(null, null, DIMENSION, null));
+        mXmlAttrs.put("inputType", mapAttrInfo(clazz, "android.text.InputType"));    // Constants' values handled with mInputTypes list.
+        mXmlAttrs.put("lineSpacingExtra", mapAttrInfo(helper, "setLineSpacing"));
+        mXmlAttrs.put("lineSpacingMultiplier", mapAttrInfo(helper, "setLineSpacing"));
+        mXmlAttrs.put("maxLength", mapAttrInfo(helper, "setMaxLength"));
+        mXmlAttrs.put("scrollHorizontally", mapAttrInfo(method, "setHorizontallyScrolling"));
+        mXmlAttrs.put("shadowColor", mapAttrInfo(helper, "setShadowLayer"));
+        mXmlAttrs.put("shadowDx", mapAttrInfo(helper, "setShadowLayer"));
+        mXmlAttrs.put("shadowDy", mapAttrInfo(helper, "setShadowLayer"));
+        mXmlAttrs.put("shadowRadius", mapAttrInfo(helper, "setShadowLayer"));
+        mXmlAttrs.put("textAllCaps", mapAttrInfo(method, "setAllCaps"));
+        mXmlAttrs.put("textColor", mapAttrInfo(mod, COLOR));
+        mXmlAttrs.put("textColorHighlight", mapAttrInfo(method, "setHighlightColor", mod, COLOR));
+        mXmlAttrs.put("textColorHint", mapAttrInfo(method, "setHintTextColor", mod, COLOR));
+        mXmlAttrs.put("textColorLink", mapAttrInfo(method, "setLinkTextColor", mod, COLOR));
+        mXmlAttrs.put("textSize", mapAttrInfo(helper, "setTextSize"));
+        mXmlAttrs.put("textStyle", mapAttrInfo(helper, "setTextStyle"));
+        mXmlAttrs.put("typeface", mapAttrInfo(helper, "setTypeface"));
+        mXmlAttrs.put("width", mapAttrInfo(mod, DIMENSION));
 
         // ViewGroup (Layout Params)
-        mXmlAttrs.put("layout_", mapAttrInfo("setLayoutProperty", null, null, null));
+        mXmlAttrs.put("layout_", mapAttrInfo(helper, "setLayoutProperty"));
 
         // LinearLayout
-        mXmlAttrs.put("divider", mapAttrInfo("setDividerDrawable", null, null, null));
-        mXmlAttrs.put("measureWithLargestChild", mapAttrInfo(null, "setMeasureWithLargestChildEnabled", null, null));
+        mXmlAttrs.put("divider", mapAttrInfo(helper, "setDividerDrawable"));
+        mXmlAttrs.put("measureWithLargestChild", mapAttrInfo(method, "setMeasureWithLargestChildEnabled"));
 
         // RelativeLayout
-        mXmlAttrs.put("ignoreGravity", mapAttrInfo(null, null, VIEW_ID, null));
+        mXmlAttrs.put("ignoreGravity", mapAttrInfo(mod, VIEW_ID));
 
         // TableLayout
-        mXmlAttrs.put("collapseColumns", mapAttrInfo("setTableColumns", null, null, null)); // works but a way to 'uncollapse' should be offered...
-        mXmlAttrs.put("shrinkColumns", mapAttrInfo("setTableColumns", null, null, null));
-        mXmlAttrs.put("stretchColumns", mapAttrInfo("setTableColumns", null, null, null));
+        mXmlAttrs.put("collapseColumns", mapAttrInfo(helper, "setTableColumns")); // works but a way to 'uncollapse' should be offered...
+        mXmlAttrs.put("shrinkColumns", mapAttrInfo(helper, "setTableColumns"));
+        mXmlAttrs.put("stretchColumns", mapAttrInfo(helper, "setTableColumns"));
 
         // Various Classes
-        mXmlAttrs.put("gravity", mapAttrInfo(null, null, null, "android.view.Gravity"));
+        mXmlAttrs.put("gravity", mapAttrInfo(clazz, "android.view.Gravity"));
     }
 
-    private static Map<AttributeInfo, String> mapAttrInfo(String helperMethod, String attrMethod,
-                                                          String valModifier, String constants) {
+    private static Map<AttributeInfo, String> mapAttrInfo(Object... attrInfo) {
         Map<AttributeInfo, String> infoMap = new EnumMap<>(AttributeInfo.class);
-        infoMap.put(AttributeInfo.HELPER_METHOD, helperMethod);
-        infoMap.put(AttributeInfo.ATTR_METHOD, attrMethod);
-        infoMap.put(AttributeInfo.VAL_MODIFIER, valModifier);
-        infoMap.put(AttributeInfo.CONSTANTS, constants);
+        for (int i = 0; i < attrInfo.length; i = i + 2) {
+            infoMap.put((AttributeInfo) attrInfo[i], (String) attrInfo[i + 1]);
+        }
         return infoMap;
     }
 
@@ -902,8 +914,9 @@ public class ViewInflater {
     private class ViewAttributesHelper {
 
         private final int TEXT_VIEW = 0;
-        private final int LINEAR_LAYOUT = 1;
-        private final int TABLE_LAYOUT = 2;
+        private final int IMAGE_VIEW = 1;
+        private final int LINEAR_LAYOUT = 2;
+        private final int TABLE_LAYOUT = 3;
 
         // Dedicated functions
 
@@ -1166,11 +1179,7 @@ public class ViewInflater {
                         int rule = mRelative.get(layoutAttr);
                         ((RelativeLayout.LayoutParams) layout).addRule(rule, anchor);
                     } else {
-                        try {
-                            setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
-                        } catch (NoSuchElementException e) {
-                            setIntegerField(layout, "layout_" + layoutAttr, getInteger(layout.getClass(), value));
-                        }
+                        setIntegerField(layout, layoutAttr, getInteger(layout.getClass(), value));
                     }
             }
             view.setLayoutParams(layout);
@@ -1425,7 +1434,7 @@ public class ViewInflater {
                         //view.setForegroundTintList(tint);
                         break;
                     case "tint":
-                        if (!isInstanceOf(view, TEXT_VIEW)) break;
+                        if (!isInstanceOf(view, IMAGE_VIEW)) break;
                         ((ImageView) view).setImageTintList(tint);
                         break;
                     default:
@@ -1655,7 +1664,6 @@ public class ViewInflater {
             return getInteger(view.getClass(), value);
         }
 
-        // TODO (miguelpalacio): Review this function. Some resources are not being retrieved.
         private int parseTheme(String value) {
             int result;
             try {
@@ -1769,6 +1777,10 @@ public class ViewInflater {
                 case TEXT_VIEW:
                     result = view instanceof TextView;
                     c = "TextView";
+                    break;
+                case IMAGE_VIEW:
+                    result = view instanceof ImageView;
+                    c = "ImageView";
                     break;
                 case LINEAR_LAYOUT:
                     result = view instanceof LinearLayout;
