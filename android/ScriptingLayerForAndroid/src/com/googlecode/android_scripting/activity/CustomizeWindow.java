@@ -20,12 +20,9 @@ import android.support.v7.app.ActionBar;
 import android.app.Activity;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.view.Window;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import com.googlecode.android_scripting.R;
-import com.googlecode.android_scripting.Version;
 
 public class CustomizeWindow {
     private CustomizeWindow() {

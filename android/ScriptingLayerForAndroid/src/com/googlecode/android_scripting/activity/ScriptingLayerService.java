@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 
@@ -63,7 +64,7 @@ public class ScriptingLayerService extends ForegroundService {
     private volatile int mModCount = 0;
     private NotificationManager mNotificationManager;
     private Notification mNotification;
-/*    private Notification.Builder mNotification;*/
+    Notification.Builder builder;
     private PendingIntent mNotificationPendingIntent;
     private InterpreterConfiguration mInterpreterConfiguration;
 
@@ -104,20 +105,33 @@ public class ScriptingLayerService extends ForegroundService {
 
     @Override
     protected Notification createNotification() {
-        // TODO: implement notifications using Notification.Builder.
+/*        // This section stopped working since API 23.
         mNotification =
                 new Notification(R.drawable.sl4a_notification_logo, null, System.currentTimeMillis());
-/*        mNotification = new Notification.Builder(this)
-                .setSmallIcon(R.drawable.sl4a_notification_logo)
-                .setContentTitle("SL4A Service")
-                .setContentInfo("Tap to view running scripts");*/
         mNotification.flags = Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
         Intent notificationIntent = new Intent(this, ScriptingLayerService.class);
         notificationIntent.setAction(Constants.ACTION_SHOW_RUNNING_SCRIPTS);
         mNotificationPendingIntent = PendingIntent.getService(this, 0, notificationIntent, 0);
         mNotification.setLatestEventInfo(this, "SL4A Service", "Tap to view running scripts",
-                mNotificationPendingIntent);
-        return mNotification;
+                mNotificationPendingIntent);*/
+
+        Intent notificationIntent = new Intent(this, ScriptingLayerService.class);
+        notificationIntent.setAction(Constants.ACTION_SHOW_RUNNING_SCRIPTS);
+        mNotificationPendingIntent = PendingIntent.getService(this, 0, notificationIntent, 0);
+        builder = new Notification.Builder(this)
+                .setSmallIcon(R.drawable.sl4a_notification_logo)
+                .setWhen(System.currentTimeMillis())
+                .setContentTitle("SL4A Service")
+                .setContentText("Tap to view running scripts")
+                .setContentIntent(mNotificationPendingIntent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            mNotification = builder.build();
+        } else {
+            mNotification = builder.getNotification();
+        }
+        mNotification.flags = Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
+
+        return this.mNotification;
     }
 
     private void updateNotification(String tickerText) {
@@ -135,7 +149,15 @@ public class ScriptingLayerService extends ForegroundService {
         } else {
             msg = "Tap to view " + Integer.toString(mProcessMap.size()) + " running scripts";
         }
-        mNotification.setLatestEventInfo(this, "SL4A Service", msg, mNotificationPendingIntent);
+/*        mNotification.setLatestEventInfo(this, "SL4A Service", msg, mNotificationPendingIntent);*/
+        builder.setContentTitle("SL4A Service")
+                .setContentText(msg)
+                .setContentIntent(mNotificationPendingIntent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            mNotification = builder.build();
+        } else {
+            mNotification = builder.getNotification();
+        }
         mNotificationManager.notify(NOTIFICATION_ID, mNotification);
     }
 

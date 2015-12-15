@@ -11,19 +11,22 @@ buildscript {
 apply plugin: 'com.android.library'
 
 dependencies {
-    compile('com.android.support:support-v4:21.0.3'){
-        force = true
-    }
+    compile 'com.android.support:appcompat-v7:23.1.1'
 }
 
 android {
-    buildToolsVersion "22.0.1"
-    compileSdkVersion 22
+    buildToolsVersion "23.0.2"
+    compileSdkVersion 23
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 22
+        targetSdkVersion 23
     }
+
+/*    dexOptions {
+        javaMaxHeapSize "4g"
+        preDexLibraries = false
+    }*/
 
     sourceSets {
         main {

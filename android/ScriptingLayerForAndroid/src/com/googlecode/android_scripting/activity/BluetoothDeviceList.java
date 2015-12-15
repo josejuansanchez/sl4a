@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BluetoothDeviceList extends ListActivity {
-    // TODO (miguelpalacio): migrate this <--------------------
+    // TODO (miguelpalacio): migrate this list to RecyclerView.
 
     private static class DeviceInfo {
         public final String mmName;

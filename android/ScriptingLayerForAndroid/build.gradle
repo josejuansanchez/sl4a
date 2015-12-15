@@ -21,17 +21,14 @@ dependencies {
     compile project(':USBHostSerialFacade')
     compile project(':ScriptingLayer')
     compile project(':InterpreterForAndroid')
-    compile('com.android.support:support-v4:22.2.0') {
-        force = true
-    }
-    compile 'com.android.support:appcompat-v7:22.2.1'
-    compile 'com.android.support:recyclerview-v7:22.2.1'
+    compile 'com.android.support:appcompat-v7:23.1.1'
+    compile 'com.android.support:recyclerview-v7:23.1.1'
     compile files('libs/locale_platform.jar')
 }
 
 android {
-    buildToolsVersion "22.0.1"
-    compileSdkVersion 22
+    buildToolsVersion "23.0.2"
+    compileSdkVersion 23
 
     sourceSets {
         main {
@@ -50,7 +47,7 @@ android {
     }
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 22
+        targetSdkVersion 23
         versionCode 611
         versionName '6.1.1'
     }
@@ -78,8 +75,10 @@ android {
         }
     }
 /*    productFlavors {
-    }
-    dexOptions {
+    }*/
+/*    dexOptions {
+        javaMaxHeapSize "4g"
+        preDexLibraries = false
     }*/
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_7

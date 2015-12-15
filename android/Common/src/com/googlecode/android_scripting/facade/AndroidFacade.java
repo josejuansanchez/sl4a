@@ -31,6 +31,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -536,17 +537,6 @@ public class AndroidFacade extends RpcReceiver {
         });
     }
 
-/*    // TODO (miguelpalacio): remove, obviously.
-    @Rpc(description = "This is a test method to try that my RPC understanding is correct.")
-    public void miguelMethod(@RpcParameter(name = "message") final String message) {
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(mService, "Miguel Toast! " + message, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }*/
-
     private String getInputFromAlertDialog(final String title, final String message,
                                            final boolean password) {
         final FutureActivityTask<String> task = new FutureActivityTask<String>() {
@@ -610,11 +600,28 @@ public class AndroidFacade extends RpcReceiver {
     @Rpc(description = "Displays a notification that will be canceled when the user clicks on it.")
     public void notify(@RpcParameter(name = "title", description = "title") String title,
                        @RpcParameter(name = "message") String message) {
+
+/*        // This section stopped working since API 23.
         Notification notification =
                 new Notification(mResources.getLogo48(), message, System.currentTimeMillis());
         // This contentIntent is a noop.
         PendingIntent contentIntent = PendingIntent.getService(mService, 0, new Intent(), 0);
         notification.setLatestEventInfo(mService, title, message, contentIntent);
+        notification.flags = Notification.FLAG_AUTO_CANCEL;*/
+
+        Notification notification;
+        Notification.Builder builder = new Notification.Builder(mService)
+                .setTicker(message)
+                .setSmallIcon(mResources.getLogo48())
+                .setWhen(System.currentTimeMillis())
+                .setContentTitle(title)
+                .setContentText(message)
+                .setContentIntent(PendingIntent.getService(mService, 0, new Intent(), 0));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            notification = builder.build();
+        } else {
+            notification = builder.getNotification();
+        }
         notification.flags = Notification.FLAG_AUTO_CANCEL;
 
         // Get a unique notification id from the application.
