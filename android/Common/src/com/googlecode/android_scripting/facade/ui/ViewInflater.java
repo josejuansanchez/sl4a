@@ -3,6 +3,7 @@ package com.googlecode.android_scripting.facade.ui;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
@@ -814,7 +815,7 @@ public class ViewInflater {
         mXmlAttrs.put("paddingStart", mapAttrInfo(helper, "setPadding"));
         mXmlAttrs.put("paddingTop", mapAttrInfo(helper, "setPadding"));
         mXmlAttrs.put("requiresFadingEdge", mapAttrInfo(helper, "setFadingEdge"));
-        //mXmlAttrs.put("scrollbarIndicator", mapAttrInfo(null, "setScrollIndicators", null, "scroll_indicator_"));  // Test pending for API >= 23.
+        //mXmlAttrs.put("scrollIndicators", mapAttrInfo(method, "setScrollIndicators", prefix, "scroll_indicator_"));  // Test pending for API >= 23.
         mXmlAttrs.put("scrollbarDefaultDelayBeforeFade", mapAttrInfo(method, "setScrollBarDefaultDelayBeforeFade"));
         mXmlAttrs.put("scrollbarFadeDuration", mapAttrInfo(method, "setScrollBarFadeDuration"));
         mXmlAttrs.put("scrollbarSize", mapAttrInfo(method, "setScrollBarSize", mod, DIMENSION));
@@ -881,6 +882,7 @@ public class ViewInflater {
         // LinearLayout
         mXmlAttrs.put("divider", mapAttrInfo(helper, "setDividerDrawable"));
         mXmlAttrs.put("measureWithLargestChild", mapAttrInfo(method, "setMeasureWithLargestChildEnabled"));
+        mXmlAttrs.put("showDividers", mapAttrInfo(prefix, "show_divider_"));
 
         // RelativeLayout
         mXmlAttrs.put("ignoreGravity", mapAttrInfo(mod, VIEW_ID));
@@ -953,55 +955,60 @@ public class ViewInflater {
                 return;
 
             TextView textView = (TextView) view;
-            Drawable[] dws;
-            dws = textView.getCompoundDrawables();
-            // So far supports only ColorDrawable and BitmapDrawable.
-            Drawable newDrawable;
-            if (value.startsWith("#")) {
-                newDrawable = new ColorDrawable(getColor(value));
-            } else {
-                newDrawable = getDrawable(value);
-            }
+            Drawable[] dws = textView.getCompoundDrawables();
+            Drawable newDrawable = getDrawable(value);
             if (mErrors.size() > 0) return;
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 switch (attr) {
                     case "drawableBottom":
-                        textView.setCompoundDrawables(dws[0], dws[1], dws[2], newDrawable);
+                        textView.setCompoundDrawablesWithIntrinsicBounds(dws[0], dws[1], dws[2], newDrawable);
                         break;
                     case "drawableLeft":
-                        textView.setCompoundDrawables(newDrawable, dws[1], dws[2], dws[3]);
+                        textView.setCompoundDrawablesWithIntrinsicBounds(newDrawable, dws[1], dws[2], dws[3]);
                         break;
                     case "drawableRight":
-                        textView.setCompoundDrawables(dws[0], dws[1], newDrawable, dws[3]);
+                        textView.setCompoundDrawablesWithIntrinsicBounds(dws[0], dws[1], newDrawable, dws[3]);
                         break;
                     case "drawableTop":
-                        textView.setCompoundDrawables(dws[0], newDrawable, dws[2], dws[3]);
+                        textView.setCompoundDrawablesWithIntrinsicBounds(dws[0], newDrawable, dws[2], dws[3]);
                         break;
                     default:
                         mErrors.add("attribute not supported by devices with API < 17");
                 }
             } else {
-                Drawable[] dwsRel;
-                dwsRel = textView.getCompoundDrawablesRelative();
+                Drawable[] dwsRel = textView.getCompoundDrawablesRelative();
+                Configuration config = mContext.getResources().getConfiguration();
+                if (config.getLayoutDirection() == View.LAYOUT_DIRECTION_LTR) {
+                    if (dwsRel[0] == null)
+                        dwsRel[0] = dws[0]; // start = left.
+                    if (dwsRel[2] == null)
+                        dwsRel[2] = dws[2]; // end = right.
+                } else {
+                    if (dwsRel[0] == null)
+                        dwsRel[0] = dws[2]; // start = right.
+                    if (dwsRel[2] == null)
+                        dwsRel[2] = dws[0]; // end = left.
+                }
+
                 switch (attr) {
                     case "drawableBottom":
-                        textView.setCompoundDrawablesRelative(dwsRel[0], dwsRel[1], dwsRel[2], newDrawable);
+                        textView.setCompoundDrawablesRelativeWithIntrinsicBounds(dwsRel[0], dwsRel[1], dwsRel[2], newDrawable);
                         break;
                     case "drawableEnd":
-                        textView.setCompoundDrawablesRelative(dwsRel[0], dwsRel[1], newDrawable, dwsRel[3]);
+                        textView.setCompoundDrawablesRelativeWithIntrinsicBounds(dwsRel[0], dwsRel[1], newDrawable, dwsRel[3]);
                         break;
                     case "drawableLeft":
-                        textView.setCompoundDrawables(newDrawable, dws[1], dws[2], dws[3]);
+                        textView.setCompoundDrawablesWithIntrinsicBounds(newDrawable, dws[1], dws[2], dws[3]);
                         break;
                     case "drawableRight":
-                        textView.setCompoundDrawables(dws[0], dws[1], newDrawable, dws[3]);
+                        textView.setCompoundDrawablesWithIntrinsicBounds(dws[0], dws[1], newDrawable, dws[3]);
                         break;
                     case "drawableStart":
-                        textView.setCompoundDrawablesRelative(newDrawable, dwsRel[1], dwsRel[2], dwsRel[3]);
+                        textView.setCompoundDrawablesRelativeWithIntrinsicBounds(newDrawable, dwsRel[1], dwsRel[2], dwsRel[3]);
                         break;
                     case "drawableTop":
-                        textView.setCompoundDrawablesRelative(dwsRel[0], newDrawable, dwsRel[2], dwsRel[3]);
+                        textView.setCompoundDrawablesRelativeWithIntrinsicBounds(dwsRel[0], newDrawable, dwsRel[2], dwsRel[3]);
                         break;
                 }
             }
@@ -1011,12 +1018,7 @@ public class ViewInflater {
             if (!isInstanceOf(view, LINEAR_LAYOUT))
                 return;
 
-            Drawable drawable;
-            if (value.startsWith("#")) {
-                drawable = new ColorDrawable(getColor(value));
-            } else {
-                drawable = getDrawable(value);
-            }
+            Drawable drawable = getDrawable(value);
             ((LinearLayout) view).setDividerDrawable(drawable);
         }
 
@@ -1158,17 +1160,33 @@ public class ViewInflater {
                         int size = (int) getScaledSize(value);
                         MarginLayoutParams margins = (MarginLayoutParams) layout;
                         switch (layoutAttr) {
+                            case "margin":
+                                margins.setMargins(size, size, size, size);
                             case "marginBottom":
                                 margins.bottomMargin = size;
                                 break;
-                            case "marginTop":
-                                margins.topMargin = size;
+                            case "marginEnd":
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                                    margins.setMarginEnd(size);
+                                } else {
+                                    mErrors.add("attribute not supported by devices with API < 17");
+                                }
                                 break;
                             case "marginLeft":
                                 margins.leftMargin = size;
                                 break;
                             case "marginRight":
                                 margins.rightMargin = size;
+                                break;
+                            case "marginStart":
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                                    margins.setMarginStart(size);
+                                } else {
+                                    mErrors.add("attribute not supported by devices with API < 17");
+                                }
+                                break;
+                            case "marginTop":
+                                margins.topMargin = size;
                                 break;
                         }
                     } else if (layout instanceof RelativeLayout.LayoutParams) {
@@ -1588,7 +1606,7 @@ public class ViewInflater {
                 } catch (Exception e) {
                 }
             } else if (value.startsWith("?") || value.startsWith("@")) {
-                int colorRes = parseTheme(value);
+                int colorRes = parseResource(value);
                 if (colorRes != 0) {
                     return mContext.getResources().getColor(colorRes);
                 }
@@ -1614,7 +1632,7 @@ public class ViewInflater {
                 result = work;
             } else {
                 if (value.startsWith("?") || value.startsWith("@")) {
-                    result = parseTheme(value);
+                    result = parseResource(value);
                 } else if (value.startsWith("0x")) {
                     try {
                         result = (int) Long.parseLong(value.substring(2), 16);
@@ -1642,7 +1660,9 @@ public class ViewInflater {
                                 f = clazz.getField(toUnderscore(attr + '_' + value).toUpperCase());
                                 result = f.getInt(null);
                             } catch (Exception ex3) {
+/*                                if (!value.toLowerCase().endsWith("none")) {*/
                                 mErrors.add("Unknown value: " + value);
+                                /*}*/
                                 result = 0;
                             }
                         }
@@ -1664,7 +1684,7 @@ public class ViewInflater {
             return getInteger(view.getClass(), value);
         }
 
-        private int parseTheme(String value) {
+        private int parseResource(String value) {
             int result;
             try {
                 StringBuilder query = new StringBuilder();
@@ -1688,7 +1708,7 @@ public class ViewInflater {
                 Field f = clazz.getField(value);
                 result = f.getInt(null);
             } catch (Exception e) {
-                mErrors.add("Theme not found.");
+                mErrors.add("Resource not found.");
                 result = 0;
             }
             return result;
@@ -1747,6 +1767,16 @@ public class ViewInflater {
                 Uri uri = Uri.parse(value);
                 if ("file".equals(uri.getScheme())) {
                     return new BitmapDrawable(mContext.getResources(), uri.getPath());
+                }
+                else if (value.startsWith("@") || value.startsWith("?")) {
+                    int drawableId = parseResource(value);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        return mContext.getDrawable(drawableId);
+                    } else {
+                        return mContext.getResources().getDrawable(drawableId);
+                    }
+                } else if (value.startsWith("#")) {
+                    return new ColorDrawable(getColor(value));
                 }
             } catch (Exception e) {
                 mErrors.add("failed to load drawable " + value);
