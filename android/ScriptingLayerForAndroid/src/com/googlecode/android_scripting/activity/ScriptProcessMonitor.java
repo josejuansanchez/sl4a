@@ -40,11 +40,11 @@ import com.googlecode.android_scripting.Log;
 import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.interpreter.InterpreterProcess;
 
+import org.connectbot.ConsoleActivity;
+
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import org.connectbot.ConsoleActivity;
 
 /**
  * An activity that allows to monitor running scripts.
@@ -86,7 +86,9 @@ public class ScriptProcessMonitor extends ListActivity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     bindService(new Intent(this, ScriptingLayerService.class), mConnection, 0);
-    CustomizeWindow.requestCustomTitle(this, "Script Monitor", R.layout.script_monitor);
+
+    //CustomizeWindow.requestCustomTitle(this, "Script Monitor", R.layout.script_monitor);
+
     mAdapter = new ScriptMonitorAdapter();
     setListAdapter(mAdapter);
     registerForContextMenu(getListView());

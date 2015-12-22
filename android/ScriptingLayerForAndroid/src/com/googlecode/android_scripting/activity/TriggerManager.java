@@ -19,15 +19,15 @@ package com.googlecode.android_scripting.activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.DialogInterface.OnClickListener;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
@@ -38,7 +38,6 @@ import com.googlecode.android_scripting.ActivityFlinger;
 import com.googlecode.android_scripting.BaseApplication;
 import com.googlecode.android_scripting.Constants;
 import com.googlecode.android_scripting.Log;
-import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.dialog.Help;
 import com.googlecode.android_scripting.facade.FacadeConfiguration;
 import com.googlecode.android_scripting.rpc.MethodDescriptor;
@@ -75,7 +74,9 @@ public class TriggerManager extends ListActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    CustomizeWindow.requestCustomTitle(this, "Triggers", R.layout.trigger_manager);
+
+    //CustomizeWindow.requestCustomTitle(this, "Triggers", R.layout.trigger_manager);
+
     ScriptTriggerListObserver observer = new ScriptTriggerListObserver();
     mAdapter = new ScriptTriggerAdapter();
     setListAdapter(mAdapter);

@@ -29,10 +29,12 @@
 	<uses-permission android:name="android.permission.CAMERA" />
 	<uses-permission android:name="android.permission.WAKE_LOCK" />
 	<uses-permission android:name="android.permission.READ_CONTACTS" />
-	<uses-sdk android:targetSdkVersion="4" android:minSdkVersion="3" />
+
 	<application android:icon="@drawable/sl4a_logo_48"
 		android:label="@string/application_title" android:name=".Sl4aApplication"
-        tools:replace="android:label,android:icon">
+        tools:replace="android:label,android:icon"
+		android:theme="@style/Theme.AppCompat">
+
 		<activity android:name=".activity.ScriptManager"
 			android:configChanges="keyboardHidden|orientation"
 			android:windowSoftInputMode="adjustResize" android:launchMode="singleTop">
@@ -115,8 +117,13 @@
 				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
 		</activity>
+
 		<activity android:name=".activity.FutureActivity"
-			android:configChanges="keyboardHidden|orientation" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+			android:configChanges="keyboardHidden|orientation"
+			android:theme="@style/Theme.AppCompat.NoActionBar" />
+
+		<!-- android:theme="@android:style/Theme.Translucent.NoTitleBar" -->
+
 		<activity android:name="org.connectbot.HelpActivity"
 			android:configChanges="keyboardHidden|orientation" />
 		<activity android:name="org.connectbot.HelpTopicActivity"

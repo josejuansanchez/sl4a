@@ -26,7 +26,6 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.googlecode.android_scripting.Constants;
-import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.bluetooth.BluetoothDiscoveryHelper;
 import com.googlecode.android_scripting.bluetooth.BluetoothDiscoveryHelper.BluetoothDiscoveryListener;
 
@@ -52,7 +51,9 @@ public class BluetoothDeviceList extends ListActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    CustomizeWindow.requestCustomTitle(this, "Bluetooth Devices", R.layout.bluetooth_device_list);
+
+    //CustomizeWindow.requestCustomTitle(this, "Bluetooth Devices", R.layout.bluetooth_device_list);
+
     setListAdapter(mAdapter);
     // Analytics.trackActivity(this);
   }

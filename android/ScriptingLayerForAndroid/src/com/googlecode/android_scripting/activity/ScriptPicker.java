@@ -36,11 +36,11 @@ import com.googlecode.android_scripting.ScriptStorageAdapter;
 import com.googlecode.android_scripting.interpreter.InterpreterConfiguration;
 import com.googlecode.android_scripting.interpreter.InterpreterConstants;
 
-import java.io.File;
-import java.util.List;
-
 import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
+
+import java.io.File;
+import java.util.List;
 
 /**
  * Presents available scripts and returns the selected one.
@@ -58,7 +58,9 @@ public class ScriptPicker extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    CustomizeWindow.requestCustomTitle(this, "Scripts", R.layout.script_manager);
+
+    //CustomizeWindow.requestCustomTitle(this, "Scripts", R.layout.script_manager);
+
     mCurrentDir = mBaseDir;
     mConfiguration = ((BaseApplication) getApplication()).getInterpreterConfiguration();
     mScripts = ScriptStorageAdapter.listExecutableScripts(null, mConfiguration);

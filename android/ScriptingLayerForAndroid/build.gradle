@@ -11,6 +11,8 @@ buildscript {
 apply plugin: 'com.android.application'
 
 dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
     compile project(':Common')
     compile project(':Utils')
     compile project(':QuickAction')
@@ -21,15 +23,18 @@ dependencies {
     compile project(':USBHostSerialFacade')
     compile project(':ScriptingLayer')
     compile project(':InterpreterForAndroid')
-    compile('com.android.support:support-v4:21.0.3') {
-        force = true
-    }
+
+    //compile('com.android.support:support-v4:21.0.3'){
+    //    force = true
+    //}
+    compile 'com.android.support:appcompat-v7:22.1.0'
+
     compile files('libs/locale_platform.jar')
 }
 
 android {
     buildToolsVersion "21.1.2"
-    compileSdkVersion 21
+    compileSdkVersion 22
 
     sourceSets {
         main {
@@ -47,11 +52,14 @@ android {
         instrumentTest.setRoot('tests')
     }
     defaultConfig {
-        minSdkVersion 4
-        targetSdkVersion 4
+        minSdkVersion 11
+        targetSdkVersion 23
         versionCode 611
         versionName '6.1.1'
+
+        multiDexEnabled true
     }
+
     productFlavors {
         x86 {
             ndk {
@@ -74,6 +82,7 @@ android {
             }
         }
     }
+
     productFlavors {
     }
     dexOptions {
@@ -95,4 +104,3 @@ android {
         }
     }
 }
-

@@ -42,16 +42,20 @@ public class Log {
   }
 
   public static void notify(Context context, String title, String contentTitle, String message) {
+    // TODO: @josejuansanchez
+
     android.util.Log.v(getTag(), String.format("%s %s", contentTitle, message));
 
     String packageName = context.getPackageName();
     int iconId = context.getResources().getIdentifier("stat_sys_warning", "drawable", packageName);
     NotificationManager notificationManager =
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
     Notification note = new Notification(iconId > 0 ? iconId : -1, title, 0);
     note.setLatestEventInfo(context, contentTitle, message, PendingIntent.getService(context, 0,
         null, 0));
     note.contentView.getLayoutId();
+
     notificationManager.notify(NotificationIdFactory.create(), note);
   }
 

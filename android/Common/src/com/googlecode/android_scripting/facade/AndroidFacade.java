@@ -587,6 +587,7 @@ public class AndroidFacade extends RpcReceiver {
   @Rpc(description = "Displays a notification that will be canceled when the user clicks on it.")
   public void notify(@RpcParameter(name = "title", description = "title") String title,
       @RpcParameter(name = "message") String message) {
+    // TODO: @josejuansanchez
     Notification notification =
         new Notification(mResources.getLogo48(), message, System.currentTimeMillis());
     // This contentIntent is a noop.

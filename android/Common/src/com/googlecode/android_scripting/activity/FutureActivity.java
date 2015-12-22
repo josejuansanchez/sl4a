@@ -21,6 +21,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -41,7 +42,7 @@ import com.googlecode.android_scripting.jsonrpc.RpcReceiver;
  * 
  * @author Damon Kohler (damonkohler@gmail.com)
  */
-public class FutureActivity extends Activity {
+public class FutureActivity extends AppCompatActivity {
   private FutureActivityTask<?> mTask;
 
   @Override

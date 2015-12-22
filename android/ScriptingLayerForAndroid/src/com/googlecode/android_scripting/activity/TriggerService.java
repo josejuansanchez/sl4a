@@ -105,6 +105,8 @@ public class TriggerService extends ForegroundService {
   /** Returns the notification to display whenever the service is running. */
   @Override
   protected Notification createNotification() {
+    // TODO: @josejuansanchez
+
     Notification notification =
         new Notification(R.drawable.sl4a_logo_48, "SL4A Trigger Service started.",
             System.currentTimeMillis());
@@ -113,6 +115,10 @@ public class TriggerService extends ForegroundService {
         PendingIntent.getActivity(this, 0, notificationIntent, 0));
     notification.flags = Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
     return notification;
+
+    // ** ¡¡ Don't forget to delete this line. It's a temporary solution !! **
+    //return new Notification(R.drawable.sl4a_logo_48, "SL4A Trigger Service started.",
+    //        System.currentTimeMillis());
   }
 
   private class TriggerEventObserver implements EventObserver {

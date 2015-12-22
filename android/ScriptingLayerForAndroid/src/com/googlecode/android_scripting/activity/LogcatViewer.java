@@ -33,7 +33,6 @@ import android.widget.Toast;
 import com.googlecode.android_scripting.ActivityFlinger;
 import com.googlecode.android_scripting.Log;
 import com.googlecode.android_scripting.Process;
-import com.googlecode.android_scripting.R;
 import com.googlecode.android_scripting.dialog.Help;
 
 import java.io.BufferedReader;
@@ -97,7 +96,9 @@ public class LogcatViewer extends ListActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    CustomizeWindow.requestCustomTitle(this, "Logcat", R.layout.logcat_viewer);
+
+    //CustomizeWindow.requestCustomTitle(this, "Logcat", R.layout.logcat_viewer);
+
     mLogcatMessages = new LinkedList<String>();
     mOldLastPosition = 0;
     mAdapter = new LogcatViewerAdapter();

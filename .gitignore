@@ -43,3 +43,6 @@
 
 # Windows clutter
 Thumbs.db
+
+# Android Studio
+*.iml

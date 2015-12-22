@@ -56,7 +56,9 @@ public class InterpreterPicker extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    CustomizeWindow.requestCustomTitle(this, "Interpreters", R.layout.script_manager);
+
+    //CustomizeWindow.requestCustomTitle(this, "Interpreters", R.layout.script_manager);
+
     mObserver = new ScriptListObserver();
     mConfiguration = ((BaseApplication) getApplication()).getInterpreterConfiguration();
     mInterpreters = mConfiguration.getInteractiveInterpreters();

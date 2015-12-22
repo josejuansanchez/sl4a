@@ -61,6 +61,9 @@ import com.googlecode.android_scripting.interpreter.InterpreterConfiguration;
 import com.googlecode.android_scripting.interpreter.InterpreterConfiguration.ConfigurationObserver;
 import com.googlecode.android_scripting.interpreter.InterpreterConstants;
 
+import net.londatiga.android.ActionItem;
+import net.londatiga.android.QuickAction;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
@@ -68,9 +71,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
-
-import net.londatiga.android.ActionItem;
-import net.londatiga.android.QuickAction;
 
 /**
  * Manages creation, deletion, and execution of stored scripts.
@@ -110,7 +110,9 @@ public class ScriptManager extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    CustomizeWindow.requestCustomTitle(this, "Scripts", R.layout.script_manager);
+
+    //CustomizeWindow.requestCustomTitle(this, "Scripts", R.layout.script_manager);
+
     if (FileUtils.externalStorageMounted()) {
       File sl4a = mBaseDir.getParentFile();
       if (!sl4a.exists()) {
@@ -186,7 +188,7 @@ public class ScriptManager extends ListActivity {
     }
 
     if (mScripts.size() == 0) {
-      ((TextView) findViewById(android.R.id.empty)).setText("No matches found.");
+      //((TextView) findViewById(android.R.id.empty)).setText("No matches found.");
     }
 
     // TODO(damonkohler): Extending the File class here seems odd.
@@ -267,7 +269,7 @@ public class ScriptManager extends ListActivity {
   protected void onResume() {
     super.onResume();
     if (!mInSearchResultMode) {
-      ((TextView) findViewById(android.R.id.empty)).setText(R.string.no_scripts_message);
+      //((TextView) findViewById(android.R.id.empty)).setText(R.string.no_scripts_message);
     }
     updateAndFilterScriptList(mQuery);
     mAdapter.notifyDataSetChanged();

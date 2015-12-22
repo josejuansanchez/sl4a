@@ -88,7 +88,9 @@ public class ApiBrowser extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    CustomizeWindow.requestCustomTitle(this, "API Browser", R.layout.api_browser);
+
+    //CustomizeWindow.requestCustomTitle(this, "API Browser", R.layout.api_browser);
+
     getListView().setFastScrollEnabled(true);
     mExpandedPositions = new HashSet<Integer>();
     updateAndFilterMethodDescriptors(null);

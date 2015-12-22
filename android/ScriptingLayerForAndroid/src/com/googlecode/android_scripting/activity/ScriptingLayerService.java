@@ -39,6 +39,9 @@ import com.googlecode.android_scripting.interpreter.InterpreterProcess;
 import com.googlecode.android_scripting.interpreter.html.HtmlInterpreter;
 import com.googlecode.android_scripting.interpreter.shell.ShellInterpreter;
 
+import org.connectbot.ConsoleActivity;
+import org.connectbot.service.TerminalManager;
+
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
@@ -46,9 +49,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.connectbot.ConsoleActivity;
-import org.connectbot.service.TerminalManager;
 
 /**
  * A service that allows scripts and the RPC server to run in the background.
@@ -103,6 +103,7 @@ public class ScriptingLayerService extends ForegroundService {
 
   @Override
   protected Notification createNotification() {
+    // TODO: @josejuansanchez
     mNotification =
         new Notification(R.drawable.sl4a_notification_logo, null, System.currentTimeMillis());
     mNotification.flags = Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
@@ -112,9 +113,14 @@ public class ScriptingLayerService extends ForegroundService {
     mNotification.setLatestEventInfo(this, "SL4A Service", "Tap to view running scripts",
         mNotificationPendingIntent);
     return mNotification;
+
+    // ** ¡¡ Don't forget to delete this line. It's a temporary solution !! **
+    //return new Notification(R.drawable.sl4a_notification_logo, null, System.currentTimeMillis());
   }
 
   private void updateNotification(String tickerText) {
+    // TODO: @josejuansanchez
+
     mNotification.iconLevel = mProcessMap.size();
     if (tickerText.equals(mNotification.tickerText)) {
       // Consequent notifications with the same ticker-text are displayed without any ticker-text.
