@@ -33,6 +33,7 @@
 **/.idea/dataSources.ids
 **/.idea/gradle.xml
 **/.idea/libraries
+**/.idea
 
 # Linux clutter
 *~
@@ -43,3 +44,7 @@
 
 # Windows clutter
 Thumbs.db
+
+# Android Studio
+*.iml
+**/*.iml
