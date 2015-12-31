@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center">
+
+    <RelativeLayout
+        android:id="@+id/vertical_gamepad"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="30dp"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/robot_bg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/pollywog_bg_off"
+            android:layout_marginBottom="-30dp"
+            android:layout_marginTop="-30dp"
+            android:layout_centerInParent="true"/>
+
+        <ImageButton
+            android:id="@+id/up_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/robot_bg"
+            android:src="@drawable/ic_up_button"
+            android:layout_centerHorizontal="true"/>
+
+        <ImageButton
+            android:id="@+id/down_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/robot_bg"
+            android:src="@drawable/ic_down_button"
+            android:layout_centerHorizontal="true"/>
+
+    </RelativeLayout>
+
+    <ImageButton
+        android:id="@+id/left_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:src="@drawable/ic_left_button" />
+
+    <ImageButton
+        android:id="@+id/right_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/vertical_gamepad"
+        android:layout_marginLeft="-30dp"
+        android:layout_centerVertical="true"
+        android:src="@drawable/ic_right_button" />
+
+
+</RelativeLayout>
