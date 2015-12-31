@@ -195,9 +195,9 @@ public abstract class SimpleServer {
     public InetSocketAddress startPublic(int port) {
         InetAddress address;
         try {
-            // address = getPublicInetAddress();
-            address = null;
-            mServer = new ServerSocket(port, 5 /* backlog */); //just bind to all interfaces
+            address = getPublicInetAddress();
+            mServer = new ServerSocket(port, 5 /* backlog */, address);
+            //mServer = new ServerSocket(port, 5 /* backlog */); //just bind to all interfaces
         } catch (Exception e) {
             Log.e("Failed to start server.", e);
             return null;
