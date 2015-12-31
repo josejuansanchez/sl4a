@@ -32,17 +32,19 @@ import com.googlecode.android_scripting.rpc.RpcMinSdk;
 import com.googlecode.android_scripting.rpc.RpcOptional;
 import com.googlecode.android_scripting.rpc.RpcParameter;
 
+import org.apache.commons.codec.binary.Base64Codec;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-
-import org.apache.commons.codec.binary.Base64Codec;
 
 /**
  * Bluetooth functions.
@@ -155,7 +157,23 @@ public class BluetoothFacade extends RpcReceiver {
     mSocket = mDevice.createRfcommSocketToServiceRecord(UUID.fromString(uuid));
     // Always cancel discovery because it will slow down a connection.
     mBluetoothAdapter.cancelDiscovery();
-    mSocket.connect();
+
+    // TODO(josejuansanchez): Workaround to solve an issue related with bluetooth stack
+    // since android 4.2. Reference: http://goo.gl/ykilJx
+    try {
+      mSocket.connect();
+    } catch (IOException e) {
+      try {
+        mSocket =(BluetoothSocket) mDevice.getClass().getMethod("createRfcommSocket", new Class[] {int.class}).invoke(mDevice, 1);
+        mSocket.connect();
+      } catch (NoSuchMethodException e1) {
+        Log.e(e1);
+      } catch (IllegalAccessException e2) {
+        Log.e(e2);
+      } catch (InvocationTargetException e3) {
+        Log.e(e3);
+      }
+    }
     conn = new BluetoothConnection(mSocket);
     return addConnection(conn);
   }
