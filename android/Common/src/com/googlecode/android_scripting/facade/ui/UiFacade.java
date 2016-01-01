@@ -38,6 +38,10 @@ import com.googlecode.android_scripting.rpc.RpcDefault;
 import com.googlecode.android_scripting.rpc.RpcOptional;
 import com.googlecode.android_scripting.rpc.RpcParameter;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,9 +51,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.json.JSONArray;
-import org.json.JSONException;
 
 /**
  * User Interface Facade. <br>
@@ -586,6 +587,19 @@ public class UiFacade extends RpcReceiver {
             mFullScreenTask.getShowLatch().await();
         }
         return mFullScreenTask.mInflater.getErrors();
+    }
+
+    @Rpc(description = "Show full screen from a layout file")
+    public List<String> fullShowLayoutFile(
+            @RpcParameter(name = "filePath", description = "Path file containing View layout") String filePath,
+            @RpcParameter(name = "title", description = "Activity Title") @RpcOptional String title)
+            throws IOException, InterruptedException {
+        File file = new File(filePath);
+        String layout = FileUtils.readToString(file);
+        if (layout == null) {
+            throw new RuntimeException("No layout file available.");
+        }
+        return fullShow(layout, title);
     }
 
     @Rpc(description = "Dismiss Full Screen.")
