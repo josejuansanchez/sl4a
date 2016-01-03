@@ -1,6 +1,6 @@
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
     }
 
     dependencies {
@@ -15,6 +15,7 @@ dependencies {
     compile files('libs/guava-r06.jar')
     compile files('libs/libGoogleAnalytics.jar')
     compile 'com.android.support:appcompat-v7:23.1.1'
+    compile 'com.squareup.picasso:picasso:2.5.1'
 }
 
 android {
