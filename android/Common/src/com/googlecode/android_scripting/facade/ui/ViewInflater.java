@@ -36,6 +36,12 @@ import android.widget.TableLayout;
 import android.widget.TextView;
 
 import com.googlecode.android_scripting.Log;
+import com.squareup.picasso.Picasso;
+
+import org.json.JSONArray;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,11 +56,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.json.JSONArray;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
 
 public class ViewInflater {
 
@@ -1073,12 +1074,19 @@ public class ViewInflater {
             } else {
                 try {
                     Uri uri = Uri.parse(value);
-                    if ("file".equals(uri.getScheme())) {
-                        Bitmap bm = BitmapFactory.decodeFile(uri.getPath());
-                        Method method = view.getClass().getMethod("setImageBitmap", Bitmap.class);
-                        method.invoke(view, bm);
-                    } else {
-                        mErrors.add("Only 'file' currently supported for images");
+                    switch (uri.getScheme()) {
+                        case "file":
+                            Bitmap bm = BitmapFactory.decodeFile(uri.getPath());
+                            Method method = view.getClass().getMethod("setImageBitmap", Bitmap.class);
+                            method.invoke(view, bm);
+                            break;
+
+                        case "http":
+                            Picasso.with(mContext).load(value).into((ImageView) view);
+                            break;
+
+                        default:
+                            mErrors.add("Only 'file' and 'http' currently supported for images");
                     }
                 } catch (Exception e) {
                     mErrors.add("failed to set image " + value);
